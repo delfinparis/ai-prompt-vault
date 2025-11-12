@@ -81,6 +81,7 @@ export default function AIPromptVault() {
   const [collections, setCollections] = useState<Record<string, string[]>>({ "My Favorites": [] });
   const [activeCollection, setActiveCollection] = useState<string | null>(null);
   const [customPrompts, setCustomPrompts] = useState<PromptItem[]>([]);
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
   const searchInputRef = React.useRef<HTMLInputElement>(null);
   const fieldInputRef = React.useRef<HTMLInputElement>(null);
 
@@ -423,7 +424,14 @@ export default function AIPromptVault() {
     
     // Auto-select the new custom prompt for editing
     setSelectedPrompt(duplicated);
+    showToast("✨ Custom version created!");
     trackEvent("prompt_duplicated", { originalId: (prompt as any).id, customId });
+  };
+
+  // Show toast notification
+  const showToast = (message: string) => {
+    setToastMessage(message);
+    setTimeout(() => setToastMessage(null), 3000);
   };
 
   // Select prompt for detail view
@@ -618,6 +626,7 @@ export default function AIPromptVault() {
           background: "linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%)",
           borderRadius: "var(--radius-md)",
           border: "1px solid #e5e7eb",
+          animation: "fadeIn 400ms ease-out",
         }}>
           <h2 style={{ fontSize: 16, fontWeight: 700, color: "var(--text)", marginBottom: 16 }}>
             📊 Your Activity
@@ -712,7 +721,10 @@ export default function AIPromptVault() {
                   borderRadius: "var(--radius-pill)",
                   cursor: "pointer",
                   transition: "all 160ms ease",
+                  transform: "scale(1)",
                 }}
+                onMouseEnter={(e) => e.currentTarget.style.transform = "scale(1.05)"}
+                onMouseLeave={(e) => e.currentTarget.style.transform = "scale(1)"}
               >
                 📁 {collectionName} ({collections[collectionName].length})
               </button>
@@ -1421,6 +1433,14 @@ export default function AIPromptVault() {
                         cursor: "pointer",
                         transition: "all 160ms ease",
                       }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.background = "#e2e8f0";
+                        e.currentTarget.style.transform = "translateY(-1px)";
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.background = "#f1f5f9";
+                        e.currentTarget.style.transform = "translateY(0)";
+                      }}
                       title="Download as .txt file"
                     >
                       💾
@@ -1438,6 +1458,14 @@ export default function AIPromptVault() {
                         borderRadius: "var(--radius-sm)",
                         cursor: "pointer",
                         transition: "all 160ms ease",
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.background = "#e2e8f0";
+                        e.currentTarget.style.transform = "translateY(-1px)";
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.background = "#f1f5f9";
+                        e.currentTarget.style.transform = "translateY(0)";
                       }}
                       title="Duplicate and customize"
                     >
@@ -2143,6 +2171,27 @@ export default function AIPromptVault() {
               Skip intro
             </button>
           </div>
+        </div>
+      )}
+
+      {/* Toast Notification */}
+      {toastMessage && (
+        <div style={{
+          position: "fixed",
+          bottom: 24,
+          left: "50%",
+          transform: "translateX(-50%)",
+          background: "var(--text)",
+          color: "#fff",
+          padding: "12px 24px",
+          borderRadius: "var(--radius-pill)",
+          fontSize: 14,
+          fontWeight: 600,
+          boxShadow: "0 8px 24px rgba(0,0,0,0.2)",
+          zIndex: 2000,
+          animation: "slideUp 300ms ease-out",
+        }}>
+          {toastMessage}
         </div>
       )}
     </div>

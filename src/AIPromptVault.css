@@ -48,6 +48,16 @@ body.dark-mode {
 .motion-fade-up { animation: rpvFadeUp 220ms ease-out forwards; }
 .lift-hover:hover { transform: translateY(-3px); box-shadow: var(--shadow-md); }
 
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translate(-50%, 20px); }
+  to { opacity: 1; transform: translate(-50%, 0); }
+}
+
 /* Skeleton shimmer */
 .skeleton {
   background: linear-gradient(90deg, rgba(240,242,245,1) 0%, rgba(233,236,240,1) 50%, rgba(240,242,245,1) 100%);
