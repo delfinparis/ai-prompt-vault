@@ -62,6 +62,19 @@
 
 .rpv-muted { color: #6b7280; font-size: 12px; }
 
+.rpv-app .rpv-search {
+  font-size: 13px;
+  border: 1px solid #e5e7eb;
+  padding: 8px 12px;
+  border-radius: 999px;
+  min-width: 220px;
+  background: #fff;
+}
+
+.rpv-app .controls-row { display:flex; gap:8px; align-items:center; }
+
+.rpv-app .rpv-search:focus { outline: 2px solid rgba(37,99,235,0.14); box-shadow: 0 6px 18px rgba(37,99,235,0.06); }
+
 /* Make form controls full-width on mobile */
 @media (max-width: 640px) {
   .rpv-app select,

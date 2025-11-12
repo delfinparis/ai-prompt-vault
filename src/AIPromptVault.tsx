@@ -196,6 +196,7 @@ export default function AIPromptVault() {
   const [modalInput, setModalInput] = useState("");
   const [deploySha, setDeploySha] = useState<string | null>(null);
   const [copyCounts, setCopyCounts] = useState<Record<string, number>>({});
+  const [searchTerm, setSearchTerm] = useState<string>("");
 
   const KEY_FAVORITES = "rpv:favorites";
   const KEY_RECENT = "rpv:recentFills";
@@ -249,6 +250,18 @@ export default function AIPromptVault() {
   const promptsForSelected = selectedModule
     ? data.filter((d) => d.module === selectedModule)
     : [];
+
+  const filteredPrompts = useMemo(() => {
+    if (!searchTerm || !promptsForSelected.length) return promptsForSelected;
+    const q = searchTerm.toLowerCase().trim();
+    return promptsForSelected.filter((p) => {
+      return (
+        (p.title || "").toLowerCase().includes(q) ||
+        (p.quick || "").toLowerCase().includes(q) ||
+        (p.role || "").toLowerCase().includes(q)
+      );
+    });
+  }, [promptsForSelected, searchTerm]);
 
   const currentPrompt =
     selectedModule != null && selectedIndex != null
@@ -307,6 +320,24 @@ export default function AIPromptVault() {
     });
     setFieldValues(map);
   }, [currentPrompt]);
+
+  // keyboard shortcut: press 'c' to copy when not focused in an input
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      const active = document.activeElement;
+      const typing = active && (active.tagName === "INPUT" || active.tagName === "TEXTAREA" || active.tagName === "SELECT" || (active as HTMLElement).isContentEditable);
+      if (typing) return;
+      if (e.key === "c" || e.key === "C") {
+        // copy only if a prompt is selected
+        if (currentPrompt) {
+          e.preventDefault();
+          handleCopy();
+        }
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [currentPrompt, fieldValues]);
 
   // load favorites/recent from localStorage on mount
   useEffect(() => {
@@ -395,6 +426,12 @@ export default function AIPromptVault() {
     tools: "Google Sheets, Canva",
   };
 
+  const PRESET_SETS: Record<string, Record<string, string>> = {
+    "Use sample defaults": SAMPLE_DEFAULTS,
+    "Open house quick": { event: "Open House", time: "Sat 1-4pm", market: SAMPLE_DEFAULTS.market },
+    "Buyer intro": { buyer: "first-time buyer", timeline: "30 days", budget: SAMPLE_DEFAULTS.budget },
+  };
+
   const applyReplacements = (text: string, values: Record<string, string>) => {
     if (!text) return text;
     return text.replace(/\[([^\[\]]+)\]/g, (match, key) => {
@@ -443,7 +480,7 @@ export default function AIPromptVault() {
   };
 
   return (
-    <div
+    <div className="rpv-app"
       style={{
         maxWidth: 1040,
         margin: "0 auto",
@@ -683,44 +720,51 @@ export default function AIPromptVault() {
               </div>
             </div>
 
-            <select
-              value={selectedIndex ?? ""}
-              onChange={(e) => {
-                const idx =
-                  e.target.value === "" ? null : Number(e.target.value);
-                setSelectedIndex(idx);
-                if (idx != null) {
-                  const p = promptsForSelected.find(
-                    (d) => d.index === idx
-                  );
-                  trackEvent("prompt_selected", {
-                    module: selectedModule,
-                    title: p?.title,
-                  });
-                }
-              }}
-              style={{
-                height: 40,
-                minWidth: 220,
-                borderRadius: 999,
-                border: "1px solid #e5e7eb",
-                padding: "0 14px",
-                background: "#ffffff",
-                fontSize: 13,
-                color: "#111827",
-              }}
-            >
-              <option value="">
-                {promptsForSelected.length
-                  ? "Choose a prompt…"
-                  : "No prompts found"}
-              </option>
-              {promptsForSelected.map((p) => (
-                <option key={p.index} value={p.index}>
-                  {p.title}
-                </option>
-              ))}
-            </select>
+              <div style={{ display: 'flex', gap: 8, alignItems: 'center' }} className="rpv-row controls-row">
+                <input
+                  className="rpv-search"
+                  placeholder={promptsForSelected.length ? "Search prompts by title or keyword…" : "No prompts"}
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  style={{ height: 40, padding: '0 12px', borderRadius: 999, border: '1px solid #e5e7eb', minWidth: 220 }}
+                />
+                <select
+                  value={selectedIndex ?? ""}
+                  onChange={(e) => {
+                    const idx =
+                      e.target.value === "" ? null : Number(e.target.value);
+                    setSelectedIndex(idx);
+                    if (idx != null) {
+                      const p = filteredPrompts.find((d) => d.index === idx) || promptsForSelected.find((d) => d.index === idx);
+                      trackEvent("prompt_selected", {
+                        module: selectedModule,
+                        title: p?.title,
+                      });
+                    }
+                  }}
+                  style={{
+                    height: 40,
+                    minWidth: 220,
+                    borderRadius: 999,
+                    border: "1px solid #e5e7eb",
+                    padding: "0 14px",
+                    background: "#ffffff",
+                    fontSize: 13,
+                    color: "#111827",
+                  }}
+                >
+                  <option value="">
+                    {(promptsForSelected || []).length
+                      ? "Choose a prompt…"
+                      : "No prompts found"}
+                  </option>
+                  {(filteredPrompts || promptsForSelected).map((p) => (
+                    <option key={p.index} value={p.index}>
+                      {p.title}
+                    </option>
+                  ))}
+                </select>
+              </div>
           </div>
 
           {currentPrompt && (
@@ -803,6 +847,24 @@ export default function AIPromptVault() {
                     }}
                   >
                     Fill variables
+                  </div>
+                  <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 8 }}>
+                    <div style={{ fontSize: 12, color: '#6b7280' }}>Quick presets:</div>
+                    <select
+                      onChange={(e) => {
+                        const key = e.target.value;
+                        if (!key) return;
+                        const set = PRESET_SETS[key];
+                        if (set) setFieldValues((s) => ({ ...s, ...set }));
+                      }}
+                      defaultValue=""
+                      style={{ height: 32, borderRadius: 8, padding: '0 8px' }}
+                    >
+                      <option value="">Apply a preset…</option>
+                      {Object.keys(PRESET_SETS).map((k) => (
+                        <option key={k} value={k}>{k}</option>
+                      ))}
+                    </select>
                   </div>
                   <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
                     {Object.keys(fieldValues).map((k) => (
