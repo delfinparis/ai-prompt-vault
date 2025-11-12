@@ -146,14 +146,6 @@ export default function AIPromptVault() {
       const savedCustomPrompts = localStorage.getItem(KEY_CUSTOM_PROMPTS);
       if (savedCustomPrompts) setCustomPrompts(JSON.parse(savedCustomPrompts));
       
-      // Load dark mode preference
-      const savedDarkMode = localStorage.getItem(KEY_DARK_MODE);
-      if (savedDarkMode) {
-        const isDark = savedDarkMode === 'true';
-        setDarkMode(isDark);
-        document.body.classList.toggle('dark-mode', isDark);
-      }
-      
       // Check if user has seen onboarding
       const hasOnboarded = localStorage.getItem(KEY_ONBOARDED);
       if (!hasOnboarded) {
@@ -166,8 +158,38 @@ export default function AIPromptVault() {
       const dateStr = now.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
       setLastUpdated(`${dateStr} at ${timeStr}`);
       
+      // Load dark mode preference (or detect system preference)
+      const savedDarkMode = localStorage.getItem(KEY_DARK_MODE);
+      let isDark = false;
+      
+      if (savedDarkMode) {
+        // User has explicit preference
+        isDark = savedDarkMode === 'true';
+      } else {
+        // Auto-detect system preference
+        isDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+      }
+      
+      setDarkMode(isDark);
+      document.body.classList.toggle('dark-mode', isDark);
+      
+      // Listen for system theme changes
+      const darkModeMediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+      const handleSystemThemeChange = (e: MediaQueryListEvent) => {
+        // Only auto-update if user hasn't set explicit preference
+        if (!localStorage.getItem(KEY_DARK_MODE)) {
+          setDarkMode(e.matches);
+          document.body.classList.toggle('dark-mode', e.matches);
+        }
+      };
+      
+      darkModeMediaQuery.addEventListener('change', handleSystemThemeChange);
+      
       // Simulate brief loading for skeleton cards
       setTimeout(() => setIsLoading(false), 300);
+      
+      // Cleanup
+      return () => darkModeMediaQuery.removeEventListener('change', handleSystemThemeChange);
     } catch {}
   }, []);
 
