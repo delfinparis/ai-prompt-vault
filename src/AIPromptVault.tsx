@@ -104,6 +104,12 @@ export default function AIPromptVault() {
     return params.get('kale') === 'true';
   }, []);
   
+  // Detect embed mode (hide header for iframe embedding)
+  const isEmbedMode = useMemo(() => {
+    const params = new URLSearchParams(window.location.search);
+    return params.get('embed') === 'true';
+  }, []);
+  
   // Calculate current dark mode state (for tooltip)
   const getDarkModeState = () => {
     const saved = localStorage.getItem(KEY_DARK_MODE);
@@ -546,7 +552,8 @@ export default function AIPromptVault() {
 
   return (
     <div className="rpv-app rpv-container">
-      {/* Header */}
+      {/* Header - hidden in embed mode */}
+      {!isEmbedMode && (
       <header className="rpv-header" style={{ marginBottom: 32, position: "relative" }}>
         {/* Dark mode toggle */}
         <button
@@ -688,6 +695,7 @@ export default function AIPromptVault() {
           </div>
         )}
       </header>
+      )}
 
       {/* Usage Dashboard */}
       {!search && !activeTag && !activeCollection && (
