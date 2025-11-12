@@ -1,5 +1,51 @@
 /* src/AIPromptVault.css */
 
+/* Import variable font */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap');
+
+/* Design tokens */
+:root {
+  --bg: #f8fafc;
+  --surface: #ffffff;
+  --text: #071235;
+  --muted: #6b7280;
+  --primary: #2563eb;
+  --accent: #06b6d4;
+
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-pill: 999px;
+
+  --shadow-sm: 0 6px 18px rgba(15,23,42,0.04);
+  --shadow-md: 0 14px 30px rgba(15,23,42,0.06);
+  --shadow-lg: 0 24px 48px rgba(15,23,42,0.08);
+
+  --font-stack: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial;
+}
+
+/* Motion utilities */
+.motion-fade-up { animation: rpvFadeUp 220ms ease-out forwards; }
+.lift-hover:hover { transform: translateY(-3px); box-shadow: var(--shadow-md); }
+
+/* Skeleton shimmer */
+.skeleton {
+  background: linear-gradient(90deg, rgba(240,242,245,1) 0%, rgba(233,236,240,1) 50%, rgba(240,242,245,1) 100%);
+  background-size: 200% 100%;
+  animation: shimmer 1.2s linear infinite;
+}
+@keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+
+/* Respect reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .motion-fade-up, .skeleton { animation: none !important; }
+}
+
 /* Small top banner */
 .rpv-banner {
   display: inline-flex;
@@ -73,6 +119,242 @@
 
 .rpv-app .controls-row { display:flex; gap:8px; align-items:center; }
 
+/* Utility: visually hidden for screen readers */
+.sr-only {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  padding: 0 !important;
+  margin: -1px !important;
+  overflow: hidden !important;
+  clip: rect(0, 0, 0, 0) !important;
+  white-space: nowrap !important;
+  border: 0 !important;
+}
+
+/* Page container (moved from inline styles in TSX) */
+.rpv-container {
+  max-width: 1040px;
+  margin: 0 auto;
+  padding: 32px 20px 40px;
+  font-family: var(--font-stack);
+  background: linear-gradient(var(--bg), #ffffff);
+}
+
+/* Subtle radial vignette for depth like modern product pages */
+.rpv-container:before {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 0;
+  transform: translateX(-50%);
+  width: 1200px;
+  height: 360px;
+  pointer-events: none;
+  background: radial-gradient(closest-side, rgba(37,99,235,0.03), transparent 40%);
+  z-index: 0;
+}
+
+/* Keep content above vignette */
+.rpv-app > * { position: relative; z-index: 1; }
+
+/* Header title and subtitle matching screenshot */
+.rpv-header .title {
+  font-size: 30px;
+  font-weight: 900;
+  letter-spacing: -0.02em;
+  color: #071235;
+  margin-bottom: 6px;
+}
+.rpv-header .subtitle {
+  font-size: 14px;
+  color: #6b7280;
+  max-width: 720px;
+}
+
+/* Header controls layout */
+.rpv-header .controls { display:flex; gap:8px; align-items:center; }
+
+/* Buttons: smoother hover and subtle elevation */
+.rpv-btn { transition: transform 160ms var(--ease, cubic-bezier(.2,.9,.2,1)), box-shadow 160ms; }
+.rpv-btn:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); }
+.rpv-btn-primary { background: var(--primary); border-color: var(--primary); }
+.rpv-btn-primary:hover { filter: brightness(.96); }
+.rpv-btn-ghost:hover { background: rgba(15,23,42,0.04); }
+
+/* Inputs & selects: unify look */
+.rpv-app input, .rpv-app select, .rpv-app textarea {
+  font-family: var(--font-stack);
+  border-radius: var(--radius-pill);
+  border: 1px solid rgba(15,23,42,0.06);
+  padding: 8px 12px;
+  background: #fff;
+}
+.rpv-app input:focus, .rpv-app select:focus, .rpv-app textarea:focus { outline: none; box-shadow: 0 6px 18px rgba(37,99,235,0.06); border-color: var(--primary); }
+
+/* Category grid tweaks */
+.category-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; margin-bottom: 18px; }
+
+/* Make tagline slightly lighter and one-line */
+.category-card .tagline { color: var(--muted); font-size: 13px; line-height: 1.2; max-height: 2.4em; overflow: hidden; }
+
+/* ========== V2 STYLES: Search-First Design ========== */
+
+/* Hero search bar */
+.rpv-search-hero {
+  transition: all 200ms ease;
+}
+.rpv-search-hero:focus {
+  outline: none;
+  border-color: var(--primary) !important;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+/* Prompt card (new design) */
+.prompt-card-v2:hover {
+  border-color: var(--primary) !important;
+  box-shadow: var(--shadow-md);
+  transform: translateY(-2px);
+}
+
+/* Modal overlay */
+.modal-overlay {
+  animation: fadeIn 200ms ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.modal-content {
+  animation: slideUp 220ms ease-out;
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Responsive: mobile adjustments */
+@media (max-width: 640px) {
+  .rpv-header .title {
+    font-size: 24px !important;
+  }
+  .rpv-search-hero {
+    font-size: 14px !important;
+    padding: 12px 16px !important;
+  }
+  .modal-content {
+    padding: 24px !important;
+  }
+}
+
+/* ========== POLISH: Interactive Elements ========== */
+
+/* Recent chip hover */
+.recent-chip:hover {
+  background: #e2e8f0 !important;
+  border-color: var(--primary) !important;
+  transform: translateY(-1px);
+}
+
+/* Filter pill animations */
+.filter-pill {
+  animation: slideIn 200ms ease-out;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Tag badge interactive states */
+.tag-badge:hover {
+  transform: translateY(-1px);
+}
+
+.tag-badge:active {
+  transform: scale(0.95);
+}
+
+/* Button hover enhancements */
+.btn-primary:hover {
+  filter: brightness(1.05);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2);
+}
+
+.btn-primary:active {
+  transform: translateY(0);
+}
+
+/* FAB pulse animation */
+@keyframes pulse {
+  0%, 100% {
+    box-shadow: 0 8px 24px rgba(37,99,235,0.3);
+  }
+  50% {
+    box-shadow: 0 8px 32px rgba(37,99,235,0.5);
+  }
+}
+
+/* Smooth scroll */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Focus visible for accessibility */
+*:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+/* Empty state styling */
+.empty-state {
+  text-align: center;
+  padding: 60px 20px;
+  color: var(--muted);
+}
+
+.empty-state h3 {
+  font-size: 18px;
+  font-weight: 600;
+  margin-bottom: 8px;
+  color: var(--text);
+}
+
+/* Prompt body: subtle background and code-like area */
+.prompt-body { background: linear-gradient(180deg, rgba(247,249,250,1), rgba(255,255,255,1)); padding: 12px; border-radius: 8px; }
+
+/* Small utility */
+.muted { color: var(--muted); }
+
+/* Intent pills */
+.intent-pills { display:flex; gap:8px; margin: 12px 0 16px; flex-wrap:wrap; }
+.intent-pill { padding: 8px 12px; border-radius: 999px; border: 1px solid rgba(15,23,42,0.06); background: #fff; cursor: pointer; font-weight:600; font-size:13px; }
+.intent-pill.active { background: linear-gradient(90deg, rgba(37,99,235,0.08), rgba(37,99,235,0.02)); border-color: rgba(37,99,235,0.12); color: var(--primary); }
+.intent-pill:focus { outline: 3px solid rgba(37,99,235,0.12); }
+
+/* Recommended / faded states for cards */
+.category-card.faded { opacity: 0.45; }
+.category-card.recommended { transform: translateY(-2px); box-shadow: 0 18px 36px rgba(37,99,235,0.06); border-color: var(--primary); }
+
+/* Show all toggle */
+.show-all-toggle { margin-top: 8px; display:inline-flex; align-items:center; gap:8px; }
+
 .rpv-app .rpv-search:focus { outline: 2px solid rgba(37,99,235,0.14); box-shadow: 0 6px 18px rgba(37,99,235,0.06); }
 
 /* Make form controls full-width on mobile */
@@ -117,10 +399,59 @@
 .favorites-card { display: inline-block; }
 
 /* Polished buttons */
-.rpv-btn { display:inline-flex; align-items:center; justify-content:center; gap:8px; padding:8px 12px; border-radius:10px; border:1px solid #e5e7eb; background:#fff; color:#0f172a; cursor:pointer; }
+.rpv-btn { display:inline-flex; align-items:center; justify-content:center; gap:8px; padding: 0 12px; height: 36px; border-radius: 8px; border:1px solid #e5e7eb; background:#fff; color:#0f172a; cursor:pointer; font-size: 13px; }
 .rpv-btn:focus { outline: 3px solid rgba(37,99,235,0.14); }
 .rpv-btn-primary { background:#0f172a; color:#fff; border-color: #0f172a; }
 .rpv-btn-ghost { background: transparent; border-color: transparent; color: #4b5563; }
+
+/* Slightly larger pill style used for primary actions */
+.rpv-btn-lg { height: 42px; border-radius: 999px; padding: 0 16px; }
+
+/* Large modal variant used for onboarding */
+.rpv-modal-lg { max-width: 720px; }
+
+/* Header wrapper (moved from inline header styles) */
+.rpv-header { margin-bottom: 28px; }
+
+.prompt-header { margin-bottom: 8px; display:flex; justify-content:space-between; align-items:baseline; gap:12px; flex-wrap:wrap; }
+
+/* Small layout utilities used by TSX to replace inline styles */
+.rpv-header-row { display:flex; justify-content:space-between; align-items:center; gap:12px; }
+.mb-18 { margin-bottom: 18px; }
+.category-card-row { display:flex; align-items:center; gap:8px; }
+.top-picks-section { margin-bottom: 18px; }
+.helper-text { font-size: 12px; color: #9ca3af; margin-bottom: 10px; }
+.rpv-select { height: 40px; min-width: 220px; border-radius: 999px; border: 1px solid #e5e7eb; padding: 0 14px; background: #ffffff; font-size: 13px; color: #111827; }
+.badge { font-size: 11px; padding: 3px 9px; border-radius: 999px; text-transform: uppercase; letter-spacing: 0.04em; font-weight: 600; }
+.badge-muted { background: #f9fafb; color: #4b5563; }
+.badge-accent { background: #eef2ff; color: #334155; }
+.fill-variables-title { font-size: 13px; font-weight: 700; margin-bottom: 8px; color: #0f172a; }
+.field-label { display:flex; flex-direction:column; min-width:160px; }
+.modal-input { width:100%; height:36px; padding:0 8px; border-radius:8px; border:1px solid #e5e7eb; }
+
+/* Reduce heavier panel shadows to keep the look airy and minimal */
+.rpv-app .rpv-card, .rpv-app .favorites-card, .rpv-app .rpv-modal { box-shadow: 0 8px 20px rgba(15,23,42,0.06); }
+
+/* Prompt panel */
+.prompt-panel {
+  margin-top: 10px;
+  background: var(--surface);
+  border: 1px solid rgba(15,23,42,0.04);
+  border-radius: var(--radius-md);
+  padding: 18px;
+  box-shadow: var(--shadow-sm);
+}
+.prompt-title { font-weight: 800; margin: 4px 0 8px; font-size: 18px; color: var(--text); }
+.prompt-body { white-space: pre-wrap; line-height: 1.5; color: #111827; font-size: 14px; }
+.prompt-actions { margin-top: 14px; display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
+
+/* Top picks card */
+.top-pick-card { background: var(--surface); border: 1px solid rgba(15,23,42,0.04); padding: 12px; border-radius: 12px; min-width: 260px; box-shadow: var(--shadow-sm); }
+.top-pick-card .title { font-size: 13px; font-weight: 700; }
+.top-pick-card .desc { color: var(--muted); font-size: 12px; margin-top:6px; min-height:40px; }
+
+/* Favorites card refinement */
+.favorites-card { background: var(--surface); border: 1px solid rgba(15,23,42,0.04); padding: 10px; border-radius: 10px; min-width: 220px; box-shadow: var(--shadow-sm); }
 
 /* Modal header & stepper */
 .rpv-modal-header { display:flex; justify-content:space-between; align-items:center; gap:12px; margin-bottom:8px; }
@@ -131,6 +462,28 @@
 /* Reduced card shadow to minimize visual noise */
 .rpv-app button { transition: transform 120ms ease, box-shadow 120ms ease; }
 .rpv-app .rpv-card { box-shadow: none; }
+
+/* Category card (clean, minimal) */
+.category-card {
+  text-align: left;
+  border-radius: 12px;
+  padding: 16px 18px;
+  background: #ffffff;
+  border: 1px solid rgba(16,24,40,0.06);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  cursor: pointer;
+  box-shadow: 0 8px 20px rgba(15,23,42,0.04);
+}
+.category-card:hover { transform: translateY(-3px); box-shadow: 0 10px 24px rgba(15,23,42,0.06); }
+.category-card.active { border-color: #2563eb; background: linear-gradient(180deg, rgba(240,246,255,0.55), #f8fbff); box-shadow: 0 24px 48px rgba(37,99,235,0.06); box-shadow: 0 18px 36px rgba(37,99,235,0.06); }
+.category-card span.emoji { font-size: 18px; margin-right: 6px; }
+.category-card .label { font-size: 15px; font-weight: 800; color: #0b1720; }
+.category-card .tagline { font-size: 13px; color: #6b7280; }
+
+/* Pill outline to mimic the screenshot's subtle blue outline for active card */
+.category-card.active { outline: 3px solid rgba(37,99,235,0.08); outline-offset: 2px; }
 
 /* Collapsible panels */
 .rpv-collapsible { border-radius: 10px; overflow: hidden; }
