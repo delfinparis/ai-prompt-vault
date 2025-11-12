@@ -103,6 +103,75 @@ type CategoryMeta = {
   tagline: string;
 };
 
+/* ---------- Challenge Card Meta ---------- */
+
+type ChallengeMeta = {
+  id: number;
+  problem: string;
+  emoji: string;
+  moduleKey: string;
+  promptIndex: number; // Which prompt in that module to jump to
+};
+
+const CHALLENGE_CARDS: ChallengeMeta[] = [
+  {
+    id: 1,
+    problem: "I'm not getting enough leads",
+    emoji: "📣",
+    moduleKey: `Module 1 — ${MODULE_TITLES[0]}`,
+    promptIndex: 0, // First prompt in lead gen module
+  },
+  {
+    id: 2,
+    problem: "My follow-up is inconsistent",
+    emoji: "🔄",
+    moduleKey: `Module 2 — ${MODULE_TITLES[1]}`,
+    promptIndex: 2, // Follow-up workflow prompt
+  },
+  {
+    id: 3,
+    problem: "I keep missing my goals",
+    emoji: "🎯",
+    moduleKey: `Module 3 — ${MODULE_TITLES[2]}`,
+    promptIndex: 0, // Goal-setting prompt
+  },
+  {
+    id: 4,
+    problem: "My listing presentations fall flat",
+    emoji: "📊",
+    moduleKey: `Module 4 — ${MODULE_TITLES[3]}`,
+    promptIndex: 0, // Listing presentation prompt
+  },
+  {
+    id: 5,
+    problem: "Clients don't refer me",
+    emoji: "💫",
+    moduleKey: `Module 5 — ${MODULE_TITLES[4]}`,
+    promptIndex: 3, // Referral/wow prompt
+  },
+  {
+    id: 6,
+    problem: "I'm busy but not profitable",
+    emoji: "💰",
+    moduleKey: `Module 6 — ${MODULE_TITLES[5]}`,
+    promptIndex: 0, // Profitability audit
+  },
+  {
+    id: 7,
+    problem: "I lose deals to other agents",
+    emoji: "🤝",
+    moduleKey: `Module 7 — ${MODULE_TITLES[6]}`,
+    promptIndex: 0, // Negotiation strategy
+  },
+  {
+    id: 8,
+    problem: "My sphere has gone cold",
+    emoji: "🌱",
+    moduleKey: `Module 9 — ${MODULE_TITLES[8]}`,
+    promptIndex: 0, // Sphere nurture plan
+  },
+];
+
 const CATEGORY_CARDS: CategoryMeta[] = [
   {
     id: 1,
@@ -474,6 +543,16 @@ export default function AIPromptVault() {
     }
   });
 
+  // Onboarding state
+  const [showOnboarding, setShowOnboarding] = useState<boolean>(() => {
+    try {
+      const seen = localStorage.getItem("rpv:onboardingCompleted");
+      return seen !== "true"; // Show onboarding if not completed
+    } catch {
+      return true;
+    }
+  });
+
   // preload base + remote
   useEffect(() => {
     const baseArr: PromptItem[] = fullPrompts.flatMap((m, i) =>
@@ -605,6 +684,28 @@ export default function AIPromptVault() {
       try { localStorage.setItem("rpv:favoritesIds", JSON.stringify(Array.from(next))); } catch {}
       trackEvent("favorite_toggled", { id, isFavorite: next.has(id) });
       return next;
+    });
+  };
+
+  const dismissOnboarding = () => {
+    setShowOnboarding(false);
+    try {
+      localStorage.setItem("rpv:onboardingCompleted", "true");
+    } catch {}
+    trackEvent("onboarding_dismissed", {});
+  };
+
+  const handleChallengeClick = (challenge: ChallengeMeta) => {
+    setShowOnboarding(false);
+    try {
+      localStorage.setItem("rpv:onboardingCompleted", "true");
+    } catch {}
+    setViewMode("browse");
+    setSelectedModule(challenge.moduleKey);
+    setSelectedIndex(challenge.promptIndex);
+    trackEvent("challenge_selected", {
+      problem: challenge.problem,
+      module: challenge.moduleKey,
     });
   };
 
@@ -760,8 +861,105 @@ export default function AIPromptVault() {
           >
             Import Settings
           </button>
+          {!showOnboarding && (
+            <button
+              onClick={() => setShowOnboarding(true)}
+              style={{
+                padding: "8px 16px",
+                borderRadius: 999,
+                border: "1px solid #e0e7ff",
+                background: "#eef2ff",
+                color: "#4338ca",
+                fontSize: 13,
+                fontWeight: 600,
+                cursor: "pointer",
+              }}
+            >
+              Show Challenges
+            </button>
+          )}
         </div>
       </header>
+
+      {/* Challenge-Based Onboarding */}
+      {showOnboarding && (
+        <div
+          style={{
+            marginBottom: 32,
+            padding: 24,
+            background: "linear-gradient(135deg, #eef2ff 0%, #fef3c7 100%)",
+            border: "1px solid #e0e7ff",
+            borderRadius: 18,
+            boxShadow: "0 10px 28px rgba(99,102,241,0.12)",
+          }}
+        >
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 18 }}>
+            <div>
+              <div style={{ fontSize: 22, fontWeight: 800, color: "#1e1b4b", marginBottom: 6 }}>
+                🚀 What challenge can we help you solve today?
+              </div>
+              <div style={{ fontSize: 14, color: "#4338ca", fontWeight: 500 }}>
+                Pick a problem below to jump straight to the perfect prompt.
+              </div>
+            </div>
+            <button
+              onClick={dismissOnboarding}
+              style={{
+                padding: "6px 14px",
+                borderRadius: 999,
+                border: "1px solid #c7d2fe",
+                background: "#ffffff",
+                color: "#4338ca",
+                fontSize: 13,
+                fontWeight: 600,
+                cursor: "pointer",
+                whiteSpace: "nowrap",
+              }}
+            >
+              Skip →
+            </button>
+          </div>
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
+              gap: 12,
+            }}
+          >
+            {CHALLENGE_CARDS.map((challenge) => (
+              <button
+                key={challenge.id}
+                onClick={() => handleChallengeClick(challenge)}
+                style={{
+                  textAlign: "left",
+                  padding: "14px 16px",
+                  borderRadius: 12,
+                  border: "1px solid #e0e7ff",
+                  background: "#ffffff",
+                  boxShadow: "0 4px 12px rgba(99,102,241,0.08)",
+                  cursor: "pointer",
+                  transition: "all 0.2s",
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.transform = "translateY(-2px)";
+                  e.currentTarget.style.boxShadow = "0 8px 20px rgba(99,102,241,0.15)";
+                  e.currentTarget.style.borderColor = "#6366f1";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.transform = "translateY(0)";
+                  e.currentTarget.style.boxShadow = "0 4px 12px rgba(99,102,241,0.08)";
+                  e.currentTarget.style.borderColor = "#e0e7ff";
+                }}
+              >
+                <div style={{ fontSize: 28, marginBottom: 8 }}>{challenge.emoji}</div>
+                <div style={{ fontSize: 14, fontWeight: 600, color: "#1e1b4b", lineHeight: 1.3 }}>
+                  {challenge.problem}
+                </div>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
 
       {viewMode === "browse" && (
         <>
