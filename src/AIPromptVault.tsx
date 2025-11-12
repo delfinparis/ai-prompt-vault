@@ -288,31 +288,34 @@ export default function AIPromptVault() {
               width: "100%",
               fontSize: 16,
               padding: "14px 20px",
+              paddingRight: search ? "20px" : "120px",
               borderRadius: "var(--radius-pill)",
               border: "2px solid #e5e7eb",
               background: "#fff",
               fontFamily: "var(--font-stack)",
             }}
           />
-          <span
-            style={{
-              position: "absolute",
-              right: 16,
-              top: "50%",
-              transform: "translateY(-50%)",
-              fontSize: 12,
-              color: "var(--muted)",
-              pointerEvents: "none",
-            }}
-          >
-            Press <kbd style={{ 
-              padding: "2px 6px", 
-              background: "#f1f5f9", 
-              borderRadius: 4,
-              fontSize: 11,
-              fontWeight: 600 
-            }}>/</kbd> to search
-          </span>
+          {!search && (
+            <span
+              style={{
+                position: "absolute",
+                right: 16,
+                top: "50%",
+                transform: "translateY(-50%)",
+                fontSize: 12,
+                color: "var(--muted)",
+                pointerEvents: "none",
+              }}
+            >
+              Press <kbd style={{ 
+                padding: "2px 6px", 
+                background: "#f1f5f9", 
+                borderRadius: 4,
+                fontSize: 11,
+                fontWeight: 600 
+              }}>/</kbd> to search
+            </span>
+          )}
         </div>
 
         {/* Active filters */}
