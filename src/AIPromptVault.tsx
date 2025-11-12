@@ -581,6 +581,59 @@ export default function AIPromptVault() {
         )}
       </header>
 
+      {/* Usage Dashboard */}
+      {!search && !activeTag && !activeCollection && (
+        <section style={{ 
+          marginBottom: 32,
+          padding: 20,
+          background: "linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%)",
+          borderRadius: "var(--radius-md)",
+          border: "1px solid #e5e7eb",
+        }}>
+          <h2 style={{ fontSize: 16, fontWeight: 700, color: "var(--text)", marginBottom: 16 }}>
+            📊 Your Activity
+          </h2>
+          <div style={{ 
+            display: "grid", 
+            gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))",
+            gap: 16,
+          }}>
+            <div>
+              <div style={{ fontSize: 28, fontWeight: 800, color: "var(--primary)", marginBottom: 4 }}>
+                {Object.values(copyCounts).reduce((sum, count) => sum + count, 0)}
+              </div>
+              <div style={{ fontSize: 12, color: "var(--muted)", fontWeight: 500 }}>
+                Prompts Copied
+              </div>
+            </div>
+            <div>
+              <div style={{ fontSize: 28, fontWeight: 800, color: "#10b981", marginBottom: 4 }}>
+                {favorites.length}
+              </div>
+              <div style={{ fontSize: 12, color: "var(--muted)", fontWeight: 500 }}>
+                Favorites
+              </div>
+            </div>
+            <div>
+              <div style={{ fontSize: 28, fontWeight: 800, color: "#f59e0b", marginBottom: 4 }}>
+                {recentlyCopied.length}
+              </div>
+              <div style={{ fontSize: 12, color: "var(--muted)", fontWeight: 500 }}>
+                Recently Used
+              </div>
+            </div>
+            <div>
+              <div style={{ fontSize: 28, fontWeight: 800, color: "#8b5cf6", marginBottom: 4 }}>
+                {Object.keys(collections).length}
+              </div>
+              <div style={{ fontSize: 12, color: "var(--muted)", fontWeight: 500 }}>
+                Collections
+              </div>
+            </div>
+          </div>
+        </section>
+      )}
+
       {/* Recently Copied (if exists and not searching) */}
       {recentPrompts.length > 0 && !search && !activeTag && (
         <section style={{ marginBottom: 32 }}>
