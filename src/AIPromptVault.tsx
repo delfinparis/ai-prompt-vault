@@ -288,9 +288,23 @@ export default function AIPromptVault() {
     <div className="rpv-app rpv-container">
       {/* Header */}
       <header className="rpv-header" style={{ marginBottom: 32 }}>
-        <h1 className="title" style={{ marginBottom: 8 }}>
-          🏡 AI Prompt Vault
-        </h1>
+        <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 8, justifyContent: "center", flexWrap: "wrap" }}>
+          <h1 className="title" style={{ margin: 0 }}>
+            🏡 AI Prompt Vault
+          </h1>
+          <span style={{
+            background: "linear-gradient(135deg, #2563eb 0%, #06b6d4 100%)",
+            color: "#fff",
+            padding: "4px 12px",
+            borderRadius: "var(--radius-pill)",
+            fontSize: 14,
+            fontWeight: 700,
+            boxShadow: "0 2px 8px rgba(37,99,235,0.2)",
+            animation: "pulse 2s ease-in-out infinite",
+          }}>
+            {allPrompts.length} Prompts
+          </span>
+        </div>
         <p className="subtitle" style={{ marginBottom: 24 }}>
           The best AI prompts for real estate agents. Copy, paste, close deals.
         </p>
