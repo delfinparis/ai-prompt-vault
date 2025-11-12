@@ -649,10 +649,7 @@ export default function AIPromptVault() {
                 >
                   {copied ? "Copied!" : "Copy prompt"}
                 </button>
-                <span style={{ fontSize: 12, color: "#9ca3af" }}>
-                  Copy → paste into ChatGPT → tweak the bracketed fields →
-                  run.
-                </span>
+               
               </div>
             </div>
           )}
