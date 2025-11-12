@@ -117,6 +117,37 @@ export default function AIPromptVault() {
     } catch {}
   }, []);
 
+  // Keyboard shortcuts
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Cmd/Ctrl+K to focus search
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault();
+        searchInputRef.current?.focus();
+        return;
+      }
+      
+      // Escape to close modals or clear search
+      if (e.key === 'Escape') {
+        if (selectedPrompt) {
+          setSelectedPrompt(null);
+        } else if (showOnboarding) {
+          setShowOnboarding(false);
+          localStorage.setItem(KEY_ONBOARDED, 'true');
+        } else if (showFollowUps) {
+          setShowFollowUps(false);
+        } else if (search) {
+          setSearch('');
+          searchInputRef.current?.blur();
+        }
+        return;
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [selectedPrompt, showOnboarding, showFollowUps, search]);
+
     // Keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -242,6 +273,28 @@ export default function AIPromptVault() {
     }
   };
 
+  // Export prompt as .txt file
+  const handleExport = (prompt: PromptItem) => {
+    const fullText = buildFullPrompt(prompt);
+    const finalText = applyReplacements(fullText, fieldValues);
+    
+    // Create filename from prompt title (sanitized)
+    const filename = `${prompt.title.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.txt`;
+    
+    // Create blob and download
+    const blob = new Blob([finalText], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    
+    trackEvent("prompt_exported", { title: prompt.title, module: prompt.module });
+  };
+
   // Toggle favorite
   const toggleFavorite = (promptId: string) => {
     const newFavs = favorites.includes(promptId)
@@ -359,7 +412,7 @@ export default function AIPromptVault() {
                 borderRadius: 4,
                 fontSize: 11,
                 fontWeight: 600 
-              }}>/</kbd> to search
+              }}>⌘K</kbd> to search
             </span>
           )}
         </div>
@@ -1043,6 +1096,24 @@ export default function AIPromptVault() {
                       }}
                     >
                       {copied ? "✓ Copied!" : "📋 Copy Prompt"}
+                    </button>
+                    
+                    <button
+                      onClick={() => handleExport(selectedPrompt)}
+                      style={{
+                        padding: "12px 20px",
+                        fontSize: 15,
+                        fontWeight: 600,
+                        color: "var(--text)",
+                        background: "#f1f5f9",
+                        border: "none",
+                        borderRadius: "var(--radius-sm)",
+                        cursor: "pointer",
+                        transition: "all 160ms ease",
+                      }}
+                      title="Download as .txt file"
+                    >
+                      💾
                     </button>
                     
                     <button
