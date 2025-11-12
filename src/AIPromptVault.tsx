@@ -660,11 +660,17 @@ export default function AIPromptVault() {
               maxWidth: 680,
               width: "100%",
               maxHeight: "90vh",
-              overflow: "auto",
-              padding: 32,
+              overflow: "hidden",
+              display: "flex",
+              flexDirection: "column",
             }}
             onClick={(e) => e.stopPropagation()}
           >
+            <div style={{ 
+              padding: 32, 
+              overflowY: "auto",
+              flex: 1,
+            }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 8 }}>
               <h2 style={{ fontSize: 22, fontWeight: 800, color: "var(--text)" }}>
                 {selectedPrompt.title}
@@ -949,6 +955,7 @@ export default function AIPromptVault() {
               padding: "8px 0"
             }}>
               <kbd style={{ padding: "2px 6px", background: "#f1f5f9", borderRadius: 4, fontWeight: 600 }}>⌘</kbd> + <kbd style={{ padding: "2px 6px", background: "#f1f5f9", borderRadius: 4, fontWeight: 600 }}>Enter</kbd> to copy · <kbd style={{ padding: "2px 6px", background: "#f1f5f9", borderRadius: 4, fontWeight: 600 }}>ESC</kbd> to close
+            </div>
             </div>
           </div>
         </div>
