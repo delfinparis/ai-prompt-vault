@@ -208,6 +208,7 @@ const attachModule = (
   });
 };
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function getLabelOverride(moduleKey: string, originalTitle: string):
   { title: string; subtitle?: string } {
   const list: LabelOverride[] | undefined = labelOverrides[moduleKey];
@@ -275,6 +276,112 @@ Iteration Loop
 ${iterate}
 
 ${risk}`;
+};
+
+/* ---------- Personalization Helpers ---------- */
+
+const extractTokens = (text: string): string[] => {
+  const out = new Set<string>();
+  // eslint-disable-next-line no-useless-escape
+  const re = /\[([^\[\]]+)\]/g;
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(text))) {
+    const token = (m[1] || "").trim();
+    if (token) out.add(token);
+  }
+  return Array.from(out);
+};
+
+const explainToken = (token: string): string => {
+  const raw = token.trim();
+  const t = raw.toLowerCase();
+
+  // Locations
+  if (t === "market" || t === "city" || t === "area" || t.includes("market/city") || t.includes("city/county") || t.includes("neighborhood") || t.includes("submarket") || t.includes("county")) {
+    return "Your location (e.g., 'Austin, TX', 'West Loop, Chicago', or 'Orange County, CA').";
+  }
+
+  // Audience / niche / persona
+  if (t.includes("buyer/seller") || t.includes("buyer / seller") || t.includes("investor") || t.includes("niche")) {
+    return "Choose the audience or niche (e.g., 'first‑time buyers', 'move‑up sellers', 'small multi‑fam investors').";
+  }
+  if (t.includes("persona") || t.includes("profile")) {
+    return "Brief client description (e.g., 'young family relocating', 'VA buyer, 10% down').";
+  }
+
+  // Channels & sources
+  if (t === "channel" || t.includes("channel")) {
+    return "Marketing channel (e.g., Instagram Reels, YouTube, Google Ads, Email).";
+  }
+  if (t.includes("source")) {
+    return "Lead source (e.g., 'Zillow', 'Open House', 'Website form', 'Facebook Ads').";
+  }
+
+  // Numbers, money, ranges
+  if (raw.startsWith("$") || t === "$x" || t === "$y") {
+    return "Dollar amount (e.g., '$500', '$2,000/mo', '$15 CPL').";
+  }
+  if (t === "#" || raw.includes("#")) {
+    return "A number/count (e.g., '3', '10', '25').";
+  }
+  if (t === "x" || t === "y") {
+    return "A number, date, or percent that fits the line (e.g., '90 days', '20%', 'T+14').";
+  }
+  if (/[xy]\s*–\s*[xy]/i.test(t) || t.includes("–")) {
+    return "A range (usually minutes, %, or count), e.g., '15–30'.";
+  }
+
+  // Tools / tech
+  if (t === "tools" || t === "tool" || t.includes("tools")) {
+    return "List the tools you use (e.g., 'Follow Up Boss, Zapier, Google Sheets, Notion').";
+  }
+
+  // Criteria / search
+  if (t.includes("criteria")) {
+    return "Buyer search criteria (price, beds, baths, area, features).";
+  }
+
+  // Compliance / organization
+  if (t.includes("state/brokerage")) {
+    return "Your state or brokerage context for compliance (e.g., 'Texas', 'Keller Williams').";
+  }
+
+  // Financing
+  if (t.includes("credit/income")) {
+    return "Borrower profile (e.g., '720 FICO, W‑2, 10% down', 'Self‑employed, 2 yrs').";
+  }
+
+  // Links / pages
+  if (t === "url" || t === "page") {
+    return "Paste the web page URL (e.g., 'https://yourdomain.com/landing').";
+  }
+
+  // Event themes
+  if (t.includes("season/theme") || t.includes("theme")) {
+    return "Event theme/season (e.g., 'Summer BBQ', 'Holiday Toy Drive').";
+  }
+
+  // List helper
+  if (t.includes("list")) {
+    return "Paste a short list with a clear structure (e.g., 10–25 items).";
+  }
+
+  // Default fallback
+  return "Replace with your details. If it looks like a place, use your city/area; if it looks numeric, use a realistic number or $ amount.";
+};
+
+const replaceTokensInText = (text: string, values: Record<string, string>) => {
+  // eslint-disable-next-line no-useless-escape
+  return text.replace(/\[([^\[\]]+)\]/g, (m, g1) => {
+    const key = (g1 || "").trim();
+    const val = values[key];
+    return typeof val === "string" && val.length ? val : m;
+  });
+};
+
+const canPersonalizeWithSaved = (text: string, tokenValues: Record<string, string>): boolean => {
+  const toks = extractTokens(text);
+  return toks.some((t) => (tokenValues[t] || "").length > 0);
 };
 
 /* ---------- Merge Remote Prompts ---------- */
@@ -354,6 +461,18 @@ export default function AIPromptVault() {
   });
   const [viewMode, setViewMode] = useState<"browse" | "library">("browse");
   const [searchQuery, setSearchQuery] = useState("");
+  const [showFillModal, setShowFillModal] = useState(false);
+  const [fillTokens, setFillTokens] = useState<string[]>([]);
+  const [fillValues, setFillValues] = useState<Record<string, string>>({});
+  const [saveDefaults, setSaveDefaults] = useState(true);
+  const [tokenValues, setTokenValues] = useState<Record<string, string>>(() => {
+    try {
+      const raw = localStorage.getItem("rpv:tokenVals");
+      return raw ? (JSON.parse(raw) as Record<string, string>) : {};
+    } catch {
+      return {};
+    }
+  });
 
   // preload base + remote
   useEffect(() => {
@@ -447,6 +566,24 @@ export default function AIPromptVault() {
     setTimeout(() => setCopied(false), 1200);
   };
 
+  const handleCopyText = async (txt: string) => {
+    try {
+      await navigator.clipboard.writeText(txt);
+    } catch {
+      const ta = document.createElement("textarea");
+      ta.value = txt;
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand("copy");
+      ta.remove();
+    }
+    setCopied(true);
+    if (currentPrompt) {
+      addToRecent(currentPrompt);
+    }
+    setTimeout(() => setCopied(false), 1200);
+  };
+
   const addToRecent = (prompt: PromptItem) => {
     const entry = { id: prompt.id, timestamp: Date.now() };
     setRecentPrompts((prev) => {
@@ -532,7 +669,7 @@ export default function AIPromptVault() {
             }}
           />
         </div>
-        <div style={{ display: "flex", gap: 10, marginTop: 14 }}>
+        <div style={{ display: "flex", gap: 10, marginTop: 14, flexWrap: "wrap" }}>
           <button
             onClick={() => setViewMode("browse")}
             style={{
@@ -565,6 +702,63 @@ export default function AIPromptVault() {
               const uniqueIds = new Set<string>([...Array.from(favorites), ...recentPrompts.map(r => r.id)]);
               return uniqueIds.size > 0 ? `(${uniqueIds.size})` : "";
             })()}
+          </button>
+          <button
+            onClick={() => {
+              const json = JSON.stringify(tokenValues, null, 2);
+              const blob = new Blob([json], { type: "application/json" });
+              const url = URL.createObjectURL(blob);
+              const a = document.createElement("a");
+              a.href = url;
+              a.download = "ai-prompt-vault-settings.json";
+              a.click();
+              URL.revokeObjectURL(url);
+              trackEvent("settings_exported", {});
+            }}
+            style={{
+              padding: "8px 16px",
+              borderRadius: 999,
+              border: "1px solid #e5e7eb",
+              background: "#ffffff",
+              color: "#64748b",
+              fontSize: 13,
+              fontWeight: 600,
+              cursor: "pointer",
+            }}
+          >
+            Export Settings
+          </button>
+          <button
+            onClick={() => {
+              const input = prompt("Paste your exported JSON settings:");
+              if (!input) return;
+              try {
+                const parsed = JSON.parse(input);
+                if (typeof parsed === "object" && parsed !== null) {
+                  const merged = { ...tokenValues, ...parsed };
+                  setTokenValues(merged);
+                  try { localStorage.setItem("rpv:tokenVals", JSON.stringify(merged)); } catch {}
+                  alert("Settings imported successfully!");
+                  trackEvent("settings_imported", {});
+                } else {
+                  alert("Invalid JSON format");
+                }
+              } catch (err) {
+                alert("Failed to parse JSON. Please check the format.");
+              }
+            }}
+            style={{
+              padding: "8px 16px",
+              borderRadius: 999,
+              border: "1px solid #e5e7eb",
+              background: "#ffffff",
+              color: "#64748b",
+              fontSize: 13,
+              fontWeight: 600,
+              cursor: "pointer",
+            }}
+          >
+            Import Settings
           </button>
         </div>
       </header>
@@ -893,6 +1087,31 @@ export default function AIPromptVault() {
                   alignItems: "center",
                 }}
               >
+                {(() => {
+                  const txt = currentPrompt ? buildFullPrompt(currentPrompt) : "";
+                  if (txt && canPersonalizeWithSaved(txt, tokenValues)) {
+                    const personalized = replaceTokensInText(txt, tokenValues);
+                    return (
+                      <button
+                        onClick={() => handleCopyText(personalized)}
+                        style={{
+                          height: 42,
+                          borderRadius: 999,
+                          border: "1px solid #e5e7eb",
+                          padding: "0 16px",
+                          background: "#2563eb",
+                          color: "#f9fafb",
+                          fontSize: 14,
+                          fontWeight: 600,
+                          cursor: "pointer",
+                        }}
+                      >
+                        {copied ? "Copied!" : "Copy personalized"}
+                      </button>
+                    );
+                  }
+                  return null;
+                })()}
                 <button
                   onClick={handleCopy}
                   style={{
@@ -908,6 +1127,31 @@ export default function AIPromptVault() {
                   }}
                 >
                   {copied ? "Copied!" : "Copy prompt"}
+                </button>
+                <button
+                  onClick={() => {
+                    const txt = currentPrompt ? buildFullPrompt(currentPrompt) : "";
+                    const toks = txt ? extractTokens(txt) : [];
+                    setFillTokens(toks);
+                    setFillValues(toks.reduce((acc, t) => {
+                      acc[t] = tokenValues[t] || "";
+                      return acc;
+                    }, {} as Record<string,string>));
+                    setShowFillModal(true);
+                  }}
+                  style={{
+                    height: 42,
+                    borderRadius: 999,
+                    border: "1px solid #e5e7eb",
+                    padding: "0 16px",
+                    background: "#ffffff",
+                    color: "#0f172a",
+                    fontSize: 14,
+                    fontWeight: 600,
+                    cursor: "pointer",
+                  }}
+                >
+                  Quick Fill
                 </button>
                 <span style={{ fontSize: 12, color: "#9ca3af" }}>
                   Copy → paste into ChatGPT → tweak the bracketed fields →
@@ -1083,6 +1327,144 @@ export default function AIPromptVault() {
               </div>
             </div>
           )}
+        </div>
+      )}
+
+      {/* Quick Fill Modal */}
+      {showFillModal && (
+        <div
+          style={{
+            position: "fixed",
+            inset: 0,
+            background: "rgba(15,23,42,0.55)",
+            backdropFilter: "blur(3px)",
+            display: "flex",
+            alignItems: "flex-start",
+            justifyContent: "center",
+            padding: "80px 20px 40px",
+            zIndex: 1000,
+          }}
+        >
+          <div
+            style={{
+              width: "100%",
+              maxWidth: 520,
+              background: "#ffffff",
+              border: "1px solid #e5e7eb",
+              borderRadius: 18,
+              padding: 22,
+              boxShadow: "0 18px 40px rgba(15,23,42,0.25)",
+              display: "flex",
+              flexDirection: "column",
+              gap: 16,
+              position: "relative",
+            }}
+          >
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <div style={{ fontSize: 18, fontWeight: 700, color: "#0f172a" }}>Quick Fill Personalization</div>
+              <button
+                onClick={() => setShowFillModal(false)}
+                style={{
+                  background: "#f1f5f9",
+                  border: "1px solid #cbd5e1",
+                  borderRadius: 8,
+                  fontSize: 12,
+                  padding: "6px 10px",
+                  cursor: "pointer",
+                }}
+              >
+                Close
+              </button>
+            </div>
+            <div style={{ fontSize: 12, color: "#64748b" }}>
+              Fill in your details below. These replace the matching [tokens] when you copy the personalized prompt.
+            </div>
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                if (saveDefaults) {
+                  const merged = { ...tokenValues, ...fillValues };
+                  setTokenValues(merged);
+                  try { localStorage.setItem("rpv:tokenVals", JSON.stringify(merged)); } catch {}
+                }
+                if (currentPrompt) {
+                  const personalized = replaceTokensInText(buildFullPrompt(currentPrompt), fillValues);
+                  handleCopyText(personalized);
+                  trackEvent("prompt_personalized_copied", { title: currentPrompt.title, module: currentPrompt.module });
+                }
+                setShowFillModal(false);
+              }}
+              style={{ display: "flex", flexDirection: "column", gap: 14 }}
+            >
+              <div style={{ display: "flex", flexDirection: "column", gap: 10, maxHeight: 300, overflowY: "auto", paddingRight: 4 }}>
+                {fillTokens.map((tk) => (
+                  <label key={tk} style={{ display: "flex", flexDirection: "column", gap: 4, fontSize: 12, color: "#0f172a" }}>
+                    <span style={{ fontWeight: 600 }}>[{tk}]</span>
+                    <input
+                      value={fillValues[tk] || ""}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        setFillValues((prev) => ({ ...prev, [tk]: val }));
+                      }}
+                      placeholder={explainToken(tk)}
+                      style={{
+                        height: 36,
+                        borderRadius: 8,
+                        border: "1px solid #cbd5e1",
+                        padding: "0 10px",
+                        fontSize: 13,
+                        background: "#ffffff",
+                      }}
+                    />
+                  </label>
+                ))}
+              </div>
+              <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, color: "#0f172a" }}>
+                <input
+                  type="checkbox"
+                  checked={saveDefaults}
+                  onChange={(e) => setSaveDefaults(e.target.checked)}
+                  style={{ width: 14, height: 14 }}
+                />
+                Save these values for next time
+              </label>
+              <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+                <button
+                  type="submit"
+                  style={{
+                    height: 40,
+                    borderRadius: 999,
+                    border: "1px solid #0f172a",
+                    background: "#0f172a",
+                    color: "#f8fafc",
+                    padding: "0 20px",
+                    fontSize: 14,
+                    fontWeight: 600,
+                    cursor: "pointer",
+                  }}
+                >
+                  {copied ? "Copied!" : "Copy personalized"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowFillModal(false)}
+                  style={{
+                    height: 40,
+                    borderRadius: 999,
+                    border: "1px solid #cbd5e1",
+                    background: "#ffffff",
+                    color: "#0f172a",
+                    padding: "0 18px",
+                    fontSize: 14,
+                    fontWeight: 600,
+                    cursor: "pointer",
+                  }}
+                >
+                  Cancel
+                </button>
+              </div>
+            </form>
+          </div>
         </div>
       )}
 
