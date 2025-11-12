@@ -143,7 +143,7 @@ Perfect for: `/resources/ai-prompts` page on joinkale.com
   <div class="kale-prompt-vault-container">
     <div class="kale-vault-loading"></div>
     <iframe 
-      src="https://your-app.vercel.app?kale=true"
+      src="https://ai-prompt-vault-two.vercel.app?kale=true"
       class="kale-vault-iframe"
       title="AI Prompt Vault - Free AI Prompts for Kale Realty Brokers"
       loading="lazy"
@@ -298,7 +298,7 @@ Perfect for: Linked from training pages, resource sections
   <div class="kale-vault-modal-content">
     <button class="kale-vault-close" onclick="closeKaleVault()" aria-label="Close">×</button>
     <iframe 
-      src="https://your-app.vercel.app?kale=true"
+      src="https://ai-prompt-vault-two.vercel.app?kale=true"
       style="width: 100%; height: 100%; border: none;"
       title="AI Prompt Vault"
       allow="clipboard-write"
