@@ -16,6 +16,8 @@ const KEY_FIRST_COPY = "rpv:firstCopy";
 const KEY_FIELD_HISTORY = "rpv:fieldHistory";
 const KEY_COLLECTIONS = "rpv:collections";
 const KEY_CUSTOM_PROMPTS = "rpv:customPrompts";
+const KEY_SEQUENCES = "rpv:sequences";
+const KEY_SESSION_HISTORY = "rpv:sessionHistory";
 
 // Module names (descriptive, not numbered)
 const MODULE_NAMES: Record<number, string> = {
@@ -48,6 +50,26 @@ const MODULE_TAGS: Record<number, string[]> = {
   11: ["automation", "workflow", "tech"],
   12: ["learning", "research", "intel"]
 };
+
+/* ---------- Types for Sequence Tracking ---------- */
+interface SequencePair {
+  from: string;  // First prompt ID
+  to: string;    // Second prompt ID
+  count: number; // How many times this pair occurred
+  lastUsed: number; // Timestamp
+}
+
+interface SessionCopy {
+  promptId: string;
+  timestamp: number;
+  module: string;
+  title: string;
+}
+
+interface SequenceData {
+  pairs: Record<string, SequencePair>; // Key: "fromId->toId"
+  totalSequences: number;
+}
 
 /* ---------- Tracking ---------- */
 const trackEvent = (name: string, data?: Record<string, any>) => {
@@ -97,6 +119,10 @@ export default function AIPromptVault() {
   const [activeCollection, setActiveCollection] = useState<string | null>(null);
   const [customPrompts, setCustomPrompts] = useState<PromptItem[]>([]);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+  
+  // Sequence tracking state
+  const [sequences, setSequences] = useState<SequenceData>({ pairs: {}, totalSequences: 0 });
+  const [sessionHistory, setSessionHistory] = useState<SessionCopy[]>([]);
   
   // Detect Kale branding from URL parameter
   const isKaleBranded = useMemo(() => {
@@ -166,6 +192,23 @@ export default function AIPromptVault() {
       // Load custom prompts
       const savedCustomPrompts = localStorage.getItem(KEY_CUSTOM_PROMPTS);
       if (savedCustomPrompts) setCustomPrompts(JSON.parse(savedCustomPrompts));
+      
+      // Load sequence tracking data
+      const savedSequences = localStorage.getItem(KEY_SEQUENCES);
+      if (savedSequences) {
+        setSequences(JSON.parse(savedSequences));
+      }
+      
+      // Load session history (resets on page load, but we'll keep last session)
+      const savedSessionHistory = localStorage.getItem(KEY_SESSION_HISTORY);
+      if (savedSessionHistory) {
+        const history: SessionCopy[] = JSON.parse(savedSessionHistory);
+        // Keep only recent history from last 30 minutes
+        const thirtyMinsAgo = Date.now() - (30 * 60 * 1000);
+        const recentHistory = history.filter(h => h.timestamp > thirtyMinsAgo);
+        setSessionHistory(recentHistory);
+        localStorage.setItem(KEY_SESSION_HISTORY, JSON.stringify(recentHistory));
+      }
       
       // Check if user has seen onboarding
       const hasOnboarded = localStorage.getItem(KEY_ONBOARDED);
@@ -331,6 +374,55 @@ export default function AIPromptVault() {
       .slice(0, 3);
   }, [recentlyCopied, allPrompts]);
 
+  // Record a sequence pair (when user copies prompt B shortly after prompt A)
+  const recordSequence = (fromId: string, toId: string) => {
+    const pairKey = `${fromId}->${toId}`;
+    const now = Date.now();
+    
+    const updatedSequences = { ...sequences };
+    
+    if (updatedSequences.pairs[pairKey]) {
+      // Increment existing pair
+      updatedSequences.pairs[pairKey].count++;
+      updatedSequences.pairs[pairKey].lastUsed = now;
+    } else {
+      // Create new pair
+      updatedSequences.pairs[pairKey] = {
+        from: fromId,
+        to: toId,
+        count: 1,
+        lastUsed: now
+      };
+    }
+    
+    updatedSequences.totalSequences++;
+    
+    // Save to state and localStorage
+    setSequences(updatedSequences);
+    localStorage.setItem(KEY_SEQUENCES, JSON.stringify(updatedSequences));
+    
+    // Track analytics event
+    trackEvent("sequence_recorded", { 
+      from: fromId, 
+      to: toId, 
+      count: updatedSequences.pairs[pairKey].count 
+    });
+  };
+
+  // Get top sequence suggestions for a given prompt
+  const getSequenceSuggestions = (promptId: string, limit: number = 3): PromptItem[] => {
+    // Find all pairs where this prompt was the "from"
+    const relevantPairs = Object.values(sequences.pairs)
+      .filter(pair => pair.from === promptId)
+      .sort((a, b) => b.count - a.count) // Sort by frequency
+      .slice(0, limit);
+    
+    // Convert to actual prompts
+    return relevantPairs
+      .map(pair => allPrompts.find((p: any) => p.id === pair.to))
+      .filter(Boolean) as PromptItem[];
+  };
+
   // Copy handler
   const handleCopy = async (prompt: PromptItem) => {
     const fullText = buildFullPrompt(prompt);
@@ -354,20 +446,51 @@ export default function AIPromptVault() {
       setRecentlyCopied(newRecent);
       localStorage.setItem(KEY_RECENT, JSON.stringify(newRecent));
       
-      // Generate follow-up suggestions based on tags and module
-      const promptTags = (prompt as any).tags || [];
-      const promptModule = prompt.module;
+      // Record sequence if there's a previous prompt in session
+      if (sessionHistory.length > 0) {
+        const lastCopy = sessionHistory[sessionHistory.length - 1];
+        const timeSinceLastCopy = Date.now() - lastCopy.timestamp;
+        
+        // Only record as sequence if within 5 minutes (300000ms)
+        if (timeSinceLastCopy < 300000 && lastCopy.promptId !== id) {
+          recordSequence(lastCopy.promptId, id);
+        }
+      }
       
-      const suggestions = allPrompts
-        .filter((p: any) => {
-          if (p.id === id) return false; // Don't suggest the same prompt
-          // Match by tags or same module
-          const pTags = p.tags || [];
-          const hasCommonTag = promptTags.some((tag: string) => pTags.includes(tag));
-          const sameModule = p.module === promptModule;
-          return hasCommonTag || sameModule;
-        })
-        .slice(0, 3); // Take top 3
+      // Add current copy to session history
+      const newSessionCopy: SessionCopy = {
+        promptId: id,
+        timestamp: Date.now(),
+        module: prompt.module,
+        title: prompt.title
+      };
+      const updatedSessionHistory = [...sessionHistory, newSessionCopy].slice(-10); // Keep last 10
+      setSessionHistory(updatedSessionHistory);
+      localStorage.setItem(KEY_SESSION_HISTORY, JSON.stringify(updatedSessionHistory));
+      
+      // Generate follow-up suggestions based on sequences first, then tags/module
+      let suggestions: any[] = [];
+      
+      // Priority 1: Get learned sequence suggestions
+      const learnedSuggestions = getSequenceSuggestions(id, 3);
+      if (learnedSuggestions.length > 0) {
+        suggestions = learnedSuggestions;
+      } else {
+        // Priority 2: Fallback to tag/module matching
+        const promptTags = (prompt as any).tags || [];
+        const promptModule = prompt.module;
+        
+        suggestions = allPrompts
+          .filter((p: any) => {
+            if (p.id === id) return false; // Don't suggest the same prompt
+            // Match by tags or same module
+            const pTags = p.tags || [];
+            const hasCommonTag = promptTags.some((tag: string) => pTags.includes(tag));
+            const sameModule = p.module === promptModule;
+            return hasCommonTag || sameModule;
+          })
+          .slice(0, 3); // Take top 3
+      }
       
       setFollowUpPrompts(suggestions);
       setShowFollowUps(true);
