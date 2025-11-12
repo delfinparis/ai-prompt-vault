@@ -536,13 +536,13 @@ export default function AIPromptVault() {
             🏡 AI Prompt Vault
           </h1>
           <span style={{
-            background: "linear-gradient(135deg, #2563eb 0%, #06b6d4 100%)",
-            color: "#fff",
+            background: "linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%)",
+            color: "var(--text-inverse)",
             padding: "4px 12px",
             borderRadius: "var(--radius-pill)",
             fontSize: 14,
             fontWeight: 700,
-            boxShadow: "0 2px 8px rgba(37,99,235,0.2)",
+            boxShadow: "var(--shadow-md)",
             animation: "pulse 2s ease-in-out infinite",
           }}>
             {allPrompts.length} Prompts
@@ -552,7 +552,7 @@ export default function AIPromptVault() {
           The best AI prompts for real estate agents. Copy, paste, close deals.
         </p>
         {lastUpdated && (
-          <p style={{ fontSize: 12, color: "var(--muted)", marginBottom: 16 }}>
+          <p style={{ fontSize: 12, color: "var(--text-secondary)", marginBottom: 16 }}>
             ✨ Last updated: {lastUpdated}
           </p>
         )}
@@ -573,7 +573,7 @@ export default function AIPromptVault() {
               paddingRight: search ? "20px" : "120px",
               borderRadius: "var(--radius-pill)",
               border: "2px solid #e5e7eb",
-              background: "#fff",
+              background: "var(--surface)",
               fontFamily: "var(--font-stack)",
             }}
           />
@@ -591,7 +591,7 @@ export default function AIPromptVault() {
             >
               Press <kbd style={{ 
                 padding: "2px 6px", 
-                background: "#f1f5f9", 
+                background: "var(--badge-bg)", 
                 borderRadius: 4,
                 fontSize: 11,
                 fontWeight: 600 
@@ -612,7 +612,7 @@ export default function AIPromptVault() {
                   padding: "4px 10px",
                   borderRadius: "var(--radius-pill)",
                   background: "var(--primary)",
-                  color: "#fff",
+                  color: "var(--text-inverse)",
                   border: "none",
                   fontSize: 12,
                   cursor: "pointer",
@@ -673,7 +673,7 @@ export default function AIPromptVault() {
               </div>
             </div>
             <div>
-              <div style={{ fontSize: 28, fontWeight: 800, color: "#10b981", marginBottom: 4 }}>
+              <div style={{ fontSize: 28, fontWeight: 800, color: "var(--success)", marginBottom: 4 }}>
                 {favorites.length}
               </div>
               <div style={{ fontSize: 12, color: "var(--muted)", fontWeight: 500 }}>
@@ -681,7 +681,7 @@ export default function AIPromptVault() {
               </div>
             </div>
             <div>
-              <div style={{ fontSize: 28, fontWeight: 800, color: "#f59e0b", marginBottom: 4 }}>
+              <div style={{ fontSize: 28, fontWeight: 800, color: "var(--warning)", marginBottom: 4 }}>
                 {recentlyCopied.length}
               </div>
               <div style={{ fontSize: 12, color: "var(--muted)", fontWeight: 500 }}>
@@ -689,7 +689,7 @@ export default function AIPromptVault() {
               </div>
             </div>
             <div>
-              <div style={{ fontSize: 28, fontWeight: 800, color: "#8b5cf6", marginBottom: 4 }}>
+              <div style={{ fontSize: 28, fontWeight: 800, color: "var(--purple)", marginBottom: 4 }}>
                 {Object.keys(collections).length}
               </div>
               <div style={{ fontSize: 12, color: "var(--muted)", fontWeight: 500 }}>
@@ -715,7 +715,7 @@ export default function AIPromptVault() {
                 style={{
                   padding: "8px 14px",
                   borderRadius: "var(--radius-pill)",
-                  background: "#f8fafc",
+                  background: "var(--surface-hover)",
                   border: "1px solid #e5e7eb",
                   fontSize: 13,
                   whiteSpace: "nowrap",
@@ -816,7 +816,7 @@ export default function AIPromptVault() {
                         style={{
                           padding: "6px 14px",
                           borderRadius: "var(--radius-pill)",
-                          background: "#f1f5f9",
+                          background: "var(--badge-bg)",
                           border: "1px solid #e5e7eb",
                           color: "var(--text)",
                           fontSize: 13,
@@ -878,7 +878,7 @@ export default function AIPromptVault() {
                   style={{
                     padding: "12px 24px",
                     background: "var(--primary)",
-                    color: "#fff",
+                    color: "var(--text-inverse)",
                     border: "none",
                     borderRadius: "var(--radius-sm)",
                     fontSize: 15,
@@ -934,7 +934,7 @@ export default function AIPromptVault() {
                 key={prompt.id}
                 className="prompt-card-v2"
                 style={{
-                  background: "#fff",
+                  background: "var(--surface)",
                   border: `1px solid ${isHovered ? "var(--primary)" : "rgba(15,23,42,0.08)"}`,
                   borderRadius: "var(--radius-md)",
                   padding: 20,
@@ -954,7 +954,7 @@ export default function AIPromptVault() {
                     top: 12,
                     right: 12,
                     background: "linear-gradient(135deg, #f97316 0%, #dc2626 100%)",
-                    color: "#fff",
+                    color: "var(--text-inverse)",
                     padding: "4px 10px",
                     borderRadius: "var(--radius-pill)",
                     fontSize: 11,
@@ -976,8 +976,8 @@ export default function AIPromptVault() {
                       <span style={{
                         display: "inline-block",
                         padding: "2px 8px",
-                        background: "#8b5cf6",
-                        color: "#fff",
+                        background: "var(--purple)",
+                        color: "var(--text-inverse)",
                         fontSize: 10,
                         fontWeight: 700,
                         borderRadius: "var(--radius-pill)",
@@ -1081,7 +1081,7 @@ export default function AIPromptVault() {
                             fontSize: 12,
                             fontWeight: 600,
                             color: "var(--text)",
-                            background: "#f1f5f9",
+                            background: "var(--badge-bg)",
                             border: "1px solid #e5e7eb",
                             borderRadius: "var(--radius-pill)",
                             cursor: "pointer",
@@ -1102,7 +1102,7 @@ export default function AIPromptVault() {
                             padding: "6px 12px",
                             fontSize: 12,
                             fontWeight: 600,
-                            color: "#fff",
+                            color: "var(--text-inverse)",
                             background: "var(--primary)",
                             border: "none",
                             borderRadius: "var(--radius-pill)",
@@ -1145,7 +1145,7 @@ export default function AIPromptVault() {
           <div
             className="modal-content"
             style={{
-              background: "#fff",
+              background: "var(--surface)",
               borderRadius: "var(--radius-md)",
               maxWidth: 680,
               width: "100%",
@@ -1182,7 +1182,7 @@ export default function AIPromptVault() {
             {/* What You'll Get */}
             {selectedPrompt.deliverable && (
               <div style={{ 
-                background: "#f0f9ff",
+                background: "var(--info-bg)",
                 border: "1px solid #bae6fd",
                 borderRadius: "var(--radius-sm)",
                 padding: "12px 16px",
@@ -1191,14 +1191,14 @@ export default function AIPromptVault() {
                 <p style={{ 
                   fontSize: 13, 
                   fontWeight: 600,
-                  color: "#0369a1", 
+                  color: "var(--info-text)", 
                   marginBottom: 4,
                 }}>
                   📦 What you'll get:
                 </p>
                 <p style={{ 
                   fontSize: 14, 
-                  color: "#075985", 
+                  color: "var(--info-text)", 
                   lineHeight: 1.5,
                   margin: 0,
                 }}>
@@ -1231,7 +1231,7 @@ export default function AIPromptVault() {
                       {/* Progress bar */}
                       <div style={{ 
                         height: 4, 
-                        background: "#e5e7eb", 
+                        background: "var(--border)", 
                         borderRadius: 999,
                         overflow: "hidden",
                       }}>
@@ -1247,7 +1247,7 @@ export default function AIPromptVault() {
                     {/* Current Field - Large & Focused */}
                     <div 
                       style={{
-                        background: "#f8fafc",
+                        background: "var(--surface-hover)",
                         border: "2px solid var(--primary)",
                         borderRadius: "var(--radius-md)",
                         padding: 24,
@@ -1271,7 +1271,7 @@ export default function AIPromptVault() {
                       {savedFieldValues[currentField] && (
                         <p style={{
                           fontSize: 11,
-                          color: "#10b981",
+                          color: "var(--success)",
                           marginBottom: 8,
                           fontWeight: 500,
                         }}>
@@ -1367,7 +1367,7 @@ export default function AIPromptVault() {
                               padding: "10px 24px",
                               fontSize: 14,
                               fontWeight: 600,
-                              color: "#fff",
+                              color: "var(--text-inverse)",
                               background: "var(--primary)",
                               border: "none",
                               borderRadius: "var(--radius-sm)",
@@ -1383,7 +1383,7 @@ export default function AIPromptVault() {
                               padding: "12px 28px",
                               fontSize: 15,
                               fontWeight: 700,
-                              color: "#fff",
+                              color: "var(--text-inverse)",
                               background: "var(--primary)",
                               border: "none",
                               borderRadius: "var(--radius-sm)",
@@ -1404,12 +1404,12 @@ export default function AIPromptVault() {
               return (
                 <div
                   style={{
-                    background: "#f8fafc",
+                    background: "var(--surface-hover)",
                     padding: 16,
                     borderRadius: "var(--radius-sm)",
                     fontSize: 14,
                     lineHeight: 1.6,
-                    color: "#334155",
+                    color: "var(--text-secondary)",
                     marginBottom: 20,
                     fontFamily: "ui-monospace, monospace",
                     whiteSpace: "pre-wrap",
@@ -1437,7 +1437,7 @@ export default function AIPromptVault() {
                         padding: "12px 24px",
                         fontSize: 15,
                         fontWeight: 600,
-                        color: "#fff",
+                        color: "var(--text-inverse)",
                         background: "var(--primary)",
                         border: "none",
                         borderRadius: "var(--radius-sm)",
@@ -1455,7 +1455,7 @@ export default function AIPromptVault() {
                         fontSize: 15,
                         fontWeight: 600,
                         color: "var(--text)",
-                        background: "#f1f5f9",
+                        background: "var(--badge-bg)",
                         border: "none",
                         borderRadius: "var(--radius-sm)",
                         cursor: "pointer",
@@ -1481,7 +1481,7 @@ export default function AIPromptVault() {
                         fontSize: 15,
                         fontWeight: 600,
                         color: "var(--text)",
-                        background: "#f1f5f9",
+                        background: "var(--badge-bg)",
                         border: "none",
                         borderRadius: "var(--radius-sm)",
                         cursor: "pointer",
@@ -1507,7 +1507,7 @@ export default function AIPromptVault() {
                         fontSize: 15,
                         fontWeight: 600,
                         color: "var(--text)",
-                        background: "#f1f5f9",
+                        background: "var(--badge-bg)",
                         border: "none",
                         borderRadius: "var(--radius-sm)",
                         cursor: "pointer",
@@ -1529,7 +1529,7 @@ export default function AIPromptVault() {
               textAlign: "center",
               padding: "8px 0"
             }}>
-              <kbd style={{ padding: "2px 6px", background: "#f1f5f9", borderRadius: 4, fontWeight: 600 }}>⌘</kbd> + <kbd style={{ padding: "2px 6px", background: "#f1f5f9", borderRadius: 4, fontWeight: 600 }}>Enter</kbd> to copy · <kbd style={{ padding: "2px 6px", background: "#f1f5f9", borderRadius: 4, fontWeight: 600 }}>ESC</kbd> to close
+              <kbd style={{ padding: "2px 6px", background: "var(--badge-bg)", borderRadius: 4, fontWeight: 600 }}>⌘</kbd> + <kbd style={{ padding: "2px 6px", background: "var(--badge-bg)", borderRadius: 4, fontWeight: 600 }}>Enter</kbd> to copy · <kbd style={{ padding: "2px 6px", background: "var(--badge-bg)", borderRadius: 4, fontWeight: 600 }}>ESC</kbd> to close
             </div>
             </div>
           </div>
@@ -1553,7 +1553,7 @@ export default function AIPromptVault() {
             height: 56,
             borderRadius: "50%",
             background: "var(--primary)",
-            color: "#fff",
+            color: "var(--text-inverse)",
             border: "none",
             fontSize: 24,
             cursor: "pointer",
@@ -1568,8 +1568,8 @@ export default function AIPromptVault() {
               position: "absolute",
               top: -4,
               right: -4,
-              background: "#ef4444",
-              color: "#fff",
+              background: "var(--error)",
+              color: "var(--text-inverse)",
               fontSize: 11,
               fontWeight: 700,
               borderRadius: "50%",
@@ -1604,7 +1604,7 @@ export default function AIPromptVault() {
           <div
             className="modal-content"
             style={{
-              background: "#fff",
+              background: "var(--surface)",
               borderRadius: "var(--radius-md)",
               maxWidth: 720,
               width: "100%",
@@ -1652,7 +1652,7 @@ export default function AIPromptVault() {
                     padding: "10px 20px",
                     fontSize: 14,
                     fontWeight: 600,
-                    color: "#fff",
+                    color: "var(--text-inverse)",
                     background: "var(--primary)",
                     border: "none",
                     borderRadius: "var(--radius-sm)",
@@ -1670,7 +1670,7 @@ export default function AIPromptVault() {
                     <div
                       key={prompt.id}
                       style={{
-                        background: "#f8fafc",
+                        background: "var(--surface-hover)",
                         border: "1px solid #e5e7eb",
                         borderRadius: "var(--radius-sm)",
                         padding: 16,
@@ -1727,8 +1727,8 @@ export default function AIPromptVault() {
             bottom: 24,
             left: "50%",
             transform: "translateX(-50%)",
-            background: "#10b981",
-            color: "#fff",
+            background: "var(--success)",
+            color: "var(--text-inverse)",
             padding: "16px 24px",
             borderRadius: "var(--radius-md)",
             boxShadow: "0 10px 40px rgba(0,0,0,0.3)",
@@ -1754,7 +1754,7 @@ export default function AIPromptVault() {
                 background: "rgba(255,255,255,0.2)",
                 border: "1px solid rgba(255,255,255,0.3)",
                 borderRadius: "var(--radius-sm)",
-                color: "#fff",
+                color: "var(--text-inverse)",
                 textDecoration: "none",
                 fontSize: 13,
                 fontWeight: 600,
@@ -1778,7 +1778,7 @@ export default function AIPromptVault() {
                 background: "rgba(255,255,255,0.2)",
                 border: "1px solid rgba(255,255,255,0.3)",
                 borderRadius: "var(--radius-sm)",
-                color: "#fff",
+                color: "var(--text-inverse)",
                 textDecoration: "none",
                 fontSize: 13,
                 fontWeight: 600,
@@ -1814,7 +1814,7 @@ export default function AIPromptVault() {
         >
           <div
             style={{
-              background: "#fff",
+              background: "var(--surface)",
               borderRadius: "var(--radius-md)",
               maxWidth: 520,
               width: "100%",
@@ -1843,7 +1843,7 @@ export default function AIPromptVault() {
                   }}
                   style={{
                     padding: "16px",
-                    background: "#f8fafc",
+                    background: "var(--surface-hover)",
                     border: "2px solid #e5e7eb",
                     borderRadius: "var(--radius-sm)",
                     textAlign: "left",
@@ -1865,7 +1865,7 @@ export default function AIPromptVault() {
                     top: 8, 
                     right: 8, 
                     background: "var(--primary)",
-                    color: "#fff",
+                    color: "var(--text-inverse)",
                     width: 24,
                     height: 24,
                     borderRadius: "50%",
@@ -1912,7 +1912,7 @@ export default function AIPromptVault() {
                   borderRadius: "var(--radius-sm)",
                   fontSize: 14,
                   fontWeight: 600,
-                  color: "#fff",
+                  color: "var(--text-inverse)",
                   cursor: "pointer",
                 }}
               >
@@ -1956,7 +1956,7 @@ export default function AIPromptVault() {
         >
           <div
             style={{
-              background: "#fff",
+              background: "var(--surface)",
               borderRadius: "var(--radius-md)",
               maxWidth: 540,
               width: "100%",
@@ -1980,7 +1980,7 @@ export default function AIPromptVault() {
                     width: "100%",
                     padding: "14px 24px",
                     background: "var(--primary)",
-                    color: "#fff",
+                    color: "var(--text-inverse)",
                     border: "none",
                     borderRadius: "var(--radius-sm)",
                     fontSize: 16,
@@ -2005,7 +2005,7 @@ export default function AIPromptVault() {
                       minWidth: 32, 
                       height: 32, 
                       borderRadius: "50%", 
-                      background: "#dbeafe", 
+                      background: "var(--badge-primary-bg)", 
                       color: "var(--primary)", 
                       display: "flex", 
                       alignItems: "center", 
@@ -2025,7 +2025,7 @@ export default function AIPromptVault() {
                       minWidth: 32, 
                       height: 32, 
                       borderRadius: "50%", 
-                      background: "#dbeafe", 
+                      background: "var(--badge-primary-bg)", 
                       color: "var(--primary)", 
                       display: "flex", 
                       alignItems: "center", 
@@ -2045,7 +2045,7 @@ export default function AIPromptVault() {
                       minWidth: 32, 
                       height: 32, 
                       borderRadius: "50%", 
-                      background: "#dbeafe", 
+                      background: "var(--badge-primary-bg)", 
                       color: "var(--primary)", 
                       display: "flex", 
                       alignItems: "center", 
@@ -2067,7 +2067,7 @@ export default function AIPromptVault() {
                     width: "100%",
                     padding: "14px 24px",
                     background: "var(--primary)",
-                    color: "#fff",
+                    color: "var(--text-inverse)",
                     border: "none",
                     borderRadius: "var(--radius-sm)",
                     fontSize: 16,
@@ -2101,7 +2101,7 @@ export default function AIPromptVault() {
                     }}
                     style={{
                       padding: "12px 16px",
-                      background: "#f8fafc",
+                      background: "var(--surface-hover)",
                       border: "2px solid #e5e7eb",
                       borderRadius: "var(--radius-sm)",
                       fontSize: 15,
@@ -2124,7 +2124,7 @@ export default function AIPromptVault() {
                     }}
                     style={{
                       padding: "12px 16px",
-                      background: "#f8fafc",
+                      background: "var(--surface-hover)",
                       border: "2px solid #e5e7eb",
                       borderRadius: "var(--radius-sm)",
                       fontSize: 15,
@@ -2147,7 +2147,7 @@ export default function AIPromptVault() {
                     }}
                     style={{
                       padding: "12px 16px",
-                      background: "#f8fafc",
+                      background: "var(--surface-hover)",
                       border: "2px solid #e5e7eb",
                       borderRadius: "var(--radius-sm)",
                       fontSize: 15,
@@ -2169,7 +2169,7 @@ export default function AIPromptVault() {
                     width: "100%",
                     padding: "14px 24px",
                     background: "var(--primary)",
-                    color: "#fff",
+                    color: "var(--text-inverse)",
                     border: "none",
                     borderRadius: "var(--radius-sm)",
                     fontSize: 16,
@@ -2210,7 +2210,7 @@ export default function AIPromptVault() {
           left: "50%",
           transform: "translateX(-50%)",
           background: "var(--text)",
-          color: "#fff",
+          color: "var(--text-inverse)",
           padding: "12px 24px",
           borderRadius: "var(--radius-pill)",
           fontSize: 14,
