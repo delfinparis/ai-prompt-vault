@@ -1,30 +1,16 @@
 "use client";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import { prompts as fullPrompts } from "./prompts";
+import {
+  PromptItem,
+  buildFullPrompt,
+  mergeRemote,
+  extractPlaceholders,
+  applyReplacements,
+  RemotePayload,
+} from "./promptUtils";
 
 /* ---------- Types ---------- */
-type PromptItem = {
-  title: string;
-  quick?: string;
-  role?: string;
-  deliverable?: string;
-  success?: string;
-  inputs?: string;
-  constraints?: string;
-  tools?: string;
-  iterate?: string;
-  risk?: string;
-  format?: string;
-  audience?: string;
-  module: string;
-  index: number;
-};
-
-type RemotePrompt = Omit<PromptItem, "module" | "index">;
-type RemotePayload = {
-  version?: string;
-  modules?: Record<string, RemotePrompt[]>;
-};
 
 /* ---------- Constants ---------- */
 
@@ -180,112 +166,10 @@ const attachModule = (
 
 /* ---------- Prompt Builder ---------- */
 
-const buildFullPrompt = (p: PromptItem): string => {
-  const moduleName = p.module || "Category";
-  const title = p.title || "Prompt";
-  const audience =
-    p.audience || "[buyer/seller/investor/agent type in [market]]";
-  const inputs =
-    p.inputs ||
-    "- KPIs = [list]\n- Tools = [list]\n- Timeline/Budget = [X]\n- Constraints = [plain, compliant language]";
-  const deliverable =
-    p.deliverable || "Bulleted steps + 1 table (fields relevant to this prompt).";
-  const constraints =
-    p.constraints ||
-    "≤ 400 words; use headings; avoid guarantees; fair-housing safe.";
-  const quality =
-    (p as any).quality ||
-    "Add ‘Why this works’ and 3 clarifying questions. Propose 2 ways to improve the first draft.";
-  const success =
-    p.success ||
-    "Define measurable outcomes (response rate %, time saved, appointments set).";
-  const tools =
-    p.tools ||
-    "Prefer Google Workspace, CRM, Make.com/Zapier, Notion, Canva as applicable.";
-  const iterate =
-    p.iterate ||
-    "End by asking 2–3 questions and offering a v2 refinement path.";
-  const risk =
-    p.risk ||
-    "Risk Check: keep claims verifiable; avoid protected-class targeting; keep language compliant.";
-
-  return `Role & Outcome
-Act as a ${p.role || "top 1% real-estate coach"} and produce: “${title}” for ${audience} in ${moduleName}.
-
-Audience & Channel
-Primary user = ${audience}. Output format = ${p.format || "bulleted brief + 1 table"}.
-
-Facts / Inputs
-${inputs}
-
-Constraints
-${constraints}
-
-Deliverable
-${deliverable}
-
-Quality Controls
-${quality}
-
-Success Metrics
-${success}
-
-Tool Integration
-${tools}
-
-Iteration Loop
-${iterate}
-
-${risk}`;
-};
 
 /* ---------- Merge Remote Prompts ---------- */
 
-function mergeRemote(base: PromptItem[], remote: RemotePayload): PromptItem[] {
-  if (!remote?.modules) return base;
 
-  const result = [...base];
-  const existing = new Set(
-    base.map((b) => (b.title || "").toLowerCase().trim())
-  );
-
-  const baseModules = Array.from(new Set(base.map((b) => b.module)));
-
-  const findModuleKey = (label: string): string | null => {
-    // try exact
-    const exact = baseModules.find((m) => m === label);
-    if (exact) return exact;
-
-    const target = label.trim().toLowerCase();
-    // try by displayName
-    const match = baseModules.find(
-      (m) => displayName(m).trim().toLowerCase() === target
-    );
-    return match || null;
-  };
-
-  Object.entries(remote.modules).forEach(([rawModule, arr]) => {
-    const targetModule = findModuleKey(rawModule);
-    if (!targetModule) return;
-
-    const existingInModule = result.filter((r) => r.module === targetModule);
-    let nextIndex = existingInModule.length;
-
-    arr.forEach((r) => {
-      const t = (r.title || "").toLowerCase().trim();
-      if (!t || existing.has(t)) return;
-
-      result.push({
-        ...r,
-        module: targetModule,
-        index: nextIndex++,
-      });
-      existing.add(t);
-    });
-  });
-
-  return result;
-}
 
 /* ---------- Main Component ---------- */
 
@@ -295,6 +179,26 @@ export default function AIPromptVault() {
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
   const [copied, setCopied] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [fieldValues, setFieldValues] = useState<Record<string, string>>({});
+  const [favorites, setFavorites] = useState<{
+    id: string;
+    module: string;
+    index: number;
+    title: string;
+    values: Record<string, string>;
+    createdAt: string;
+  }[]>([]);
+  const [recentFills, setRecentFills] = useState<Record<string, string>[]>([]);
+  const [showFull, setShowFull] = useState(true);
+  const [variations, setVariations] = useState<string[] | null>(null);
+  const [renameModalId, setRenameModalId] = useState<string | null>(null);
+  const [deleteModalId, setDeleteModalId] = useState<string | null>(null);
+  const [modalInput, setModalInput] = useState("");
+  const [copyCounts, setCopyCounts] = useState<Record<string, number>>({});
+
+  const KEY_FAVORITES = "rpv:favorites";
+  const KEY_RECENT = "rpv:recentFills";
+  const KEY_COUNTS = "rpv:copyCounts";
 
   // preload base + remote
   useEffect(() => {
@@ -352,9 +256,162 @@ export default function AIPromptVault() {
         ) || null
       : null;
 
+  // Utility: find unique bracketed tokens like [market], [buyer], etc.
+  const extractPlaceholders = (p: PromptItem | null): string[] => {
+    if (!p) return [];
+    // concatenate all text fields from the prompt item
+    const vals = [
+      p.title,
+      p.quick,
+      p.role,
+      p.deliverable,
+      p.success,
+      p.inputs,
+      p.constraints,
+      p.tools,
+      p.iterate,
+      p.risk,
+      p.format,
+      p.audience,
+    ]
+      .filter(Boolean)
+      .join(" ");
+
+    const rx = /\[([^\[\]]+)\]/g;
+    const found = new Set<string>();
+    let m: RegExpExecArray | null;
+    while ((m = rx.exec(vals))) {
+      const tok = m[1].trim();
+      if (tok) found.add(tok);
+    }
+
+    // Also run extraction on the built full prompt (covers defaults)
+    const built = buildFullPrompt(p);
+    rx.lastIndex = 0;
+    while ((m = rx.exec(built))) {
+      const tok = m[1].trim();
+      if (tok) found.add(tok);
+    }
+
+    return Array.from(found);
+  };
+
+  // initialize fieldValues when currentPrompt changes
+  useEffect(() => {
+    const toks = extractPlaceholders(currentPrompt);
+    const map: Record<string, string> = {};
+    toks.forEach((t) => {
+      // sensible initial value: prefer a small sample value to speed entry
+      map[t] = SAMPLE_DEFAULTS[t.toLowerCase()] || "";
+    });
+    setFieldValues(map);
+  }, [currentPrompt]);
+
+  // load favorites/recent from localStorage on mount
+  useEffect(() => {
+    try {
+      const fav = localStorage.getItem(KEY_FAVORITES);
+      if (fav) setFavorites(JSON.parse(fav));
+    } catch {}
+    try {
+      const rec = localStorage.getItem(KEY_RECENT);
+      if (rec) setRecentFills(JSON.parse(rec));
+    } catch {}
+  }, []);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(KEY_FAVORITES, JSON.stringify(favorites));
+    } catch {}
+  }, [favorites]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(KEY_RECENT, JSON.stringify(recentFills));
+    } catch {}
+  }, [recentFills]);
+
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(KEY_COUNTS);
+      if (raw) setCopyCounts(JSON.parse(raw));
+    } catch {}
+  }, []);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(KEY_COUNTS, JSON.stringify(copyCounts));
+    } catch {}
+  }, [copyCounts]);
+
+  const saveFavorite = () => {
+    if (!currentPrompt) return;
+    const id = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+    const fav = {
+      id,
+      module: currentPrompt.module,
+      index: currentPrompt.index,
+      title: currentPrompt.title || "Untitled",
+      values: fieldValues,
+      createdAt: new Date().toISOString(),
+    };
+    setFavorites((s) => [fav, ...s].slice(0, 50));
+    trackEvent("favorite_saved", { title: fav.title });
+  };
+
+  const removeFavorite = (id: string) => {
+    setFavorites((s) => s.filter((f) => f.id !== id));
+    trackEvent("favorite_removed", { id });
+  };
+
+  const applyFavorite = (id: string) => {
+    const f = favorites.find((x) => x.id === id);
+    if (!f) return;
+    setSelectedModule(f.module);
+    setSelectedIndex(f.index);
+    setFieldValues(f.values || {});
+    trackEvent("favorite_applied", { title: f.title });
+  };
+
+  const pushRecent = (values: Record<string, string>) => {
+    setRecentFills((s) => {
+      const next = [values, ...s];
+      return next.slice(0, 20);
+    });
+  };
+
+  // sample default values for common placeholders (lowercase keys)
+  const SAMPLE_DEFAULTS: Record<string, string> = {
+    market: "Denver, CO",
+    city: "San Diego",
+    neighborhood: "Capitol Hill",
+    buyer: "first-time buyer",
+    seller: "motivated seller",
+    investor: "cash investor",
+    budget: "$650k",
+    timeline: "30 days",
+    list: "[list]",
+    tools: "Google Sheets, Canva",
+  };
+
+  const applyReplacements = (text: string, values: Record<string, string>) => {
+    if (!text) return text;
+    return text.replace(/\[([^\[\]]+)\]/g, (match, key) => {
+      const k = (key || "").trim();
+      if (k in values && values[k] !== "") return values[k];
+      return match; // leave placeholder if no value
+    });
+  };
+
+  const renderedPrompt = useMemo(() => {
+    if (!currentPrompt) return "";
+    const txt = buildFullPrompt(currentPrompt);
+    return applyReplacements(txt, fieldValues);
+  }, [currentPrompt, fieldValues]);
+
   const handleCopy = async () => {
     if (!currentPrompt) return;
-    const txt = buildFullPrompt(currentPrompt);
+    const txt = renderedPrompt || buildFullPrompt(currentPrompt);
 
     try {
       await navigator.clipboard.writeText(txt);
@@ -372,6 +429,15 @@ export default function AIPromptVault() {
       title: currentPrompt.title,
       module: currentPrompt.module,
     });
+    // save the filled values to recent history
+    try {
+      pushRecent(fieldValues);
+    } catch {}
+    // increment copy counts
+    try {
+      const key = `${currentPrompt.module}||${currentPrompt.title}`;
+      setCopyCounts((s) => ({ ...(s || {}), [key]: (s?.[key] || 0) + 1 }));
+    } catch {}
     setTimeout(() => setCopied(false), 1200);
   };
 
@@ -387,7 +453,7 @@ export default function AIPromptVault() {
       }}
     >
       {/* Header */}
-      <header style={{ marginBottom: 28 }}>
+  <header style={{ marginBottom: 28 }}>
         <div
           style={{
             fontSize: 26,
@@ -404,6 +470,106 @@ export default function AIPromptVault() {
           marketing, systems, or client problem.
         </div>
       </header>
+
+      {/* Favorites Manager */}
+      {favorites.length > 0 && (
+        <div style={{ marginBottom: 18 }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <div style={{ fontSize: 13, fontWeight: 700 }}>Favorites</div>
+            <div style={{ fontSize: 12, color: "#6b7280" }}>{favorites.length} saved</div>
+          </div>
+          <div style={{ display: "flex", gap: 8, marginTop: 8, flexWrap: "wrap" }}>
+            {favorites.map((f) => (
+              <div key={f.id} className="favorites-card" style={{ background: "#fff", border: "1px solid #e5e7eb", padding: 8, borderRadius: 10, minWidth: 220 }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8 }}>
+                  <div style={{ fontSize: 13, fontWeight: 700 }}>{f.title}</div>
+                  <div style={{ display: "flex", gap: 6 }}>
+                    <button
+                      onClick={() => applyFavorite(f.id)}
+                      style={{ height: 28, borderRadius: 8, padding: "0 8px" }}
+                    >
+                      Apply
+                    </button>
+                    <button
+                      onClick={() => {
+                        setRenameModalId(f.id);
+                        setModalInput(f.title || "");
+                      }}
+                      style={{ height: 28, borderRadius: 8, padding: "0 8px" }}
+                    >
+                      Rename
+                    </button>
+                    <button
+                      onClick={() => {
+                        setDeleteModalId(f.id);
+                      }}
+                      style={{ height: 28, borderRadius: 8, padding: "0 8px", color: "#b91c1c" }}
+                    >
+                      Delete
+                    </button>
+                  </div>
+                </div>
+                <div style={{ fontSize: 12, color: "#6b7280", marginTop: 6 }}>
+                  {Object.entries(f.values || {}).slice(0, 3).map(([k, v]) => (
+                    <div key={k}>{k}: {v}</div>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Rename Modal */}
+      {renameModalId && (
+        <div className="rpv-modal-backdrop" onClick={() => { setRenameModalId(null); setModalInput(""); }}>
+          <div className="rpv-modal" onClick={(e) => e.stopPropagation()}>
+            <h3>Rename favorite</h3>
+            <div>
+              <input value={modalInput} onChange={(e) => setModalInput(e.target.value)} style={{ width: '100%', height:36, padding:'0 8px', borderRadius:8, border:'1px solid #e5e7eb' }} />
+              <div className="row">
+                <button onClick={() => { if (modalInput.trim()) { setFavorites((s) => s.map((x) => x.id === renameModalId ? { ...x, title: modalInput.trim() } : x)); setRenameModalId(null); setModalInput(""); } }} style={{ height:36, borderRadius:8 }}>Save</button>
+                <button onClick={() => { setRenameModalId(null); setModalInput(""); }} style={{ height:36, borderRadius:8 }}>Cancel</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Modal */}
+      {deleteModalId && (
+        <div className="rpv-modal-backdrop" onClick={() => setDeleteModalId(null)}>
+          <div className="rpv-modal" onClick={(e) => e.stopPropagation()}>
+            <h3>Delete favorite?</h3>
+            <div style={{ color: '#6b7280' }}>This will remove the saved favorite. This action cannot be undone.</div>
+            <div className="row">
+              <button onClick={() => { removeFavorite(deleteModalId); setDeleteModalId(null); }} style={{ height:36, borderRadius:8, color:'#fff', background:'#b91c1c' }}>Delete</button>
+              <button onClick={() => setDeleteModalId(null)} style={{ height:36, borderRadius:8 }}>Cancel</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Analytics (Top copied prompts) */}
+      {Object.keys(copyCounts || {}).length > 0 && (
+        <div style={{ marginBottom: 18 }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <div style={{ fontSize: 13, fontWeight: 700 }}>Usage</div>
+            <div style={{ fontSize: 12, color: "#6b7280" }}>Top copied prompts</div>
+          </div>
+          <div style={{ marginTop: 8 }}>
+            {Object.entries(copyCounts)
+              .sort((a, b) => b[1] - a[1])
+              .slice(0, 5)
+              .map(([k, v]) => (
+                <div key={k} style={{ fontSize: 13, padding: "6px 0", borderBottom: "1px solid #f3f4f6" }}>
+                  <div style={{ fontWeight: 700 }}>{k.split("||")[1] || k}</div>
+                  <div style={{ color: "#6b7280", fontSize: 12 }}>{v} copies</div>
+                </div>
+              ))}
+          </div>
+        </div>
+      )}
 
       {/* Category cards */}
       <div
@@ -621,8 +787,48 @@ export default function AIPromptVault() {
                   fontSize: 14,
                 }}
               >
-                {buildFullPrompt(currentPrompt)}
+                {renderedPrompt}
               </div>
+
+              {/* Editable bracket fields */}
+              {Object.keys(fieldValues).length > 0 && (
+                <div style={{ marginTop: 12 }}>
+                  <div
+                    style={{
+                      fontSize: 13,
+                      fontWeight: 700,
+                      marginBottom: 8,
+                      color: "#0f172a",
+                    }}
+                  >
+                    Fill variables
+                  </div>
+                  <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                    {Object.keys(fieldValues).map((k) => (
+                      <label
+                        key={k}
+                        style={{ display: "flex", flexDirection: "column", minWidth: 160 }}
+                      >
+                        <span style={{ fontSize: 11, color: "#6b7280", marginBottom: 6 }}>{k}</span>
+                        <input
+                          value={fieldValues[k]}
+                          onChange={(e) =>
+                            setFieldValues((s) => ({ ...s, [k]: e.target.value }))
+                          }
+                          placeholder={k}
+                          style={{
+                            height: 36,
+                            borderRadius: 8,
+                            border: "1px solid #e5e7eb",
+                            padding: "0 8px",
+                            fontSize: 13,
+                          }}
+                        />
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               <div
                 style={{
@@ -649,6 +855,124 @@ export default function AIPromptVault() {
                 >
                   {copied ? "Copied!" : "Copy prompt"}
                 </button>
+                <button
+                  onClick={() => saveFavorite()}
+                  title="Save current filled prompt as favorite"
+                  style={{
+                    height: 42,
+                    borderRadius: 999,
+                    border: "1px solid #e5e7eb",
+                    padding: "0 12px",
+                    background: "#ffffff",
+                    color: "#0f172a",
+                    fontSize: 13,
+                    cursor: "pointer",
+                  }}
+                >
+                  ☆ Save
+                </button>
+
+                <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+                  <select
+                    onChange={(e) => {
+                      const id = e.target.value;
+                      if (!id) return;
+                      applyFavorite(id);
+                    }}
+                    defaultValue=""
+                    style={{ height: 36, borderRadius: 8, padding: "0 8px" }}
+                  >
+                    <option value="">Favorites…</option>
+                    {favorites.map((f) => (
+                      <option key={f.id} value={f.id}>
+                        {f.title}
+                      </option>
+                    ))}
+                  </select>
+                  <select
+                    onChange={(e) => {
+                      const i = e.target.selectedIndex - 1;
+                      if (i < 0) return;
+                      const vals = recentFills[i];
+                      if (vals) setFieldValues(vals);
+                    }}
+                    defaultValue=""
+                    style={{ height: 36, borderRadius: 8, padding: "0 8px" }}
+                  >
+                    <option value="">Recent fills…</option>
+                    {recentFills.map((r, idx) => (
+                      <option key={idx} value={idx}>
+                        {Object.values(r).slice(0, 3).join(", ")}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <button
+                  onClick={() => setShowFull((s) => !s)}
+                  style={{ height: 36, borderRadius: 8, padding: "0 10px" }}
+                >
+                  {showFull ? "Collapse" : "Expand"}
+                </button>
+
+                <button
+                  onClick={() => {
+                    // request serverless variations (AI-powered when available)
+                    (async () => {
+                      if (!currentPrompt) return;
+                      const base = renderedPrompt || buildFullPrompt(currentPrompt);
+                      try {
+                        const res = await fetch("/api/variations", {
+                          method: "POST",
+                          headers: { "Content-Type": "application/json" },
+                          body: JSON.stringify({ prompt: base }),
+                        });
+                        if (res.ok) {
+                          const j = await res.json();
+                          setVariations(j.variations || [base]);
+                        } else {
+                          setVariations([base]);
+                        }
+                      } catch (e) {
+                        console.warn("Variations error:", e);
+                        setVariations([base]);
+                      }
+                    })();
+                  }}
+                  style={{ height: 36, borderRadius: 8, padding: "0 10px" }}
+                >
+                  Variations
+                </button>
+
+                <button
+                  onClick={() => {
+                    const txt = renderedPrompt || (currentPrompt && buildFullPrompt(currentPrompt)) || "";
+                    const blob = new Blob([txt], { type: "text/plain;charset=utf-8" });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement("a");
+                    a.href = url;
+                    a.download = `${(currentPrompt?.title || 'prompt').replace(/[^a-z0-9-_]/gi, '_')}.txt`;
+                    document.body.appendChild(a);
+                    a.click();
+                    a.remove();
+                    URL.revokeObjectURL(url);
+                  }}
+                  style={{ height: 36, borderRadius: 8, padding: "0 10px" }}
+                >
+                  Export
+                </button>
+
+                <a
+                  href={
+                    "https://chat.openai.com/" +
+                    (renderedPrompt ? "?input=" + encodeURIComponent(renderedPrompt) : "")
+                  }
+                  target="_blank"
+                  rel="noreferrer"
+                  style={{ height: 36, display: "inline-flex", alignItems: "center", padding: "0 10px", borderRadius: 8, background: "#fff" }}
+                >
+                  Open Chat
+                </a>
                
               </div>
             </div>

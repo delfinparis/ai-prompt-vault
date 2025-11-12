@@ -45,3 +45,29 @@ You can learn more in the [Create React App documentation](https://facebook.gith
 
 To learn React, check out the [React documentation](https://reactjs.org/).
 # ai-prompt-vault
+
+## Deployment
+
+This project is intended to be deployed to a static hosting provider that supports Create React App builds. If your repository is connected to Vercel via the Vercel dashboard (Git integration), you don't need any extra GitHub Actions for basic deploys — Vercel will build PR previews and production deployments automatically.
+
+Recommended workflow (what we use):
+
+- Keep Vercel's Git integration enabled for branch/PR previews and production builds.
+- Use the existing GitHub Actions CI (`.github/workflows/ci.yml`) to run tests on PRs and pushes. Protect the `main` branch so merges require passing CI.
+- If you want GitHub Actions to *trigger* production deploys instead of Vercel's auto-deploy, add a deploy workflow and set the repository secrets `VERCEL_TOKEN`, `VERCEL_ORG_ID`, and `VERCEL_PROJECT_ID` (not required for normal Vercel Git integration).
+
+To test locally:
+
+1. Start the dev server:
+```bash
+npm install
+npm start
+```
+
+2. To emulate serverless functions (such as `api/variations.ts`) and the full Vercel routing, you can use the Vercel CLI:
+```bash
+npm install -g vercel
+vercel dev
+```
+
+If you'd like, I can add a short PR template or a contributing note that outlines adding Vercel environment variables (e.g., `OPENAI_API_KEY`) for deploy-time features.
