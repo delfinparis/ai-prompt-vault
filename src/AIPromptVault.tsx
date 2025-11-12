@@ -1378,7 +1378,7 @@ export default function AIPromptVault() {
                   Welcome to AI Prompt Vault
                 </h2>
                 <p style={{ fontSize: 16, color: "var(--muted)", lineHeight: 1.6, marginBottom: 32 }}>
-                  120 AI prompts designed specifically for real estate agents. Get instant marketing plans, social media content, and lead generation strategies.
+                  AI prompts designed specifically for real estate agents. Get instant marketing plans, social media content, and lead generation strategies — with new prompts added daily.
                 </p>
                 <button
                   onClick={() => setOnboardingStep(1)}
