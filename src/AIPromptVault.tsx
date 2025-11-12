@@ -18,6 +18,13 @@ const KEY_COLLECTIONS = "rpv:collections";
 const KEY_CUSTOM_PROMPTS = "rpv:customPrompts";
 const KEY_SEQUENCES = "rpv:sequences";
 const KEY_SESSION_HISTORY = "rpv:sessionHistory";
+// const KEY_GENERATIONS = "rpv:generations"; // Reserved for future use
+const KEY_GENERATION_COUNT = "rpv:generationCount";
+const KEY_SAVED_OUTPUTS = "rpv:savedOutputs";
+
+// Free tier limits
+// const FREE_PROMPTS_PER_MONTH = 10; // Reserved for future paywall
+const FREE_GENERATIONS_PER_MONTH = 3;
 
 // Module names (descriptive, not numbered)
 const MODULE_NAMES: Record<number, string> = {
@@ -78,6 +85,16 @@ interface SuggestionMeta {
   percentage?: number;
 }
 
+interface GeneratedOutput {
+  id: string;
+  promptId: string;
+  promptTitle: string;
+  input: string;
+  output: string;
+  timestamp: number;
+  model: string;
+}
+
 /* ---------- Tracking ---------- */
 const trackEvent = (name: string, data?: Record<string, any>) => {
   try {
@@ -131,6 +148,13 @@ export default function AIPromptVault() {
   // Sequence tracking state
   const [sequences, setSequences] = useState<SequenceData>({ pairs: {}, totalSequences: 0 });
   const [sessionHistory, setSessionHistory] = useState<SessionCopy[]>([]);
+  
+  // AI Generation state
+  const [generationCount, setGenerationCount] = useState<number>(0);
+  const [isGenerating, setIsGenerating] = useState<boolean>(false);
+  const [generatedOutput, setGeneratedOutput] = useState<string | null>(null);
+  const [savedOutputs, setSavedOutputs] = useState<GeneratedOutput[]>([]);
+  const [showUpgradeModal, setShowUpgradeModal] = useState<boolean>(false);
   
   // Detect Kale branding from URL parameter
   const isKaleBranded = useMemo(() => {
@@ -216,6 +240,28 @@ export default function AIPromptVault() {
         const recentHistory = history.filter(h => h.timestamp > thirtyMinsAgo);
         setSessionHistory(recentHistory);
         localStorage.setItem(KEY_SESSION_HISTORY, JSON.stringify(recentHistory));
+      }
+      
+      // Load generation count and reset monthly
+      const savedGenCount = localStorage.getItem(KEY_GENERATION_COUNT);
+      if (savedGenCount) {
+        const data = JSON.parse(savedGenCount);
+        const now = new Date();
+        const savedDate = new Date(data.month);
+        
+        // Reset if it's a new month
+        if (now.getMonth() !== savedDate.getMonth() || now.getFullYear() !== savedDate.getFullYear()) {
+          setGenerationCount(0);
+          localStorage.setItem(KEY_GENERATION_COUNT, JSON.stringify({ count: 0, month: now.toISOString() }));
+        } else {
+          setGenerationCount(data.count || 0);
+        }
+      }
+      
+      // Load saved outputs
+      const savedOutputsData = localStorage.getItem(KEY_SAVED_OUTPUTS);
+      if (savedOutputsData) {
+        setSavedOutputs(JSON.parse(savedOutputsData));
       }
       
       // Check if user has seen onboarding
@@ -592,6 +638,89 @@ export default function AIPromptVault() {
     URL.revokeObjectURL(url);
     
     trackEvent("prompt_exported", { title: prompt.title, module: prompt.module });
+  };
+
+  // Generate AI output
+  const handleGenerate = async (prompt: PromptItem) => {
+    // Check usage limits (free tier)
+    if (generationCount >= FREE_GENERATIONS_PER_MONTH) {
+      setShowUpgradeModal(true);
+      trackEvent("generation_limit_hit", { count: generationCount });
+      return;
+    }
+
+    setIsGenerating(true);
+    setGeneratedOutput(null);
+
+    try {
+      const fullText = buildFullPrompt(prompt);
+      const finalText = applyReplacements(fullText, fieldValues);
+
+      // Call our serverless function
+      const response = await fetch('/api/generate', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          prompt: finalText,
+          userId: 'free-user', // You'll replace this with actual user ID later
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Generation failed');
+      }
+
+      const data = await response.json();
+      setGeneratedOutput(data.output);
+
+      // Increment generation count
+      const newCount = generationCount + 1;
+      setGenerationCount(newCount);
+      localStorage.setItem(
+        KEY_GENERATION_COUNT,
+        JSON.stringify({ count: newCount, month: new Date().toISOString() })
+      );
+
+      // Save to outputs history
+      const output: GeneratedOutput = {
+        id: `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
+        promptId: (prompt as any).id,
+        promptTitle: prompt.title,
+        input: finalText,
+        output: data.output,
+        timestamp: Date.now(),
+        model: data.model || 'gpt-4o-mini',
+      };
+
+      const newOutputs = [output, ...savedOutputs].slice(0, 50); // Keep last 50
+      setSavedOutputs(newOutputs);
+      localStorage.setItem(KEY_SAVED_OUTPUTS, JSON.stringify(newOutputs));
+
+      // Confetti on first generation
+      if (newCount === 1) {
+        confetti({
+          particleCount: 100,
+          spread: 70,
+          origin: { y: 0.6 },
+          colors: ['#2563eb', '#06b6d4', '#f59e0b', '#ec4899'],
+        });
+      }
+
+      trackEvent("generation_success", { 
+        promptTitle: prompt.title, 
+        count: newCount,
+        remainingFree: FREE_GENERATIONS_PER_MONTH - newCount 
+      });
+
+    } catch (error) {
+      console.error('Generation error:', error);
+      setGeneratedOutput('⚠️ Generation failed. Please try again.');
+      trackEvent("generation_error", { error: String(error) });
+    } finally {
+      setIsGenerating(false);
+    }
   };
 
   // Toggle favorite
@@ -1678,6 +1807,38 @@ export default function AIPromptVault() {
                     </button>
                     
                     <button
+                      onClick={() => handleGenerate(selectedPrompt)}
+                      disabled={isGenerating}
+                      style={{
+                        flex: 1,
+                        padding: "12px 24px",
+                        fontSize: 15,
+                        fontWeight: 600,
+                        color: "#fff",
+                        background: isGenerating 
+                          ? "#94a3b8" 
+                          : "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+                        border: "none",
+                        borderRadius: "var(--radius-sm)",
+                        cursor: isGenerating ? "not-allowed" : "pointer",
+                        transition: "all 160ms ease",
+                        opacity: isGenerating ? 0.7 : 1,
+                      }}
+                      onMouseEnter={(e) => {
+                        if (!isGenerating) {
+                          e.currentTarget.style.transform = "translateY(-1px)";
+                          e.currentTarget.style.boxShadow = "0 4px 12px rgba(102, 126, 234, 0.4)";
+                        }
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.transform = "translateY(0)";
+                        e.currentTarget.style.boxShadow = "none";
+                      }}
+                    >
+                      {isGenerating ? "⏳ Generating..." : `✨ Generate with AI (${FREE_GENERATIONS_PER_MONTH - generationCount} left)`}
+                    </button>
+                    
+                    <button
                       onClick={() => handleExport(selectedPrompt)}
                       style={{
                         padding: "12px 20px",
@@ -1750,6 +1911,80 @@ export default function AIPromptVault() {
               }
               return null;
             })()}
+
+            {/* AI Generated Output */}
+            {generatedOutput && (
+              <div style={{ marginTop: 20, marginBottom: 20 }}>
+                <div style={{ 
+                  display: "flex", 
+                  alignItems: "center", 
+                  gap: 8, 
+                  marginBottom: 12 
+                }}>
+                  <div style={{ 
+                    fontSize: 16, 
+                    fontWeight: 700, 
+                    color: "var(--text)" 
+                  }}>
+                    ✨ AI Generated Output
+                  </div>
+                  <button
+                    onClick={() => {
+                      navigator.clipboard.writeText(generatedOutput);
+                      setCopied(true);
+                      setTimeout(() => setCopied(false), 2000);
+                    }}
+                    style={{
+                      padding: "6px 12px",
+                      fontSize: 13,
+                      fontWeight: 600,
+                      color: "var(--text)",
+                      background: "var(--surface-hover)",
+                      border: "1px solid var(--border)",
+                      borderRadius: "var(--radius-sm)",
+                      cursor: "pointer",
+                    }}
+                  >
+                    📋 Copy Output
+                  </button>
+                  <button
+                    onClick={() => setGeneratedOutput(null)}
+                    style={{
+                      padding: "6px 12px",
+                      fontSize: 13,
+                      color: "var(--muted)",
+                      background: "transparent",
+                      border: "none",
+                      cursor: "pointer",
+                    }}
+                  >
+                    ✕ Clear
+                  </button>
+                </div>
+                <div style={{
+                  background: "linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%)",
+                  padding: 20,
+                  borderRadius: "var(--radius-sm)",
+                  border: "2px solid #667eea",
+                  fontSize: 14,
+                  lineHeight: 1.7,
+                  color: "var(--text)",
+                  whiteSpace: "pre-wrap",
+                  maxHeight: 400,
+                  overflowY: "auto",
+                }}>
+                  {generatedOutput}
+                </div>
+                <div style={{ 
+                  fontSize: 12, 
+                  color: "var(--muted)", 
+                  marginTop: 8,
+                  textAlign: "center"
+                }}>
+                  {generationCount} / {FREE_GENERATIONS_PER_MONTH} free generations used this month
+                </div>
+              </div>
+            )}
 
             {/* Keyboard shortcuts hint */}
             <div style={{ 
@@ -2468,6 +2703,138 @@ export default function AIPromptVault() {
               }}
             >
               Skip intro
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Upgrade Modal */}
+      {showUpgradeModal && (
+        <div style={{
+          position: "fixed",
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: "rgba(0, 0, 0, 0.7)",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          zIndex: 3000,
+          backdropFilter: "blur(4px)",
+        }}>
+          <div style={{
+            background: "linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)",
+            borderRadius: "24px",
+            padding: "48px",
+            maxWidth: "500px",
+            width: "90%",
+            boxShadow: "0 24px 64px rgba(0,0,0,0.3)",
+            border: "2px solid #667eea",
+            textAlign: "center",
+          }}>
+            <div style={{ fontSize: "48px", marginBottom: "16px" }}>✨</div>
+            <h2 style={{ 
+              fontSize: "28px", 
+              fontWeight: 700, 
+              marginBottom: "16px",
+              background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+              WebkitBackgroundClip: "text",
+              WebkitTextFillColor: "transparent",
+            }}>
+              Upgrade to Keep Generating
+            </h2>
+            <p style={{ 
+              fontSize: "16px", 
+              color: "#64748b", 
+              marginBottom: "32px",
+              lineHeight: "1.6",
+            }}>
+              You've used all <strong>3 free AI generations</strong> this month.<br />
+              Upgrade to Pro for unlimited prompts and <strong>100 AI generations per month</strong>.
+            </p>
+            
+            <div style={{
+              background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+              borderRadius: "16px",
+              padding: "24px",
+              marginBottom: "24px",
+              color: "white",
+            }}>
+              <div style={{ fontSize: "14px", opacity: 0.9, marginBottom: "8px" }}>Pro Plan</div>
+              <div style={{ fontSize: "42px", fontWeight: 700, marginBottom: "4px" }}>
+                $14.50<span style={{ fontSize: "20px", fontWeight: 400 }}>/month</span>
+              </div>
+              <div style={{ fontSize: "14px", opacity: 0.9, textDecoration: "line-through" }}>$29/month</div>
+              <div style={{ fontSize: "16px", fontWeight: 600, marginTop: "12px" }}>🎉 50% off first month</div>
+            </div>
+
+            <div style={{
+              textAlign: "left",
+              background: "#f8fafc",
+              borderRadius: "12px",
+              padding: "20px",
+              marginBottom: "32px",
+              fontSize: "14px",
+              lineHeight: "1.8",
+            }}>
+              <div style={{ marginBottom: "8px" }}>✓ <strong>100 AI generations</strong> per month</div>
+              <div style={{ marginBottom: "8px" }}>✓ <strong>Unlimited</strong> prompt access</div>
+              <div style={{ marginBottom: "8px" }}>✓ Save and export all outputs</div>
+              <div>✓ Smart workflow suggestions</div>
+            </div>
+
+            <button
+              onClick={() => {
+                trackEvent("upgrade_modal_clicked", { source: "ai_limit" });
+                window.open("https://buy.stripe.com/test_your_link_here", "_blank");
+              }}
+              style={{
+                width: "100%",
+                padding: "16px 32px",
+                background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+                color: "white",
+                border: "none",
+                borderRadius: "12px",
+                fontSize: "16px",
+                fontWeight: 700,
+                cursor: "pointer",
+                marginBottom: "12px",
+                transition: "transform 150ms ease, box-shadow 150ms ease",
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.transform = "translateY(-2px)";
+                e.currentTarget.style.boxShadow = "0 8px 24px rgba(102, 126, 234, 0.4)";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = "translateY(0)";
+                e.currentTarget.style.boxShadow = "none";
+              }}
+            >
+              Upgrade Now - Save 50%
+            </button>
+
+            <button
+              onClick={() => {
+                setShowUpgradeModal(false);
+                trackEvent("upgrade_modal_dismissed", { source: "ai_limit" });
+              }}
+              style={{
+                width: "100%",
+                padding: "16px 32px",
+                background: "transparent",
+                color: "#64748b",
+                border: "none",
+                borderRadius: "12px",
+                fontSize: "14px",
+                fontWeight: 600,
+                cursor: "pointer",
+                transition: "color 150ms ease",
+              }}
+              onMouseEnter={(e) => e.currentTarget.style.color = "#334155"}
+              onMouseLeave={(e) => e.currentTarget.style.color = "#64748b"}
+            >
+              Maybe Later
             </button>
           </div>
         </div>

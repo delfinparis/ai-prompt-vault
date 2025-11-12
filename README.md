@@ -1,73 +1,180 @@
-# Getting Started with Create React App
+# AI Prompt Vault
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+A curated library of AI prompts for real estate agents, featuring smart workflow tracking and direct AI generation.
 
-## Available Scripts
+## Features
 
-In the project directory, you can run:
+- 📚 **170+ Professional Prompts** - Organized by real estate workflows
+- ✨ **Direct AI Generation** - Generate content without leaving the platform
+- 🧠 **Smart Suggestions** - Learn your workflow patterns
+- 🎯 **Sequence Tracking** - Discover which prompts work best together
+- 💾 **Save Outputs** - Keep a library of your best AI-generated content
+- 🎨 **Beautiful UX** - Gradients, animations, and delightful interactions
 
-### `npm start`
+## Quick Start
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in the browser.
+### 1. Install Dependencies
 
-The page will reload if you make edits.\
-You will also see any lint errors in the console.
-
-### `npm test`
-
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
-
-### `npm run build`
-
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
-
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
-
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
-
-### `npm run eject`
-
-**Note: this is a one-way operation. Once you `eject`, you can’t go back!**
-
-If you aren’t satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
-
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you’re on your own.
-
-You don’t have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn’t feel obligated to use this feature. However we understand that this tool wouldn’t be useful if you couldn’t customize it when you are ready for it.
-
-## Learn More
-
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
-
-To learn React, check out the [React documentation](https://reactjs.org/).
-# ai-prompt-vault
-
-## Deployment
-
-This project is intended to be deployed to a static hosting provider that supports Create React App builds. If your repository is connected to Vercel via the Vercel dashboard (Git integration), you don't need any extra GitHub Actions for basic deploys — Vercel will build PR previews and production deployments automatically.
-
-Recommended workflow (what we use):
-
-- Keep Vercel's Git integration enabled for branch/PR previews and production builds.
-- Use the existing GitHub Actions CI (`.github/workflows/ci.yml`) to run tests on PRs and pushes. Protect the `main` branch so merges require passing CI.
-- If you want GitHub Actions to *trigger* production deploys instead of Vercel's auto-deploy, add a deploy workflow and set the repository secrets `VERCEL_TOKEN`, `VERCEL_ORG_ID`, and `VERCEL_PROJECT_ID` (not required for normal Vercel Git integration).
-
-To test locally:
-
-1. Start the dev server:
 ```bash
 npm install
+```
+
+### 2. Environment Variables
+
+Create a `.env.local` file in the root directory:
+
+```bash
+cp .env.local.example .env.local
+```
+
+Edit `.env.local` and add your OpenAI API key:
+
+```
+OPENAI_API_KEY=sk-proj-your-key-here
+```
+
+Get your API key from: https://platform.openai.com/api-keys
+
+### 3. Run Development Server
+
+```bash
 npm start
 ```
 
-2. To emulate serverless functions (such as `api/variations.ts`) and the full Vercel routing, you can use the Vercel CLI:
+Open [http://localhost:3000](http://localhost:3000) in your browser.
+
+### 4. Test Serverless Functions Locally
+
+To test the AI generation endpoint locally:
+
 ```bash
 npm install -g vercel
 vercel dev
 ```
 
-If you'd like, I can add a short PR template or a contributing note that outlines adding Vercel environment variables (e.g., `OPENAI_API_KEY`) for deploy-time features.
+### 5. Build for Production
+
+```bash
+npm run build
+```
+
+## Deployment
+
+### Vercel (Recommended)
+
+1. Push code to GitHub
+2. Connect repository to Vercel
+3. Add environment variable in Vercel dashboard:
+   - Go to **Project Settings → Environment Variables**
+   - Add `OPENAI_API_KEY` with your OpenAI key
+   - Scope: Production, Preview, Development
+4. Deploy!
+
+Vercel will automatically:
+- Build on every push to `main`
+- Create preview deployments for PRs
+- Run serverless functions in `/api` directory
+
+## Architecture
+
+- **Frontend**: React 19.2.0 + TypeScript 4.9.5
+- **AI Integration**: OpenAI API (gpt-4o-mini model)
+- **Serverless Functions**: Vercel serverless (`/api/generate.ts`)
+- **State Management**: React hooks + localStorage
+- **Styling**: Inline styles with CSS variables
+
+## Free Tier Limits
+
+- 10 prompt copies per month
+- 3 AI generations per month
+- Limits reset automatically on the 1st of each month
+
+## Pro Tier Features (Coming Soon)
+
+- 100 AI generations per month
+- Unlimited prompt access
+- Save and export all outputs
+- Team collaboration features
+- Priority support
+
+## Project Structure
+
+```
+/api
+  generate.ts          # OpenAI API proxy (serverless function)
+  variations.ts        # Prompt variation generator
+/src
+  AIPromptVault.tsx    # Main app component (2800+ lines)
+  prompts.ts           # Prompt library data (170+ prompts)
+  labelOverrides.ts    # Display name mappings
+  index.tsx            # App entry point
+/public
+  index.html           # HTML template
+```
+
+## Key Features Implementation
+
+### Sequence Tracking
+The app learns which prompts users commonly use together and suggests them as "next steps". See `SEQUENCE_TRACKING.md` for details.
+
+### AI Generation
+- Users can generate content directly in the app
+- Usage limits enforced (3 free generations/month)
+- Results saved to localStorage history
+- Copy/clear functionality
+
+### Smart Suggestions
+- ✨ Gold badges for strong sequences (3+ uses)
+- 📊 Blue badges for emerging patterns
+- Social proof messaging ("85% of agents use this next")
+
+## Development
+
+### Adding New Prompts
+
+Edit `src/prompts.ts` and add to the appropriate module array (M1-M12):
+
+```typescript
+{
+  title: "Your Prompt Title",
+  role: "Real estate marketing expert",
+  deliverable: "What you want generated",
+  inputs: [
+    { name: "[placeholder]", description: "What to fill in - example: Austin, TX" }
+  ],
+  // ... other fields
+}
+```
+
+### Changing Module Display Names
+
+Edit `MODULE_TITLES` in `src/AIPromptVault.tsx`.
+
+### Overriding Card Labels
+
+Edit `src/labelOverrides.ts` to map internal titles to user-facing labels.
+
+## Testing
+
+```bash
+npm test
+```
+
+## Contributing
+
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
+
+## License
+
+MIT
+
+## Learn More
+
+- [Create React App Documentation](https://facebook.github.io/create-react-app/docs/getting-started)
+- [React Documentation](https://reactjs.org/)
+- [Vercel Documentation](https://vercel.com/docs)
+- [OpenAI API Documentation](https://platform.openai.com/docs)
