@@ -194,6 +194,7 @@ export default function AIPromptVault() {
   const [renameModalId, setRenameModalId] = useState<string | null>(null);
   const [deleteModalId, setDeleteModalId] = useState<string | null>(null);
   const [modalInput, setModalInput] = useState("");
+  const [deploySha, setDeploySha] = useState<string | null>(null);
   const [copyCounts, setCopyCounts] = useState<Record<string, number>>({});
 
   const KEY_FAVORITES = "rpv:favorites";
@@ -985,6 +986,33 @@ export default function AIPromptVault() {
           Loading prompts…
         </p>
       )}
+
+      {/* Commit SHA footer */}
+      <div style={{ marginTop: 20, color: '#6b7280', fontSize: 12 }}>
+        <CommitFooter />
+      </div>
     </div>
   );
+}
+
+function CommitFooter() {
+  const [sha, setSha] = useState<string | null>(null);
+
+  useEffect(() => {
+    // Prefer build-time env var (set in Vercel: REACT_APP_COMMIT_SHA = VERCEL_GIT_COMMIT_SHA)
+    const envSha = process.env.REACT_APP_COMMIT_SHA || (window as any).__COMMIT__;
+    if (envSha) {
+      setSha(envSha);
+      return;
+    }
+
+    // Fallback: try to fetch public/commit.txt which we include during repo commits
+    fetch('/commit.txt')
+      .then((r) => r.text())
+      .then((t) => setSha(t.trim()))
+      .catch(() => setSha(null));
+  }, []);
+
+  if (!sha) return <div />;
+  return <div>Build: <strong style={{ fontFamily: 'monospace' }}>{sha}</strong></div>;
 }
