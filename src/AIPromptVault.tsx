@@ -532,7 +532,7 @@ export default function AIPromptVault() {
             right: 0,
             padding: "8px 12px",
             background: "transparent",
-            border: "2px solid rgba(15,23,42,0.1)",
+            border: "2px solid var(--border)",
             borderRadius: "var(--radius-sm)",
             cursor: "pointer",
             fontSize: 18,
@@ -917,7 +917,7 @@ export default function AIPromptVault() {
                   className="skeleton"
                   style={{
                     background: "var(--surface)",
-                    border: "1px solid rgba(15,23,42,0.08)",
+                    border: "1px solid var(--border)",
                     borderRadius: "var(--radius-md)",
                     padding: 20,
                     height: 160,
@@ -947,7 +947,7 @@ export default function AIPromptVault() {
                 className="prompt-card-v2"
                 style={{
                   background: "var(--surface)",
-                  border: `1px solid ${isHovered ? "var(--primary)" : "rgba(15,23,42,0.08)"}`,
+                  border: `1px solid ${isHovered ? "var(--primary)" : "var(--border)"}`,
                   borderRadius: "var(--radius-md)",
                   padding: 20,
                   cursor: "pointer",
@@ -965,7 +965,7 @@ export default function AIPromptVault() {
                     position: "absolute",
                     top: 12,
                     right: 12,
-                    background: "linear-gradient(135deg, #f97316 0%, #dc2626 100%)",
+                    background: "linear-gradient(135deg, var(--error) 0%, var(--warning) 100%)",
                     color: "var(--text-inverse)",
                     padding: "4px 10px",
                     borderRadius: "var(--radius-pill)",
