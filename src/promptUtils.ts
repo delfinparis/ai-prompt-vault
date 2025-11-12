@@ -29,7 +29,7 @@ export const buildFullPrompt = (p: PromptItem): string => {
   const audience = p.audience || "[buyer/seller/investor/agent type in [market]]";
   const inputs =
     p.inputs ||
-    "- KPIs = [list]\n- Tools = [list]\n- Timeline/Budget = [X]\n- Constraints = [plain, compliant language]";
+    "- KPIs = [your specific goals - example: 50 leads/month, 15% conversion rate, $200 cost per lead]\n- Tools = [the actual tools you use - example: Follow Up Boss, Canva, Facebook Ads Manager]\n- Timeline/Budget = [X]\n- Constraints = [plain, compliant language]";
   const deliverable = p.deliverable || "Bulleted steps + 1 table (fields relevant to this prompt).";
   const constraints = p.constraints || "≤ 400 words; use headings; avoid guarantees; fair-housing safe.";
   const quality = (p as any).quality || "Add ‘Why this works’ and 3 clarifying questions. Propose 2 ways to improve the first draft.";
@@ -124,6 +124,37 @@ export function extractPlaceholders(prompt: PromptItem): string[] {
 export function getPlaceholderHelp(placeholder: string): { description: string; example: string } {
   const lower = placeholder.toLowerCase();
   
+  // KPIs and Goals - super specific
+  if (lower.includes('kpi') || lower === 'list' || lower.includes('your specific goals')) {
+    return {
+      description: "Your measurable goals - be specific with numbers and timeframes",
+      example: "50 new leads per month, 15% conversion rate, $200 cost per lead, 3 closings per month"
+    };
+  }
+  
+  if (lower.includes('your goals') || lower.includes('goal metric')) {
+    return {
+      description: "What success looks like in numbers",
+      example: "Close 25 transactions this year, build a database of 500 contacts, generate 10 referrals per quarter"
+    };
+  }
+  
+  // Tools - with real tool names
+  if (lower.includes('tools') || lower.includes('the actual tools you use')) {
+    return {
+      description: "Name the specific software, platforms, or tools you actually use in your business",
+      example: "Follow Up Boss, Canva, Facebook Ads Manager, Zillow Premier Agent, BombBomb video email"
+    };
+  }
+  
+  // Lists - context-specific examples
+  if (lower === 'list') {
+    return {
+      description: "Your specific items - give real examples from your business",
+      example: "50 leads per month, 15% conversion, $200 cost per lead, 3 closings monthly"
+    };
+  }
+  
   // Specific multi-option fields (buyer/seller/investor, etc.)
   if (lower === 'buyer/seller/investor') {
     return {
@@ -134,143 +165,151 @@ export function getPlaceholderHelp(placeholder: string): { description: string; 
   
   if (lower === 'y') {
     return {
-      description: "What's your maximum cost per lead? (just the number)",
+      description: "Your maximum cost per lead (just the dollar amount, no $ sign needed)",
       example: "50"
     };
   }
   
   if (lower === 'x') {
     return {
-      description: "Enter a specific number or amount",
+      description: "Enter the specific number or amount",
       example: "10"
     };
   }
   
-  // Market/Location
+  // Market/Location - emphasize specificity
   if (lower.includes('market') || lower.includes('city') || lower.includes('area') || lower.includes('neighborhood')) {
     return {
-      description: "Your city or area (be specific - helps AI give local insights)",
-      example: "Austin, TX"
+      description: "Your specific city, neighborhood, or area - be as specific as possible so the AI understands your local market",
+      example: "South Austin, TX (78704 zip)" 
     };
   }
   
-  // Budget/Money
+  // Budget/Money - clear format
   if (lower.includes('$') || lower.includes('budget') || lower.includes('price') || lower.includes('cost')) {
     return {
-      description: "Dollar amount (no need for $ symbol)",
+      description: "Dollar amount (you can skip the $ symbol)",
       example: "5000"
     };
   }
   
-  // Timeline/Date
+  // Timeline/Date - with realistic realtor timeframes
   if (lower.includes('timeline') || lower.includes('date') || lower.includes('deadline') || lower.includes('day')) {
     return {
-      description: "How much time? (e.g., 30 days, 90 days, 6 months)",
-      example: "30 days"
+      description: "How long do you have? Use realistic timeframes for real estate",
+      example: "30 days" 
     };
   }
   
-  // Channel/Platform
+  // Channel/Platform - specific options
   if (lower.includes('channel') || lower.includes('platform')) {
     return {
-      description: "Which marketing channel? (pick ONE: Facebook Ads, Google Ads, Instagram, YouTube, Email, etc.)",
+      description: "Which ONE marketing channel will you focus on? (pick your primary channel)",
       example: "Facebook Ads"
     };
   }
   
   if (lower.includes('social')) {
     return {
-      description: "Which social platform? (Instagram, Facebook, TikTok, LinkedIn, etc.)",
+      description: "Which ONE social platform is your main focus?",
       example: "Instagram"
     };
   }
   
-  // Niche/Type
+  // Niche/Type - encourage specificity
   if (lower.includes('niche') || lower.includes('type') || lower.includes('persona')) {
     return {
-      description: "Who specifically? (be narrow: luxury buyers, first-timers, downsizers, etc.)",
-      example: "first-time buyers"
+      description: "Get specific! The narrower your target, the better the AI's suggestions",
+      example: "first-time homebuyers under 35 with $300k budget"
     };
   }
   
   // Buyer/Seller/Investor
   if (lower.includes('buyer') || lower.includes('seller') || lower.includes('investor')) {
     return {
-      description: "Pick ONE: buyers, sellers, or investors",
+      description: "Pick ONE: buyers, sellers, or investors (stay focused on one audience)",
       example: "buyers"
     };
   }
   
-  // Strategy/Method
+  // Strategy/Method - real prospecting methods
   if (lower.includes('strategy') || lower.includes('method') || lower.includes('approach')) {
     return {
-      description: "What's your approach? (cold calling, door knocking, content, etc.)",
-      example: "cold calling"
+      description: "What's your main lead generation or prospecting method?",
+      example: "door knocking in my farm area"
     };
   }
   
-  // Goal/Target
+  // Goal/Target - super concrete
   if (lower.includes('goal') || lower.includes('target') || lower.includes('objective')) {
     return {
-      description: "What's the specific number you want to hit?",
-      example: "50 leads per month"
+      description: "Your specific, measurable target - include the number and timeframe",
+      example: "50 qualified leads per month"
     };
   }
   
-  // Skill/Topic
+  // Skill/Topic - real skills
   if (lower.includes('skill') || lower.includes('topic') || lower.includes('subject')) {
     return {
-      description: "What skill or topic? (be specific)",
-      example: "objection handling"
+      description: "What specific skill do you want to improve?",
+      example: "handling price objections on listing appointments"
     };
   }
   
   // Number/Quantity
   if (lower.includes('#') || lower.includes('number') || lower.includes('count')) {
     return {
-      description: "Just enter the number",
+      description: "Just the number (no extra words)",
       example: "5"
     };
   }
   
-  // Tool/Platform
+  // Tool/Platform - CRM emphasis
   if (lower.includes('tool') || lower.includes('crm') || lower.includes('software')) {
     return {
-      description: "Which tool/software? (the one you actually use)",
+      description: "Name the actual tool/software you use (or want to use)",
       example: "Follow Up Boss"
     };
   }
   
-  // Property specific
+  // Property specific - realistic descriptions
   if (lower.includes('property') || lower.includes('listing') || lower.includes('home')) {
     return {
-      description: "Property type/details (3bd/2ba, luxury condo, etc.)",
-      example: "3bd/2ba single-family"
+      description: "Describe the property type and key features",
+      example: "3bd/2ba single-family home, 1,800 sqft, built 2015"
     };
   }
   
-  // Scenario/Situation
+  // Scenario/Situation - real deal situations
   if (lower.includes('scenario') || lower.includes('situation') || lower.includes('case')) {
     return {
-      description: "Describe the situation in plain English",
-      example: "appraisal came in low"
+      description: "Describe the specific situation you're dealing with in plain English",
+      example: "appraisal came in $15k low and seller won't budge on price"
     };
   }
   
   // URL/Link
   if (lower.includes('url') || lower.includes('link') || lower.includes('website')) {
     return {
-      description: "Full website URL (include www or https)",
-      example: "www.yoursite.com"
+      description: "Your full website URL (include https:// or www)",
+      example: "www.yourrealtorsite.com"
     };
   }
   
-  // General fallback - extract the actual placeholder content and make it actionable
+  // General fallback - much improved with context
   const cleanPlaceholder = placeholder.replace(/[[\]]/g, '').trim();
   
+  // Smart fallback based on common patterns
+  if (cleanPlaceholder.length < 15) {
+    return {
+      description: `Describe your ${cleanPlaceholder} - be specific with real examples from your business`,
+      example: cleanPlaceholder.includes('/') ? cleanPlaceholder.split('/')[0].trim() : `your ${cleanPlaceholder}`
+    };
+  }
+  
   return {
-    description: `Enter your ${cleanPlaceholder} (be specific)`,
-    example: cleanPlaceholder.split('/')[0].trim()
+    description: `${cleanPlaceholder} - use specific details from your actual business`,
+    example: "Example: your specific situation or details"
   };
 }
 
