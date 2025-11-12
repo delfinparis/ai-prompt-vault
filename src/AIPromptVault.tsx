@@ -9,6 +9,7 @@ const KEY_FAVORITES = "rpv:favorites";
 const KEY_COUNTS = "rpv:copyCounts";
 const KEY_RECENT = "rpv:recentCopied";
 const KEY_SAVED_FIELDS = "rpv:savedFields";
+const KEY_ONBOARDED = "rpv:onboarded";
 
 // Module names (descriptive, not numbered)
 const MODULE_NAMES: Record<number, string> = {
@@ -63,6 +64,8 @@ export default function AIPromptVault() {
   const [hoveredCard, setHoveredCard] = useState<string | null>(null);
   const [showFavoritesView, setShowFavoritesView] = useState<boolean>(false);
   const [currentFieldIndex, setCurrentFieldIndex] = useState<number>(0);
+  const [showOnboarding, setShowOnboarding] = useState<boolean>(false);
+  const [onboardingStep, setOnboardingStep] = useState<number>(0);
   const searchInputRef = React.useRef<HTMLInputElement>(null);
   const fieldInputRef = React.useRef<HTMLInputElement>(null);
 
@@ -96,6 +99,12 @@ export default function AIPromptVault() {
       
       const savedFields = localStorage.getItem(KEY_SAVED_FIELDS);
       if (savedFields) setSavedFieldValues(JSON.parse(savedFields));
+      
+      // Check if user has seen onboarding
+      const hasOnboarded = localStorage.getItem(KEY_ONBOARDED);
+      if (!hasOnboarded) {
+        setShowOnboarding(true);
+      }
     } catch {}
   }, []);
 
@@ -1218,6 +1227,268 @@ export default function AIPromptVault() {
             >
               Open Claude →
             </a>
+          </div>
+        </div>
+      )}
+
+      {/* Onboarding Modal */}
+      {showOnboarding && (
+        <div
+          style={{
+            position: "fixed",
+            inset: 0,
+            background: "rgba(0,0,0,0.75)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 2000,
+            padding: 20,
+          }}
+        >
+          <div
+            style={{
+              background: "#fff",
+              borderRadius: "var(--radius-md)",
+              maxWidth: 540,
+              width: "100%",
+              padding: 40,
+              textAlign: "center",
+              animation: "slideUp 300ms ease-out",
+            }}
+          >
+            {onboardingStep === 0 && (
+              <>
+                <div style={{ fontSize: 48, marginBottom: 16 }}>🏡</div>
+                <h2 style={{ fontSize: 26, fontWeight: 800, marginBottom: 12, color: "var(--text)" }}>
+                  Welcome to AI Prompt Vault
+                </h2>
+                <p style={{ fontSize: 16, color: "var(--muted)", lineHeight: 1.6, marginBottom: 32 }}>
+                  120 AI prompts designed specifically for real estate agents. Get instant marketing plans, social media content, and lead generation strategies.
+                </p>
+                <button
+                  onClick={() => setOnboardingStep(1)}
+                  style={{
+                    width: "100%",
+                    padding: "14px 24px",
+                    background: "var(--primary)",
+                    color: "#fff",
+                    border: "none",
+                    borderRadius: "var(--radius-sm)",
+                    fontSize: 16,
+                    fontWeight: 600,
+                    cursor: "pointer",
+                  }}
+                >
+                  Let's Go →
+                </button>
+              </>
+            )}
+
+            {onboardingStep === 1 && (
+              <>
+                <div style={{ fontSize: 48, marginBottom: 16 }}>⚡</div>
+                <h2 style={{ fontSize: 26, fontWeight: 800, marginBottom: 12, color: "var(--text)" }}>
+                  How It Works
+                </h2>
+                <div style={{ textAlign: "left", marginBottom: 32 }}>
+                  <div style={{ display: "flex", gap: 16, marginBottom: 20 }}>
+                    <div style={{ 
+                      minWidth: 32, 
+                      height: 32, 
+                      borderRadius: "50%", 
+                      background: "#dbeafe", 
+                      color: "var(--primary)", 
+                      display: "flex", 
+                      alignItems: "center", 
+                      justifyContent: "center",
+                      fontWeight: 700,
+                      fontSize: 14,
+                    }}>1</div>
+                    <div>
+                      <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 4, color: "var(--text)" }}>Search or browse</h3>
+                      <p style={{ fontSize: 14, color: "var(--muted)", lineHeight: 1.5 }}>
+                        Find the perfect prompt for your task
+                      </p>
+                    </div>
+                  </div>
+                  <div style={{ display: "flex", gap: 16, marginBottom: 20 }}>
+                    <div style={{ 
+                      minWidth: 32, 
+                      height: 32, 
+                      borderRadius: "50%", 
+                      background: "#dbeafe", 
+                      color: "var(--primary)", 
+                      display: "flex", 
+                      alignItems: "center", 
+                      justifyContent: "center",
+                      fontWeight: 700,
+                      fontSize: 14,
+                    }}>2</div>
+                    <div>
+                      <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 4, color: "var(--text)" }}>Personalize it</h3>
+                      <p style={{ fontSize: 14, color: "var(--muted)", lineHeight: 1.5 }}>
+                        Fill in your city, niche, and details (saved for next time!)
+                      </p>
+                    </div>
+                  </div>
+                  <div style={{ display: "flex", gap: 16 }}>
+                    <div style={{ 
+                      minWidth: 32, 
+                      height: 32, 
+                      borderRadius: "50%", 
+                      background: "#dbeafe", 
+                      color: "var(--primary)", 
+                      display: "flex", 
+                      alignItems: "center", 
+                      justifyContent: "center",
+                      fontWeight: 700,
+                      fontSize: 14,
+                    }}>3</div>
+                    <div>
+                      <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 4, color: "var(--text)" }}>Paste into AI</h3>
+                      <p style={{ fontSize: 14, color: "var(--muted)", lineHeight: 1.5 }}>
+                        Use it in ChatGPT or Claude and get results in seconds
+                      </p>
+                    </div>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setOnboardingStep(2)}
+                  style={{
+                    width: "100%",
+                    padding: "14px 24px",
+                    background: "var(--primary)",
+                    color: "#fff",
+                    border: "none",
+                    borderRadius: "var(--radius-sm)",
+                    fontSize: 16,
+                    fontWeight: 600,
+                    cursor: "pointer",
+                  }}
+                >
+                  Next →
+                </button>
+              </>
+            )}
+
+            {onboardingStep === 2 && (
+              <>
+                <div style={{ fontSize: 48, marginBottom: 16 }}>🚀</div>
+                <h2 style={{ fontSize: 26, fontWeight: 800, marginBottom: 12, color: "var(--text)" }}>
+                  Start with a Popular Prompt
+                </h2>
+                <p style={{ fontSize: 16, color: "var(--muted)", lineHeight: 1.6, marginBottom: 24 }}>
+                  Try one of these to get started:
+                </p>
+                <div style={{ display: "flex", flexDirection: "column", gap: 12, marginBottom: 32 }}>
+                  <button
+                    onClick={() => {
+                      const prompt = allPrompts.find(p => p.title === "90-Day Inbound Lead Blueprint");
+                      if (prompt) {
+                        setShowOnboarding(false);
+                        localStorage.setItem(KEY_ONBOARDED, "true");
+                        setSelectedPrompt(prompt);
+                      }
+                    }}
+                    style={{
+                      padding: "12px 16px",
+                      background: "#f8fafc",
+                      border: "2px solid #e5e7eb",
+                      borderRadius: "var(--radius-sm)",
+                      fontSize: 15,
+                      fontWeight: 600,
+                      cursor: "pointer",
+                      textAlign: "left",
+                      color: "var(--text)",
+                    }}
+                  >
+                    📈 90-Day Marketing Plan
+                  </button>
+                  <button
+                    onClick={() => {
+                      const prompt = allPrompts.find(p => p.title === "Instagram Reels 30-Day Calendar");
+                      if (prompt) {
+                        setShowOnboarding(false);
+                        localStorage.setItem(KEY_ONBOARDED, "true");
+                        setSelectedPrompt(prompt);
+                      }
+                    }}
+                    style={{
+                      padding: "12px 16px",
+                      background: "#f8fafc",
+                      border: "2px solid #e5e7eb",
+                      borderRadius: "var(--radius-sm)",
+                      fontSize: 15,
+                      fontWeight: 600,
+                      cursor: "pointer",
+                      textAlign: "left",
+                      color: "var(--text)",
+                    }}
+                  >
+                    📱 30 Days of Social Media Content
+                  </button>
+                  <button
+                    onClick={() => {
+                      const prompt = allPrompts.find(p => p.title === "Listing Description (AI-Enhanced)");
+                      if (prompt) {
+                        setShowOnboarding(false);
+                        localStorage.setItem(KEY_ONBOARDED, "true");
+                        setSelectedPrompt(prompt);
+                      }
+                    }}
+                    style={{
+                      padding: "12px 16px",
+                      background: "#f8fafc",
+                      border: "2px solid #e5e7eb",
+                      borderRadius: "var(--radius-sm)",
+                      fontSize: 15,
+                      fontWeight: 600,
+                      cursor: "pointer",
+                      textAlign: "left",
+                      color: "var(--text)",
+                    }}
+                  >
+                    ✍️ Write a Listing Description
+                  </button>
+                </div>
+                <button
+                  onClick={() => {
+                    setShowOnboarding(false);
+                    localStorage.setItem(KEY_ONBOARDED, "true");
+                  }}
+                  style={{
+                    width: "100%",
+                    padding: "14px 24px",
+                    background: "var(--primary)",
+                    color: "#fff",
+                    border: "none",
+                    borderRadius: "var(--radius-sm)",
+                    fontSize: 16,
+                    fontWeight: 600,
+                    cursor: "pointer",
+                  }}
+                >
+                  Browse All Prompts
+                </button>
+              </>
+            )}
+
+            <button
+              onClick={() => {
+                setShowOnboarding(false);
+                localStorage.setItem(KEY_ONBOARDED, "true");
+              }}
+              style={{
+                marginTop: 16,
+                background: "transparent",
+                border: "none",
+                color: "var(--muted)",
+                fontSize: 13,
+                cursor: "pointer",
+              }}
+            >
+              Skip intro
+            </button>
           </div>
         </div>
       )}
