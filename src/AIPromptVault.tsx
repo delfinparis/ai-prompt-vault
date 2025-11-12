@@ -71,6 +71,13 @@ interface SequenceData {
   totalSequences: number;
 }
 
+interface SuggestionMeta {
+  prompt: PromptItem;
+  source: 'sequence' | 'tag' | 'module';
+  sequenceCount?: number;
+  percentage?: number;
+}
+
 /* ---------- Tracking ---------- */
 const trackEvent = (name: string, data?: Record<string, any>) => {
   try {
@@ -111,6 +118,7 @@ export default function AIPromptVault() {
   const [onboardingStep, setOnboardingStep] = useState<number>(0);
   const [showFollowUps, setShowFollowUps] = useState<boolean>(false);
   const [followUpPrompts, setFollowUpPrompts] = useState<PromptItem[]>([]);
+  const [followUpMeta, setFollowUpMeta] = useState<SuggestionMeta[]>([]);
   const [lastUpdated, setLastUpdated] = useState<string | null>(null);
   const [darkMode, setDarkMode] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(true);
@@ -409,18 +417,80 @@ export default function AIPromptVault() {
     });
   };
 
-  // Get top sequence suggestions for a given prompt
-  const getSequenceSuggestions = (promptId: string, limit: number = 3): PromptItem[] => {
-    // Find all pairs where this prompt was the "from"
+  // Get enhanced suggestions with metadata
+  const getEnhancedSuggestions = (promptId: string, limit: number = 3): SuggestionMeta[] => {
+    const suggestions: SuggestionMeta[] = [];
+    
+    // Priority 1: Sequence-based suggestions
     const relevantPairs = Object.values(sequences.pairs)
       .filter(pair => pair.from === promptId)
-      .sort((a, b) => b.count - a.count) // Sort by frequency
-      .slice(0, limit);
+      .sort((a, b) => b.count - a.count);
     
-    // Convert to actual prompts
-    return relevantPairs
-      .map(pair => allPrompts.find((p: any) => p.id === pair.to))
-      .filter(Boolean) as PromptItem[];
+    // Calculate total uses of this source prompt (for percentages)
+    const totalUsesFromThisPrompt = relevantPairs.reduce((sum, pair) => sum + pair.count, 0);
+    
+    for (const pair of relevantPairs.slice(0, limit)) {
+      const prompt = allPrompts.find((p: any) => p.id === pair.to);
+      if (prompt) {
+        const percentage = totalUsesFromThisPrompt > 0 
+          ? Math.round((pair.count / totalUsesFromThisPrompt) * 100)
+          : 0;
+        
+        suggestions.push({
+          prompt,
+          source: 'sequence',
+          sequenceCount: pair.count,
+          percentage
+        });
+      }
+    }
+    
+    // If we need more suggestions, fall back to tag/module matching
+    if (suggestions.length < limit) {
+      const currentPrompt = allPrompts.find((p: any) => p.id === promptId);
+      if (currentPrompt) {
+        const promptTags = (currentPrompt as any).tags || [];
+        const promptModule = currentPrompt.module;
+        
+        const tagMatches = allPrompts
+          .filter((p: any) => {
+            if (p.id === promptId) return false;
+            if (suggestions.some(s => (s.prompt as any).id === p.id)) return false; // Don't duplicate
+            
+            const pTags = p.tags || [];
+            const hasCommonTag = promptTags.some((tag: string) => pTags.includes(tag));
+            return hasCommonTag;
+          })
+          .slice(0, limit - suggestions.length);
+        
+        for (const prompt of tagMatches) {
+          suggestions.push({
+            prompt,
+            source: 'tag'
+          });
+        }
+        
+        // Fill remaining with module matches
+        if (suggestions.length < limit) {
+          const moduleMatches = allPrompts
+            .filter((p: any) => {
+              if (p.id === promptId) return false;
+              if (suggestions.some(s => (s.prompt as any).id === p.id)) return false;
+              return p.module === promptModule;
+            })
+            .slice(0, limit - suggestions.length);
+          
+          for (const prompt of moduleMatches) {
+            suggestions.push({
+              prompt,
+              source: 'module'
+            });
+          }
+        }
+      }
+    }
+    
+    return suggestions.slice(0, limit);
   };
 
   // Copy handler
@@ -468,31 +538,11 @@ export default function AIPromptVault() {
       setSessionHistory(updatedSessionHistory);
       localStorage.setItem(KEY_SESSION_HISTORY, JSON.stringify(updatedSessionHistory));
       
-      // Generate follow-up suggestions based on sequences first, then tags/module
-      let suggestions: any[] = [];
+      // Generate enhanced follow-up suggestions with metadata
+      const enhancedSuggestions = getEnhancedSuggestions(id, 3);
       
-      // Priority 1: Get learned sequence suggestions
-      const learnedSuggestions = getSequenceSuggestions(id, 3);
-      if (learnedSuggestions.length > 0) {
-        suggestions = learnedSuggestions;
-      } else {
-        // Priority 2: Fallback to tag/module matching
-        const promptTags = (prompt as any).tags || [];
-        const promptModule = prompt.module;
-        
-        suggestions = allPrompts
-          .filter((p: any) => {
-            if (p.id === id) return false; // Don't suggest the same prompt
-            // Match by tags or same module
-            const pTags = p.tags || [];
-            const hasCommonTag = promptTags.some((tag: string) => pTags.includes(tag));
-            const sameModule = p.module === promptModule;
-            return hasCommonTag || sameModule;
-          })
-          .slice(0, 3); // Take top 3
-      }
-      
-      setFollowUpPrompts(suggestions);
+      setFollowUpMeta(enhancedSuggestions);
+      setFollowUpPrompts(enhancedSuggestions.map(s => s.prompt));
       setShowFollowUps(true);
       
       // Check if this is the user's first copy ever
@@ -2013,57 +2063,99 @@ export default function AIPromptVault() {
             </div>
             
             <div style={{ display: "flex", flexDirection: "column", gap: 12, marginBottom: 20 }}>
-              {followUpPrompts.map((prompt: any, idx: number) => (
-                <button
-                  key={prompt.id}
-                  onClick={() => {
-                    setShowFollowUps(false);
-                    setSelectedPrompt(prompt);
-                  }}
-                  style={{
-                    padding: "16px",
-                    background: "var(--surface-hover)",
-                    border: "2px solid var(--border)",
-                    borderRadius: "var(--radius-sm)",
-                    textAlign: "left",
-                    cursor: "pointer",
-                    transition: "all 160ms ease",
-                    position: "relative",
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.background = "var(--surface-hover)";
-                    e.currentTarget.style.borderColor = "var(--primary)";
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.background = "var(--surface)";
-                    e.currentTarget.style.borderColor = "#e5e7eb";
-                  }}
-                >
-                  <div style={{ 
-                    position: "absolute", 
-                    top: 8, 
-                    right: 8, 
-                    background: "var(--primary)",
-                    color: "var(--text-inverse)",
-                    width: 24,
-                    height: 24,
-                    borderRadius: "50%",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    fontSize: 11,
-                    fontWeight: 700,
-                  }}>
-                    {idx + 1}
-                  </div>
-                  <div style={{ fontSize: 15, fontWeight: 600, marginBottom: 4, color: "var(--text)", paddingRight: 30 }}>
-                    {prompt.title}
-                  </div>
-                  <div style={{ fontSize: 13, color: "var(--muted)", lineHeight: 1.4 }}>
-                    {prompt.role.slice(0, 100)}{prompt.role.length > 100 ? "..." : ""}
-                  </div>
-                </button>
-              ))}
+              {followUpMeta.map((meta, idx: number) => {
+                const prompt = meta.prompt;
+                const isSequence = meta.source === 'sequence';
+                const isTag = meta.source === 'tag';
+                
+                // Determine badge content
+                let badge = '';
+                let badgeColor = '';
+                let subtext = '';
+                
+                if (isSequence && meta.sequenceCount && meta.sequenceCount >= 3) {
+                  badge = '✨';
+                  badgeColor = '#f59e0b';
+                  const percentage = meta.percentage || 0;
+                  subtext = percentage > 60 
+                    ? `${percentage}% of agents use this next (${meta.sequenceCount}x)`
+                    : `Strong pattern (used ${meta.sequenceCount}x after this)`;
+                } else if (isSequence) {
+                  badge = '📊';
+                  badgeColor = '#3b82f6';
+                  subtext = `Emerging pattern (${meta.sequenceCount || 0}x)`;
+                } else if (isTag) {
+                  badge = '🏷️';
+                  badgeColor = '#6b7280';
+                  subtext = 'Related by category';
+                } else {
+                  badge = '📂';
+                  badgeColor = '#6b7280';
+                  subtext = 'Same module';
+                }
+                
+                return (
+                  <button
+                    key={(prompt as any).id}
+                    onClick={() => {
+                      setShowFollowUps(false);
+                      setSelectedPrompt(prompt);
+                    }}
+                    style={{
+                      padding: "16px",
+                      background: isSequence ? "linear-gradient(135deg, var(--surface) 0%, var(--surface-hover) 100%)" : "var(--surface)",
+                      border: isSequence ? "2px solid var(--primary)" : "2px solid var(--border)",
+                      borderRadius: "var(--radius-sm)",
+                      textAlign: "left",
+                      cursor: "pointer",
+                      transition: "all 160ms ease",
+                      position: "relative",
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.transform = "translateY(-2px)";
+                      e.currentTarget.style.boxShadow = "0 4px 12px rgba(0,0,0,0.1)";
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.transform = "translateY(0)";
+                      e.currentTarget.style.boxShadow = "none";
+                    }}
+                  >
+                    <div style={{ 
+                      position: "absolute", 
+                      top: 8, 
+                      right: 8, 
+                      background: isSequence ? badgeColor : "var(--muted-bg)",
+                      color: "white",
+                      fontSize: 16,
+                      width: 28,
+                      height: 28,
+                      borderRadius: "50%",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      boxShadow: isSequence ? "0 2px 8px rgba(0,0,0,0.15)" : "none"
+                    }}>
+                      {badge}
+                    </div>
+                    <div style={{ fontSize: 15, fontWeight: 600, marginBottom: 4, color: "var(--text)", paddingRight: 36 }}>
+                      {prompt.title}
+                    </div>
+                    {subtext && (
+                      <div style={{ 
+                        fontSize: 12, 
+                        color: isSequence ? "var(--primary)" : "var(--muted)", 
+                        marginBottom: 6,
+                        fontWeight: isSequence ? 600 : 400
+                      }}>
+                        {subtext}
+                      </div>
+                    )}
+                    <div style={{ fontSize: 13, color: "var(--muted)", lineHeight: 1.4 }}>
+                      {prompt.role ? (prompt.role.slice(0, 80) + (prompt.role.length > 80 ? "..." : "")) : ""}
+                    </div>
+                  </button>
+                );
+              })}
             </div>
             
             <div style={{ display: "flex", gap: 12, marginBottom: 12 }}>
