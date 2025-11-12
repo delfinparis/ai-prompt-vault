@@ -115,3 +115,23 @@
 .rpv-modal .row { display:flex; gap:8px; margin-top:12px; }
 .rpv-modal .row button { flex: 0 0 auto; }
 .favorites-card { display: inline-block; }
+
+/* Polished buttons */
+.rpv-btn { display:inline-flex; align-items:center; justify-content:center; gap:8px; padding:8px 12px; border-radius:10px; border:1px solid #e5e7eb; background:#fff; color:#0f172a; cursor:pointer; }
+.rpv-btn:focus { outline: 3px solid rgba(37,99,235,0.14); }
+.rpv-btn-primary { background:#0f172a; color:#fff; border-color: #0f172a; }
+.rpv-btn-ghost { background: transparent; border-color: transparent; color: #4b5563; }
+
+/* Modal header & stepper */
+.rpv-modal-header { display:flex; justify-content:space-between; align-items:center; gap:12px; margin-bottom:8px; }
+.rpv-stepper { display:flex; gap:8px; align-items:center; margin-bottom:12px; }
+.rpv-step { width:28px; height:28px; border-radius:999px; display:inline-flex; align-items:center; justify-content:center; font-size:12px; background:#f3f4f6; color:#374151; }
+.rpv-step.active { background:#0f172a; color:#fff; }
+
+/* Reduced card shadow to minimize visual noise */
+.rpv-app button { transition: transform 120ms ease, box-shadow 120ms ease; }
+.rpv-app .rpv-card { box-shadow: none; }
+
+/* Collapsible panels */
+.rpv-collapsible { border-radius: 10px; overflow: hidden; }
+.rpv-collapsible .rpv-collapsible-header { display:flex; justify-content:space-between; align-items:center; padding:8px 0; }

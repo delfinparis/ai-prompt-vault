@@ -208,6 +208,8 @@ export default function AIPromptVault() {
   const [onboardStep, setOnboardStep] = useState<number>(1);
   const [onboardAnswers, setOnboardAnswers] = useState<{ intent?: string; role?: string; market?: string }>({});
   const [topPicks, setTopPicks] = useState<PromptItem[] | null>(null);
+  const [showFavoritesPanel, setShowFavoritesPanel] = useState<boolean>(false);
+  const onboardModalRef = React.useRef<HTMLDivElement | null>(null);
 
   const ONBOARD_INTENTS: { key: string; label: string; moduleKey?: string; emoji: string }[] = [
     { key: "leads", label: "Get more leads", moduleKey: CATEGORY_CARDS[0].moduleKey, emoji: "📣" },
@@ -424,6 +426,38 @@ export default function AIPromptVault() {
     return scored;
   };
 
+  // focus trap + Escape handler for onboarding modal
+  useEffect(() => {
+    if (!showOnboard) return;
+    const modal = onboardModalRef.current;
+    const focusable = 'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])';
+    const nodes = modal ? Array.from(modal.querySelectorAll(focusable)) as HTMLElement[] : [];
+    const first = nodes[0];
+    const last = nodes[nodes.length - 1];
+    if (first) first.focus();
+
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setShowOnboard(false);
+        localStorage.setItem('rpv:onboardSeen', '1');
+        trackEvent('onboard_closed_escape');
+      }
+      if (e.key === 'Tab') {
+        if (!nodes.length) return;
+        if (e.shiftKey && document.activeElement === first) {
+          e.preventDefault();
+          last?.focus();
+        } else if (!e.shiftKey && document.activeElement === last) {
+          e.preventDefault();
+          first?.focus();
+        }
+      }
+    };
+
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [showOnboard]);
+
   useEffect(() => {
     try {
       localStorage.setItem(KEY_COUNTS, JSON.stringify(copyCounts));
@@ -573,13 +607,18 @@ export default function AIPromptVault() {
       {/* Onboarding modal (A - guided flow) */}
       {showOnboard && (
         <div className="rpv-modal-backdrop" onClick={() => { setShowOnboard(false); localStorage.setItem('rpv:onboardSeen', '1'); }}>
-          <div className="rpv-modal" onClick={(e) => e.stopPropagation()} style={{ maxWidth: 720 }}>
+          <div ref={onboardModalRef} role="dialog" aria-modal="true" aria-label="Onboarding" className="rpv-modal" onClick={(e) => e.stopPropagation()} style={{ maxWidth: 720 }}>
             <h3 style={{ marginBottom: 6 }}>What do you want to do right now?</h3>
             <div style={{ color: '#6b7280', marginBottom: 12 }}>Pick one — we'll surface ready-to-use prompts.</div>
+            <div className="rpv-stepper" aria-hidden>
+              <div className={`rpv-step ${onboardStep === 1 ? 'active' : ''}`}>1</div>
+              <div className={`rpv-step ${onboardStep === 2 ? 'active' : ''}`}>2</div>
+              <div className={`rpv-step ${onboardStep === 3 ? 'active' : ''}`}>3</div>
+            </div>
             {onboardStep === 1 && (
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(160px,1fr))', gap: 10 }}>
-                {ONBOARD_INTENTS.map((it) => (
-                  <button key={it.key} onClick={() => { setOnboardAnswers(a => ({ ...a, intent: it.key })); setOnboardStep(2); trackEvent('onboard_intent', { intent: it.key }); }} style={{ padding: 12, borderRadius: 12, textAlign: 'left', border: '1px solid #e5e7eb', background: '#fff' }}>
+                  {ONBOARD_INTENTS.map((it) => (
+                  <button key={it.key} onClick={() => { setOnboardAnswers(a => ({ ...a, intent: it.key })); setOnboardStep(2); trackEvent('onboard_intent', { intent: it.key }); }} className="rpv-btn" style={{ padding: 12, borderRadius: 12, textAlign: 'left', minHeight: 72 }}>
                     <div style={{ fontSize: 18 }}>{it.emoji}</div>
                     <div style={{ fontWeight: 700 }}>{it.label}</div>
                   </button>
@@ -592,12 +631,12 @@ export default function AIPromptVault() {
                 <h4 style={{ marginTop: 6 }}>Which best describes you?</h4>
                 <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 8 }}>
                   {ROLE_OPTIONS.map((r) => (
-                    <button key={r} onClick={() => { setOnboardAnswers(a => ({ ...a, role: r })); setOnboardStep(3); trackEvent('onboard_role', { role: r }); }} style={{ padding: '8px 10px', borderRadius: 999, border: '1px solid #e5e7eb', background: '#fff' }}>{r}</button>
+                    <button key={r} onClick={() => { setOnboardAnswers(a => ({ ...a, role: r })); setOnboardStep(3); trackEvent('onboard_role', { role: r }); }} className="rpv-btn rpv-btn-ghost" style={{ padding: '8px 10px' }}>{r}</button>
                   ))}
                 </div>
                 <div style={{ marginTop: 10 }}>
-                  <button onClick={() => setOnboardStep(1)} style={{ marginRight: 8 }}>Back</button>
-                  <button onClick={() => { setOnboardStep(3); trackEvent('onboard_skip_role'); }}>Skip</button>
+                  <button onClick={() => setOnboardStep(1)} className="rpv-btn">Back</button>
+                  <button onClick={() => { setOnboardStep(3); trackEvent('onboard_skip_role'); }} className="rpv-btn rpv-btn-ghost">Skip</button>
                 </div>
               </div>
             )}
@@ -609,7 +648,7 @@ export default function AIPromptVault() {
                   <input placeholder="City or neighborhood (e.g., Denver, CO)" value={onboardAnswers.market || ''} onChange={(e) => setOnboardAnswers(a => ({ ...a, market: e.target.value }))} style={{ flex: 1, height: 40, padding: '0 12px', borderRadius: 8, border: '1px solid #e5e7eb' }} />
                 </div>
                 <div style={{ marginTop: 12, display: 'flex', gap: 8 }}>
-                  <button onClick={() => setOnboardStep(2)}>Back</button>
+                  <button onClick={() => setOnboardStep(2)} className="rpv-btn">Back</button>
                   <button onClick={() => {
                     // finish: compute picks and close modal
                     const picks = computeTopPicks(onboardAnswers);
@@ -617,7 +656,7 @@ export default function AIPromptVault() {
                     setShowOnboard(false);
                     localStorage.setItem('rpv:onboardSeen', '1');
                     trackEvent('onboard_completed', onboardAnswers);
-                  }} style={{ background: '#0f172a', color: '#fff', padding: '8px 12px', borderRadius: 8 }}>Show my prompts</button>
+                  }} className="rpv-btn rpv-btn-primary">Show my prompts</button>
                 </div>
               </div>
             )}
@@ -627,50 +666,37 @@ export default function AIPromptVault() {
 
       {/* Favorites Manager */}
       {favorites.length > 0 && (
-        <div style={{ marginBottom: 18 }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-            <div style={{ fontSize: 13, fontWeight: 700 }}>Favorites</div>
-            <div style={{ fontSize: 12, color: "#6b7280" }}>{favorites.length} saved</div>
+        <div className="rpv-collapsible" style={{ marginBottom: 18 }}>
+          <div className="rpv-collapsible-header">
+            <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+              <div style={{ fontSize: 13, fontWeight: 700 }}>Favorites</div>
+              <div style={{ fontSize: 12, color: '#6b7280' }}>{favorites.length} saved</div>
+            </div>
+            <div>
+              <button className="rpv-btn" onClick={() => setShowFavoritesPanel((s) => !s)} aria-expanded={showFavoritesPanel}>{showFavoritesPanel ? 'Hide' : 'Show'}</button>
+            </div>
           </div>
-          <div style={{ display: "flex", gap: 8, marginTop: 8, flexWrap: "wrap" }}>
-            {favorites.map((f) => (
-              <div key={f.id} className="favorites-card" style={{ background: "#fff", border: "1px solid #e5e7eb", padding: 8, borderRadius: 10, minWidth: 220 }}>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8 }}>
-                  <div style={{ fontSize: 13, fontWeight: 700 }}>{f.title}</div>
-                  <div style={{ display: "flex", gap: 6 }}>
-                    <button
-                      onClick={() => applyFavorite(f.id)}
-                      style={{ height: 28, borderRadius: 8, padding: "0 8px" }}
-                    >
-                      Apply
-                    </button>
-                    <button
-                      onClick={() => {
-                        setRenameModalId(f.id);
-                        setModalInput(f.title || "");
-                      }}
-                      style={{ height: 28, borderRadius: 8, padding: "0 8px" }}
-                    >
-                      Rename
-                    </button>
-                    <button
-                      onClick={() => {
-                        setDeleteModalId(f.id);
-                      }}
-                      style={{ height: 28, borderRadius: 8, padding: "0 8px", color: "#b91c1c" }}
-                    >
-                      Delete
-                    </button>
+          {showFavoritesPanel && (
+            <div style={{ display: 'flex', gap: 8, marginTop: 8, flexWrap: 'wrap' }}>
+              {favorites.map((f) => (
+                <div key={f.id} className="favorites-card" style={{ background: '#fff', border: '1px solid #e5e7eb', padding: 8, borderRadius: 10, minWidth: 220 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8 }}>
+                    <div style={{ fontSize: 13, fontWeight: 700 }}>{f.title}</div>
+                    <div style={{ display: 'flex', gap: 6 }}>
+                      <button className="rpv-btn" onClick={() => applyFavorite(f.id)}>Apply</button>
+                      <button className="rpv-btn" onClick={() => { setRenameModalId(f.id); setModalInput(f.title || ''); }}>Rename</button>
+                      <button className="rpv-btn" onClick={() => setDeleteModalId(f.id)} style={{ color: '#b91c1c' }}>Delete</button>
+                    </div>
+                  </div>
+                  <div style={{ fontSize: 12, color: '#6b7280', marginTop: 6 }}>
+                    {Object.entries(f.values || {}).slice(0, 3).map(([k, v]) => (
+                      <div key={k}>{k}: {v}</div>
+                    ))}
                   </div>
                 </div>
-                <div style={{ fontSize: 12, color: "#6b7280", marginTop: 6 }}>
-                  {Object.entries(f.values || {}).slice(0, 3).map(([k, v]) => (
-                    <div key={k}>{k}: {v}</div>
-                  ))}
-                </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
 
