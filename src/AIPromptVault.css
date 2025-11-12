@@ -29,6 +29,21 @@
   --font-stack: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial;
 }
 
+/* Dark mode */
+body.dark-mode {
+  --bg: #0f172a;
+  --surface: #1e293b;
+  --text: #f1f5f9;
+  --muted: #94a3b8;
+  --primary: #3b82f6;
+  --accent: #06b6d4;
+}
+
+body.dark-mode {
+  background: var(--bg);
+  color: var(--text);
+}
+
 /* Motion utilities */
 .motion-fade-up { animation: rpvFadeUp 220ms ease-out forwards; }
 .lift-hover:hover { transform: translateY(-3px); box-shadow: var(--shadow-md); }

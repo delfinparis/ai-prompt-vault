@@ -10,6 +10,7 @@ const KEY_COUNTS = "rpv:copyCounts";
 const KEY_RECENT = "rpv:recentCopied";
 const KEY_SAVED_FIELDS = "rpv:savedFields";
 const KEY_ONBOARDED = "rpv:onboarded";
+const KEY_DARK_MODE = "rpv:darkMode";
 
 // Module names (descriptive, not numbered)
 const MODULE_NAMES: Record<number, string> = {
@@ -69,6 +70,7 @@ export default function AIPromptVault() {
   const [showFollowUps, setShowFollowUps] = useState<boolean>(false);
   const [followUpPrompts, setFollowUpPrompts] = useState<PromptItem[]>([]);
   const [lastUpdated, setLastUpdated] = useState<string | null>(null);
+  const [darkMode, setDarkMode] = useState<boolean>(false);
   const searchInputRef = React.useRef<HTMLInputElement>(null);
   const fieldInputRef = React.useRef<HTMLInputElement>(null);
 
@@ -102,6 +104,14 @@ export default function AIPromptVault() {
       
       const savedFields = localStorage.getItem(KEY_SAVED_FIELDS);
       if (savedFields) setSavedFieldValues(JSON.parse(savedFields));
+      
+      // Load dark mode preference
+      const savedDarkMode = localStorage.getItem(KEY_DARK_MODE);
+      if (savedDarkMode) {
+        const isDark = savedDarkMode === 'true';
+        setDarkMode(isDark);
+        document.body.classList.toggle('dark-mode', isDark);
+      }
       
       // Check if user has seen onboarding
       const hasOnboarded = localStorage.getItem(KEY_ONBOARDED);
@@ -306,6 +316,15 @@ export default function AIPromptVault() {
     trackEvent("favorite_toggled", { promptId, action: newFavs.includes(promptId) ? "add" : "remove" });
   };
 
+  // Toggle dark mode
+  const toggleDarkMode = () => {
+    const newDarkMode = !darkMode;
+    setDarkMode(newDarkMode);
+    localStorage.setItem(KEY_DARK_MODE, String(newDarkMode));
+    document.body.classList.toggle('dark-mode', newDarkMode);
+    trackEvent("dark_mode_toggled", { enabled: newDarkMode });
+  };
+
   // Select prompt for detail view
   const selectPrompt = (prompt: PromptItem) => {
     setSelectedPrompt(prompt);
@@ -347,7 +366,27 @@ export default function AIPromptVault() {
   return (
     <div className="rpv-app rpv-container">
       {/* Header */}
-      <header className="rpv-header" style={{ marginBottom: 32 }}>
+      <header className="rpv-header" style={{ marginBottom: 32, position: "relative" }}>
+        {/* Dark mode toggle */}
+        <button
+          onClick={toggleDarkMode}
+          style={{
+            position: "absolute",
+            top: 0,
+            right: 0,
+            padding: "8px 12px",
+            background: "transparent",
+            border: "2px solid rgba(15,23,42,0.1)",
+            borderRadius: "var(--radius-sm)",
+            cursor: "pointer",
+            fontSize: 18,
+            transition: "all 180ms ease",
+          }}
+          title={darkMode ? "Switch to light mode" : "Switch to dark mode"}
+        >
+          {darkMode ? "☀️" : "🌙"}
+        </button>
+        
         <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 8, justifyContent: "center", flexWrap: "wrap" }}>
           <h1 className="title" style={{ margin: 0 }}>
             🏡 AI Prompt Vault
