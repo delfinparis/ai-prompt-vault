@@ -14,6 +14,7 @@ const KEY_ONBOARDED = "rpv:onboarded";
 const KEY_DARK_MODE = "rpv:darkMode";
 const KEY_FIRST_COPY = "rpv:firstCopy";
 const KEY_FIELD_HISTORY = "rpv:fieldHistory";
+const KEY_COLLECTIONS = "rpv:collections";
 
 // Module names (descriptive, not numbered)
 const MODULE_NAMES: Record<number, string> = {
@@ -76,6 +77,8 @@ export default function AIPromptVault() {
   const [darkMode, setDarkMode] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [fieldHistory, setFieldHistory] = useState<Record<string, string[]>>({});
+  const [collections, setCollections] = useState<Record<string, string[]>>({ "My Favorites": [] });
+  const [activeCollection, setActiveCollection] = useState<string | null>(null);
   const searchInputRef = React.useRef<HTMLInputElement>(null);
   const fieldInputRef = React.useRef<HTMLInputElement>(null);
 
@@ -113,6 +116,10 @@ export default function AIPromptVault() {
       // Load field history
       const savedHistory = localStorage.getItem(KEY_FIELD_HISTORY);
       if (savedHistory) setFieldHistory(JSON.parse(savedHistory));
+      
+      // Load collections
+      const savedCollections = localStorage.getItem(KEY_COLLECTIONS);
+      if (savedCollections) setCollections(JSON.parse(savedCollections));
       
       // Load dark mode preference
       const savedDarkMode = localStorage.getItem(KEY_DARK_MODE);
@@ -199,6 +206,12 @@ export default function AIPromptVault() {
   const filteredPrompts = useMemo(() => {
     let filtered = allPrompts;
     
+    // Filter by active collection
+    if (activeCollection) {
+      const collectionIds = collections[activeCollection] || [];
+      filtered = filtered.filter((p: any) => collectionIds.includes(p.id));
+    }
+    
     // Filter by active tag
     if (activeTag) {
       filtered = filtered.filter((p: any) => p.tags?.includes(activeTag));
@@ -215,7 +228,7 @@ export default function AIPromptVault() {
     }
     
     return filtered;
-  }, [search, activeTag, allPrompts]);
+  }, [search, activeTag, activeCollection, collections, allPrompts]);
 
   // Hot prompts: top 5 by copy count
   const hotPrompts = useMemo(() => {
@@ -225,7 +238,7 @@ export default function AIPromptVault() {
   }, [allPrompts, copyCounts]);
 
   // Prompts to display
-  const displayPrompts = (search || activeTag) ? filteredPrompts : hotPrompts;
+  const displayPrompts = (search || activeTag || activeCollection) ? filteredPrompts : hotPrompts;
 
   // Favorite prompts
   const favoritePrompts = useMemo(() => {
@@ -338,6 +351,20 @@ export default function AIPromptVault() {
     
     setFavorites(newFavs);
     localStorage.setItem(KEY_FAVORITES, JSON.stringify(newFavs));
+    
+    // Also sync with "My Favorites" collection
+    if (newFavs.includes(promptId)) {
+      addToCollection("My Favorites", promptId);
+    } else {
+      // Remove from My Favorites collection
+      const updatedCollections = {
+        ...collections,
+        "My Favorites": (collections["My Favorites"] || []).filter(id => id !== promptId)
+      };
+      setCollections(updatedCollections);
+      localStorage.setItem(KEY_COLLECTIONS, JSON.stringify(updatedCollections));
+    }
+    
     trackEvent("favorite_toggled", { promptId, action: newFavs.includes(promptId) ? "add" : "remove" });
   };
 
@@ -348,6 +375,26 @@ export default function AIPromptVault() {
     localStorage.setItem(KEY_DARK_MODE, String(newDarkMode));
     document.body.classList.toggle('dark-mode', newDarkMode);
     trackEvent("dark_mode_toggled", { enabled: newDarkMode });
+  };
+
+  // Add prompt to collection
+  const addToCollection = (collectionName: string, promptId: string) => {
+    const updatedCollections = {
+      ...collections,
+      [collectionName]: [...(collections[collectionName] || []), promptId].filter((id, idx, arr) => arr.indexOf(id) === idx)
+    };
+    setCollections(updatedCollections);
+    localStorage.setItem(KEY_COLLECTIONS, JSON.stringify(updatedCollections));
+    trackEvent("prompt_added_to_collection", { collectionName, promptId });
+  };
+
+  // Create new collection
+  const createCollection = (name: string) => {
+    if (!collections[name]) {
+      const updatedCollections = { ...collections, [name]: [] };
+      setCollections(updatedCollections);
+      localStorage.setItem(KEY_COLLECTIONS, JSON.stringify(updatedCollections));
+    }
   };
 
   // Select prompt for detail view
@@ -558,6 +605,34 @@ export default function AIPromptVault() {
                 }}
               >
                 {prompt.title}
+              </button>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* Collections Filter */}
+      {Object.keys(collections).length > 0 && (
+        <section style={{ marginBottom: 24 }}>
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
+            <span style={{ fontSize: 13, fontWeight: 600, color: "var(--muted)" }}>Collections:</span>
+            {Object.keys(collections).map((collectionName) => (
+              <button
+                key={collectionName}
+                onClick={() => setActiveCollection(activeCollection === collectionName ? null : collectionName)}
+                style={{
+                  padding: "6px 14px",
+                  fontSize: 13,
+                  fontWeight: 600,
+                  background: activeCollection === collectionName ? "var(--primary)" : "#f1f5f9",
+                  color: activeCollection === collectionName ? "#fff" : "var(--text)",
+                  border: "none",
+                  borderRadius: "var(--radius-pill)",
+                  cursor: "pointer",
+                  transition: "all 160ms ease",
+                }}
+              >
+                📁 {collectionName} ({collections[collectionName].length})
               </button>
             ))}
           </div>
