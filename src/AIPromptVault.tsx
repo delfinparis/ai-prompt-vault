@@ -68,6 +68,7 @@ export default function AIPromptVault() {
   const [onboardingStep, setOnboardingStep] = useState<number>(0);
   const [showFollowUps, setShowFollowUps] = useState<boolean>(false);
   const [followUpPrompts, setFollowUpPrompts] = useState<PromptItem[]>([]);
+  const [lastUpdated, setLastUpdated] = useState<string | null>(null);
   const searchInputRef = React.useRef<HTMLInputElement>(null);
   const fieldInputRef = React.useRef<HTMLInputElement>(null);
 
@@ -107,6 +108,12 @@ export default function AIPromptVault() {
       if (!hasOnboarded) {
         setShowOnboarding(true);
       }
+      
+      // Set last updated timestamp
+      const now = new Date();
+      const timeStr = now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+      const dateStr = now.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+      setLastUpdated(`${dateStr} at ${timeStr}`);
     } catch {}
   }, []);
 
@@ -305,9 +312,14 @@ export default function AIPromptVault() {
             {allPrompts.length} Prompts
           </span>
         </div>
-        <p className="subtitle" style={{ marginBottom: 24 }}>
+        <p className="subtitle" style={{ marginBottom: 8 }}>
           The best AI prompts for real estate agents. Copy, paste, close deals.
         </p>
+        {lastUpdated && (
+          <p style={{ fontSize: 12, color: "var(--muted)", marginBottom: 16 }}>
+            ✨ Last updated: {lastUpdated}
+          </p>
+        )}
 
         {/* Search Bar */}
         <div style={{ maxWidth: 640, position: "relative" }}>
@@ -514,6 +526,47 @@ export default function AIPromptVault() {
                     ← Clear and browse all
                   </button>
                 </div>
+              )}
+            </div>
+          )}
+          
+          {displayPrompts.length === 0 && (
+            <div style={{
+              textAlign: "center",
+              padding: "80px 20px",
+              maxWidth: 480,
+              margin: "0 auto",
+            }}>
+              <div style={{ fontSize: 64, marginBottom: 16 }}>🔍</div>
+              <h3 style={{ fontSize: 20, fontWeight: 700, marginBottom: 8, color: "var(--text)" }}>
+                No prompts found
+              </h3>
+              <p style={{ fontSize: 15, color: "var(--muted)", marginBottom: 24, lineHeight: 1.6 }}>
+                {search 
+                  ? `Try different keywords or browse all ${allPrompts.length} prompts`
+                  : activeTag 
+                    ? "No prompts match this category"
+                    : "No prompts available"}
+              </p>
+              {(search || activeTag) && (
+                <button
+                  onClick={() => {
+                    setSearch("");
+                    setActiveTag(null);
+                  }}
+                  style={{
+                    padding: "12px 24px",
+                    background: "var(--primary)",
+                    color: "#fff",
+                    border: "none",
+                    borderRadius: "var(--radius-sm)",
+                    fontSize: 15,
+                    fontWeight: 600,
+                    cursor: "pointer",
+                  }}
+                >
+                  View All Prompts
+                </button>
               )}
             </div>
           )}
