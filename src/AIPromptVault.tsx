@@ -104,6 +104,14 @@ export default function AIPromptVault() {
     return params.get('kale') === 'true';
   }, []);
   
+  // Calculate current dark mode state (for tooltip)
+  const getDarkModeState = () => {
+    const saved = localStorage.getItem(KEY_DARK_MODE);
+    if (saved === null) return 'auto';
+    if (saved === 'true') return 'dark';
+    return 'light';
+  };
+  
   const searchInputRef = React.useRef<HTMLInputElement>(null);
   const fieldInputRef = React.useRef<HTMLInputElement>(null);
 
@@ -427,13 +435,30 @@ export default function AIPromptVault() {
     trackEvent("favorite_toggled", { promptId, action: newFavs.includes(promptId) ? "add" : "remove" });
   };
 
-  // Toggle dark mode
+  // Toggle dark mode (3-state: light → dark → auto)
   const toggleDarkMode = () => {
-    const newDarkMode = !darkMode;
-    setDarkMode(newDarkMode);
-    localStorage.setItem(KEY_DARK_MODE, String(newDarkMode));
-    document.body.classList.toggle('dark-mode', newDarkMode);
-    trackEvent("dark_mode_toggled", { enabled: newDarkMode });
+    const savedDarkMode = localStorage.getItem(KEY_DARK_MODE);
+    
+    if (savedDarkMode === null) {
+      // Currently auto, user in light mode → switch to dark
+      setDarkMode(true);
+      localStorage.setItem(KEY_DARK_MODE, 'true');
+      document.body.classList.add('dark-mode');
+      trackEvent("dark_mode_toggled", { enabled: true, mode: 'dark' });
+    } else if (savedDarkMode === 'true') {
+      // Currently dark → switch to light
+      setDarkMode(false);
+      localStorage.setItem(KEY_DARK_MODE, 'false');
+      document.body.classList.remove('dark-mode');
+      trackEvent("dark_mode_toggled", { enabled: false, mode: 'light' });
+    } else {
+      // Currently light → switch to auto (system preference)
+      localStorage.removeItem(KEY_DARK_MODE);
+      const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+      setDarkMode(systemPrefersDark);
+      document.body.classList.toggle('dark-mode', systemPrefersDark);
+      trackEvent("dark_mode_toggled", { enabled: systemPrefersDark, mode: 'auto' });
+    }
   };
 
   // Add prompt to collection
@@ -538,7 +563,13 @@ export default function AIPromptVault() {
             fontSize: 18,
             transition: "all 180ms ease",
           }}
-          title={darkMode ? "Switch to light mode" : "Switch to dark mode"}
+          title={
+            getDarkModeState() === 'auto' 
+              ? `Auto mode (currently ${darkMode ? 'dark' : 'light'}). Click for ${darkMode ? 'light' : 'dark'} mode.`
+              : getDarkModeState() === 'dark'
+              ? 'Dark mode. Click for light mode.'
+              : 'Light mode. Click for auto mode.'
+          }
         >
           {darkMode ? "☀️" : "🌙"}
         </button>
