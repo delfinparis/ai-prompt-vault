@@ -13,6 +13,7 @@ const KEY_SAVED_FIELDS = "rpv:savedFields";
 const KEY_ONBOARDED = "rpv:onboarded";
 const KEY_DARK_MODE = "rpv:darkMode";
 const KEY_FIRST_COPY = "rpv:firstCopy";
+const KEY_FIELD_HISTORY = "rpv:fieldHistory";
 
 // Module names (descriptive, not numbered)
 const MODULE_NAMES: Record<number, string> = {
@@ -74,6 +75,7 @@ export default function AIPromptVault() {
   const [lastUpdated, setLastUpdated] = useState<string | null>(null);
   const [darkMode, setDarkMode] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [fieldHistory, setFieldHistory] = useState<Record<string, string[]>>({});
   const searchInputRef = React.useRef<HTMLInputElement>(null);
   const fieldInputRef = React.useRef<HTMLInputElement>(null);
 
@@ -107,6 +109,10 @@ export default function AIPromptVault() {
       
       const savedFields = localStorage.getItem(KEY_SAVED_FIELDS);
       if (savedFields) setSavedFieldValues(JSON.parse(savedFields));
+      
+      // Load field history
+      const savedHistory = localStorage.getItem(KEY_FIELD_HISTORY);
+      if (savedHistory) setFieldHistory(JSON.parse(savedHistory));
       
       // Load dark mode preference
       const savedDarkMode = localStorage.getItem(KEY_DARK_MODE);
@@ -372,6 +378,13 @@ export default function AIPromptVault() {
       const newSavedFields = { ...savedFieldValues, [field]: value };
       setSavedFieldValues(newSavedFields);
       localStorage.setItem(KEY_SAVED_FIELDS, JSON.stringify(newSavedFields));
+      
+      // Update field history (keep last 5 unique values per field)
+      const currentHistory = fieldHistory[field] || [];
+      const newHistory = [value, ...currentHistory.filter(v => v !== value)].slice(0, 5);
+      const updatedHistory = { ...fieldHistory, [field]: newHistory };
+      setFieldHistory(updatedHistory);
+      localStorage.setItem(KEY_FIELD_HISTORY, JSON.stringify(updatedHistory));
     }
   };
 
@@ -1051,6 +1064,38 @@ export default function AIPromptVault() {
                         }}>
                           ✓ Pre-filled from last time
                         </p>
+                      )}
+                      
+                      {/* Quick-select chips for field history */}
+                      {fieldHistory[currentField] && fieldHistory[currentField].length > 0 && (
+                        <div style={{ marginBottom: 12 }}>
+                          <p style={{ fontSize: 11, color: "var(--muted)", marginBottom: 6, fontWeight: 500 }}>
+                            Recently used:
+                          </p>
+                          <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                            {fieldHistory[currentField].slice(0, 3).map((historyValue, idx) => (
+                              <button
+                                key={idx}
+                                onClick={() => updateFieldValue(currentField, historyValue)}
+                                style={{
+                                  padding: "4px 10px",
+                                  fontSize: 12,
+                                  background: fieldValues[currentField] === historyValue ? "var(--primary)" : "#f1f5f9",
+                                  color: fieldValues[currentField] === historyValue ? "#fff" : "var(--text)",
+                                  border: "1px solid",
+                                  borderColor: fieldValues[currentField] === historyValue ? "var(--primary)" : "#e5e7eb",
+                                  borderRadius: "var(--radius-pill)",
+                                  cursor: "pointer",
+                                  transition: "all 160ms ease",
+                                  fontFamily: "var(--font-stack)",
+                                  fontWeight: 500,
+                                }}
+                              >
+                                {historyValue.length > 20 ? `${historyValue.substring(0, 20)}...` : historyValue}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
                       )}
                       
                       <input
