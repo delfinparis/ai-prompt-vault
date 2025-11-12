@@ -8,6 +8,23 @@ import { PromptItem, buildFullPrompt, extractPlaceholders, applyReplacements, ge
 const KEY_FAVORITES = "rpv:favorites";
 const KEY_COUNTS = "rpv:copyCounts";
 const KEY_RECENT = "rpv:recentCopied";
+const KEY_SAVED_FIELDS = "rpv:savedFields";
+
+// Module names (descriptive, not numbered)
+const MODULE_NAMES: Record<number, string> = {
+  1: "Marketing & Lead Generation",
+  2: "Daily Systems & Productivity",
+  3: "Goals & Accountability",
+  4: "Listings & Buyer Presentations",
+  5: "Client Service & Follow-Up",
+  6: "Finance & Business Planning",
+  7: "Negotiation & Deal Strategy",
+  8: "Home Search & Market Intel",
+  9: "Database & Referral Engine",
+  10: "Tech, AI & Marketing Automation",
+  11: "AI Workflows & Automation",
+  12: "Learning & Industry Resources"
+};
 
 // Tag mapping for each module
 const MODULE_TAGS: Record<number, string[]> = {
@@ -39,7 +56,9 @@ export default function AIPromptVault() {
   const [favorites, setFavorites] = useState<string[]>([]);
   const [copyCounts, setCopyCounts] = useState<Record<string, number>>({});
   const [copied, setCopied] = useState(false);
+  const [copiedPromptTitle, setCopiedPromptTitle] = useState<string>("");
   const [fieldValues, setFieldValues] = useState<Record<string, string>>({});
+  const [savedFieldValues, setSavedFieldValues] = useState<Record<string, string>>({});
   const [activeTag, setActiveTag] = useState<string | null>(null);
   const [recentlyCopied, setRecentlyCopied] = useState<string[]>([]);
   const [hoveredCard, setHoveredCard] = useState<string | null>(null);
@@ -52,7 +71,7 @@ export default function AIPromptVault() {
   // Load all prompts with tags
   const allPrompts = useMemo(() => {
     return fullPrompts.flatMap((modulePrompts, moduleIdx) => {
-      const moduleName = `Module ${moduleIdx + 1}`;
+      const moduleName = MODULE_NAMES[moduleIdx + 1] || `Module ${moduleIdx + 1}`;
       const tags = MODULE_TAGS[moduleIdx + 1] || [];
       
       return modulePrompts.map((p: any, idx: number) => ({
@@ -76,6 +95,9 @@ export default function AIPromptVault() {
       
       const savedRecent = localStorage.getItem(KEY_RECENT);
       if (savedRecent) setRecentlyCopied(JSON.parse(savedRecent));
+      
+      const savedFields = localStorage.getItem(KEY_SAVED_FIELDS);
+      if (savedFields) setSavedFieldValues(JSON.parse(savedFields));
     } catch {}
   }, []);
 
@@ -159,7 +181,11 @@ export default function AIPromptVault() {
     try {
       await navigator.clipboard.writeText(finalText);
       setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
+      setCopiedPromptTitle(prompt.title);
+      setTimeout(() => {
+        setCopied(false);
+        setCopiedPromptTitle("");
+      }, 5000);
       
       // Update copy count
       const id = (prompt as any).id;
@@ -200,9 +226,33 @@ export default function AIPromptVault() {
   // Select prompt for detail view
   const selectPrompt = (prompt: PromptItem) => {
     setSelectedPrompt(prompt);
-    setFieldValues({});
+    
+    // Pre-fill field values from saved fields
+    const placeholders = extractPlaceholders(prompt);
+    const prefilledValues: Record<string, string> = {};
+    placeholders.forEach(ph => {
+      if (savedFieldValues[ph]) {
+        prefilledValues[ph] = savedFieldValues[ph];
+      }
+    });
+    
+    setFieldValues(prefilledValues);
     setCurrentFieldIndex(0);
-    trackEvent("prompt_viewed", { title: prompt.title });
+    setShowPreview(false);
+    trackEvent("prompt_selected", { title: prompt.title });
+  };
+  
+  // Update field value and save to localStorage
+  const updateFieldValue = (field: string, value: string) => {
+    const newFieldValues = { ...fieldValues, [field]: value };
+    setFieldValues(newFieldValues);
+    
+    // Save to localStorage for future use
+    if (value.trim()) {
+      const newSavedFields = { ...savedFieldValues, [field]: value };
+      setSavedFieldValues(newSavedFields);
+      localStorage.setItem(KEY_SAVED_FIELDS, JSON.stringify(newSavedFields));
+    }
   };
 
   // Focus field input when field changes
@@ -537,28 +587,53 @@ export default function AIPromptVault() {
                       </span>
                     )}
                     {isHovered && (
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleCopy(prompt);
-                        }}
-                        className="quick-copy-btn"
-                        style={{
-                          padding: "6px 12px",
-                          fontSize: 12,
-                          fontWeight: 600,
-                          color: "#fff",
-                          background: "var(--primary)",
-                          border: "none",
-                          borderRadius: "var(--radius-pill)",
-                          cursor: "pointer",
-                          animation: "slideIn 200ms ease-out",
-                          transition: "all 160ms ease",
-                        }}
-                        title="Quick copy (without opening details)"
-                      >
-                        📋 Quick Copy
-                      </button>
+                      <>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            const shareUrl = `${window.location.origin}${window.location.pathname}?prompt=${encodeURIComponent(prompt.title)}`;
+                            navigator.clipboard.writeText(shareUrl);
+                            // Could show a mini-toast here
+                          }}
+                          style={{
+                            padding: "6px 12px",
+                            fontSize: 12,
+                            fontWeight: 600,
+                            color: "var(--text)",
+                            background: "#f1f5f9",
+                            border: "1px solid #e5e7eb",
+                            borderRadius: "var(--radius-pill)",
+                            cursor: "pointer",
+                            animation: "slideIn 200ms ease-out",
+                            transition: "all 160ms ease",
+                          }}
+                          title="Copy link to this prompt"
+                        >
+                          🔗 Share
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleCopy(prompt);
+                          }}
+                          className="quick-copy-btn"
+                          style={{
+                            padding: "6px 12px",
+                            fontSize: 12,
+                            fontWeight: 600,
+                            color: "#fff",
+                            background: "var(--primary)",
+                            border: "none",
+                            borderRadius: "var(--radius-pill)",
+                            cursor: "pointer",
+                            animation: "slideIn 200ms ease-out",
+                            transition: "all 160ms ease",
+                          }}
+                          title="Quick copy (without opening details)"
+                        >
+                          📋 Quick Copy
+                        </button>
+                      </>
                     )}
                   </div>
                 </div>
@@ -697,7 +772,7 @@ export default function AIPromptVault() {
                           display: "block",
                           fontSize: 15,
                           fontWeight: 600,
-                          marginBottom: 16,
+                          marginBottom: 8,
                           color: "var(--text)",
                           lineHeight: 1.4,
                         }}
@@ -705,11 +780,22 @@ export default function AIPromptVault() {
                         {helpInfo.description}
                       </label>
                       
+                      {savedFieldValues[currentField] && (
+                        <p style={{
+                          fontSize: 11,
+                          color: "#10b981",
+                          marginBottom: 8,
+                          fontWeight: 500,
+                        }}>
+                          ✓ Pre-filled from last time
+                        </p>
+                      )}
+                      
                       <input
                         ref={fieldInputRef}
                         type="text"
                         value={fieldValues[currentField] || ""}
-                        onChange={(e) => setFieldValues({ ...fieldValues, [currentField]: e.target.value })}
+                        onChange={(e) => updateFieldValue(currentField, e.target.value)}
                         onKeyDown={(e) => {
                           if (e.key === "Enter" && !isLastField) {
                             e.preventDefault();
@@ -1056,6 +1142,84 @@ export default function AIPromptVault() {
                 })}
               </div>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* Copy Success Toast */}
+      {copied && (
+        <div
+          style={{
+            position: "fixed",
+            bottom: 24,
+            left: "50%",
+            transform: "translateX(-50%)",
+            background: "#10b981",
+            color: "#fff",
+            padding: "16px 24px",
+            borderRadius: "var(--radius-md)",
+            boxShadow: "0 10px 40px rgba(0,0,0,0.3)",
+            zIndex: 10000,
+            animation: "slideUp 300ms ease-out",
+            maxWidth: "90vw",
+            textAlign: "center",
+          }}
+        >
+          <div style={{ fontSize: 15, fontWeight: 700, marginBottom: 8 }}>
+            ✓ Copied!
+          </div>
+          <div style={{ fontSize: 13, marginBottom: 12, opacity: 0.9 }}>
+            Now paste into ChatGPT or Claude
+          </div>
+          <div style={{ display: "flex", gap: 12, justifyContent: "center" }}>
+            <a
+              href="https://chatgpt.com"
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{
+                padding: "8px 16px",
+                background: "rgba(255,255,255,0.2)",
+                border: "1px solid rgba(255,255,255,0.3)",
+                borderRadius: "var(--radius-sm)",
+                color: "#fff",
+                textDecoration: "none",
+                fontSize: 13,
+                fontWeight: 600,
+                transition: "all 160ms ease",
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = "rgba(255,255,255,0.3)";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = "rgba(255,255,255,0.2)";
+              }}
+            >
+              Open ChatGPT →
+            </a>
+            <a
+              href="https://claude.ai"
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{
+                padding: "8px 16px",
+                background: "rgba(255,255,255,0.2)",
+                border: "1px solid rgba(255,255,255,0.3)",
+                borderRadius: "var(--radius-sm)",
+                color: "#fff",
+                textDecoration: "none",
+                fontSize: 13,
+                fontWeight: 600,
+                transition: "all 160ms ease",
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = "rgba(255,255,255,0.3)";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = "rgba(255,255,255,0.2)";
+              }}
+            >
+              Open Claude →
+            </a>
           </div>
         </div>
       )}
