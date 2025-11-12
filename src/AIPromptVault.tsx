@@ -1705,17 +1705,17 @@ export default function AIPromptVault() {
             onClick={(e) => e.stopPropagation()}
           >
             <div style={{ textAlign: "center", marginBottom: 24 }}>
-              <div style={{ fontSize: 32, marginBottom: 12 }}>💡</div>
+              <div style={{ fontSize: 32, marginBottom: 12 }}>�</div>
               <h3 style={{ fontSize: 20, fontWeight: 700, marginBottom: 8, color: "var(--text)" }}>
-                Try These Next
+                Continue Your Workflow
               </h3>
               <p style={{ fontSize: 14, color: "var(--muted)" }}>
-                Related prompts you might need
+                Complete the sequence with these related prompts
               </p>
             </div>
             
             <div style={{ display: "flex", flexDirection: "column", gap: 12, marginBottom: 20 }}>
-              {followUpPrompts.map((prompt: any) => (
+              {followUpPrompts.map((prompt: any, idx: number) => (
                 <button
                   key={prompt.id}
                   onClick={() => {
@@ -1730,6 +1730,7 @@ export default function AIPromptVault() {
                     textAlign: "left",
                     cursor: "pointer",
                     transition: "all 160ms ease",
+                    position: "relative",
                   }}
                   onMouseEnter={(e) => {
                     e.currentTarget.style.background = "#f1f5f9";
@@ -1740,7 +1741,24 @@ export default function AIPromptVault() {
                     e.currentTarget.style.borderColor = "#e5e7eb";
                   }}
                 >
-                  <div style={{ fontSize: 15, fontWeight: 600, marginBottom: 4, color: "var(--text)" }}>
+                  <div style={{ 
+                    position: "absolute", 
+                    top: 8, 
+                    right: 8, 
+                    background: "var(--primary)",
+                    color: "#fff",
+                    width: 24,
+                    height: 24,
+                    borderRadius: "50%",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    fontSize: 11,
+                    fontWeight: 700,
+                  }}>
+                    {idx + 1}
+                  </div>
+                  <div style={{ fontSize: 15, fontWeight: 600, marginBottom: 4, color: "var(--text)", paddingRight: 30 }}>
                     {prompt.title}
                   </div>
                   <div style={{ fontSize: 13, color: "var(--muted)", lineHeight: 1.4 }}>
@@ -1748,6 +1766,39 @@ export default function AIPromptVault() {
                   </div>
                 </button>
               ))}
+            </div>
+            
+            <div style={{ display: "flex", gap: 12, marginBottom: 12 }}>
+              <button
+                onClick={async () => {
+                  // Copy all prompts in sequence with separators
+                  const sequenceText = followUpPrompts.map((p: any, idx: number) => {
+                    const fullText = buildFullPrompt(p);
+                    const finalText = applyReplacements(fullText, fieldValues);
+                    return `--- PROMPT ${idx + 1}: ${p.title} ---\n\n${finalText}`;
+                  }).join('\n\n==========\n\n');
+                  
+                  try {
+                    await navigator.clipboard.writeText(sequenceText);
+                    setCopied(true);
+                    setTimeout(() => setCopied(false), 2000);
+                    setShowFollowUps(false);
+                  } catch {}
+                }}
+                style={{
+                  flex: 1,
+                  padding: "12px",
+                  background: "var(--primary)",
+                  border: "none",
+                  borderRadius: "var(--radius-sm)",
+                  fontSize: 14,
+                  fontWeight: 600,
+                  color: "#fff",
+                  cursor: "pointer",
+                }}
+              >
+                🔗 Copy All ({followUpPrompts.length})
+              </button>
             </div>
             
             <button
