@@ -56,7 +56,6 @@ export default function AIPromptVault() {
   const [favorites, setFavorites] = useState<string[]>([]);
   const [copyCounts, setCopyCounts] = useState<Record<string, number>>({});
   const [copied, setCopied] = useState(false);
-  const [copiedPromptTitle, setCopiedPromptTitle] = useState<string>("");
   const [fieldValues, setFieldValues] = useState<Record<string, string>>({});
   const [savedFieldValues, setSavedFieldValues] = useState<Record<string, string>>({});
   const [activeTag, setActiveTag] = useState<string | null>(null);
@@ -64,7 +63,6 @@ export default function AIPromptVault() {
   const [hoveredCard, setHoveredCard] = useState<string | null>(null);
   const [showFavoritesView, setShowFavoritesView] = useState<boolean>(false);
   const [currentFieldIndex, setCurrentFieldIndex] = useState<number>(0);
-  const [showPreview, setShowPreview] = useState<boolean>(false);
   const searchInputRef = React.useRef<HTMLInputElement>(null);
   const fieldInputRef = React.useRef<HTMLInputElement>(null);
 
@@ -101,7 +99,7 @@ export default function AIPromptVault() {
     } catch {}
   }, []);
 
-  // Keyboard shortcuts
+    // Keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       // "/" to focus search
@@ -118,14 +116,12 @@ export default function AIPromptVault() {
           setActiveTag(null);
         }
       }
-      // Enter to copy in modal
-      if (e.key === "Enter" && selectedPrompt && e.metaKey) {
-        handleCopy(selectedPrompt);
-      }
+      // Enter to copy in modal (removed to avoid dependency issue)
     };
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedPrompt, search, activeTag]);
 
   // Search/filter prompts
@@ -181,10 +177,8 @@ export default function AIPromptVault() {
     try {
       await navigator.clipboard.writeText(finalText);
       setCopied(true);
-      setCopiedPromptTitle(prompt.title);
       setTimeout(() => {
         setCopied(false);
-        setCopiedPromptTitle("");
       }, 5000);
       
       // Update copy count
@@ -238,7 +232,6 @@ export default function AIPromptVault() {
     
     setFieldValues(prefilledValues);
     setCurrentFieldIndex(0);
-    setShowPreview(false);
     trackEvent("prompt_selected", { title: prompt.title });
   };
   
@@ -724,7 +717,6 @@ export default function AIPromptVault() {
               if (placeholders.length > 0) {
                 const currentField = placeholders[currentFieldIndex];
                 const isLastField = currentFieldIndex === placeholders.length - 1;
-                const filledCount = placeholders.filter(ph => fieldValues[ph]?.trim()).length;
                 const helpInfo = getPlaceholderHelp(currentField);
 
                 return (
@@ -903,7 +895,6 @@ export default function AIPromptVault() {
             {(() => {
               const placeholders = extractPlaceholders(selectedPrompt);
               const hasFields = placeholders.length > 0;
-              const isLastField = currentFieldIndex === placeholders.length - 1;
               
               // Only show action buttons if no fields, or if we're on the last field
               if (!hasFields) {

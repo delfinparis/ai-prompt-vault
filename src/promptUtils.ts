@@ -266,7 +266,7 @@ export function getPlaceholderHelp(placeholder: string): { description: string; 
   }
   
   // General fallback - extract the actual placeholder content and make it actionable
-  const cleanPlaceholder = placeholder.replace(/[\[\]]/g, '').trim();
+  const cleanPlaceholder = placeholder.replace(/[[\]]/g, '').trim();
   
   return {
     description: `Enter your ${cleanPlaceholder} (be specific)`,
@@ -297,7 +297,7 @@ export function simplifyJargon(text: string): string {
 
 export const applyReplacements = (text: string, values: Record<string, string>) => {
   if (!text) return text;
-  return text.replace(/\[([^\[\]]+)\]/g, (match, key) => {
+  return text.replace(/\[([^[\]]+)\]/g, (match, key) => {
     const k = (key || "").trim();
     if (k in values && values[k] !== "") return values[k];
     return match;
