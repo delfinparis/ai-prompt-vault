@@ -15,6 +15,7 @@ const KEY_DARK_MODE = "rpv:darkMode";
 const KEY_FIRST_COPY = "rpv:firstCopy";
 const KEY_FIELD_HISTORY = "rpv:fieldHistory";
 const KEY_COLLECTIONS = "rpv:collections";
+const KEY_CUSTOM_PROMPTS = "rpv:customPrompts";
 
 // Module names (descriptive, not numbered)
 const MODULE_NAMES: Record<number, string> = {
@@ -79,12 +80,13 @@ export default function AIPromptVault() {
   const [fieldHistory, setFieldHistory] = useState<Record<string, string[]>>({});
   const [collections, setCollections] = useState<Record<string, string[]>>({ "My Favorites": [] });
   const [activeCollection, setActiveCollection] = useState<string | null>(null);
+  const [customPrompts, setCustomPrompts] = useState<PromptItem[]>([]);
   const searchInputRef = React.useRef<HTMLInputElement>(null);
   const fieldInputRef = React.useRef<HTMLInputElement>(null);
 
   // Load all prompts with tags
   const allPrompts = useMemo(() => {
-    return fullPrompts.flatMap((modulePrompts, moduleIdx) => {
+    const basePrompts = fullPrompts.flatMap((modulePrompts, moduleIdx) => {
       const moduleName = MODULE_NAMES[moduleIdx + 1] || `Module ${moduleIdx + 1}`;
       const tags = MODULE_TAGS[moduleIdx + 1] || [];
       
@@ -96,7 +98,10 @@ export default function AIPromptVault() {
         id: `${moduleName}-${idx}`,
       }));
     });
-  }, []);
+    
+    // Merge with custom prompts
+    return [...basePrompts, ...customPrompts];
+  }, [customPrompts]);
 
   // Load favorites & counts from localStorage
   useEffect(() => {
@@ -120,6 +125,10 @@ export default function AIPromptVault() {
       // Load collections
       const savedCollections = localStorage.getItem(KEY_COLLECTIONS);
       if (savedCollections) setCollections(JSON.parse(savedCollections));
+      
+      // Load custom prompts
+      const savedCustomPrompts = localStorage.getItem(KEY_CUSTOM_PROMPTS);
+      if (savedCustomPrompts) setCustomPrompts(JSON.parse(savedCustomPrompts));
       
       // Load dark mode preference
       const savedDarkMode = localStorage.getItem(KEY_DARK_MODE);
@@ -395,6 +404,26 @@ export default function AIPromptVault() {
       setCollections(updatedCollections);
       localStorage.setItem(KEY_COLLECTIONS, JSON.stringify(updatedCollections));
     }
+  };
+
+  // Duplicate prompt (create custom version)
+  const duplicatePrompt = (prompt: PromptItem) => {
+    const customId = `custom-${Date.now()}`;
+    const duplicated: any = {
+      ...prompt,
+      id: customId,
+      title: `${prompt.title} (My Version)`,
+      module: "My Custom Prompts",
+      tags: [...((prompt as any).tags || []), "custom"],
+    };
+    
+    const updatedCustomPrompts = [...customPrompts, duplicated];
+    setCustomPrompts(updatedCustomPrompts);
+    localStorage.setItem(KEY_CUSTOM_PROMPTS, JSON.stringify(updatedCustomPrompts));
+    
+    // Auto-select the new custom prompt for editing
+    setSelectedPrompt(duplicated);
+    trackEvent("prompt_duplicated", { originalId: (prompt as any).id, customId });
   };
 
   // Select prompt for detail view
@@ -899,9 +928,25 @@ export default function AIPromptVault() {
                   </div>
                 )}
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 10 }}>
-                  <h3 style={{ fontSize: 17, fontWeight: 700, color: "var(--text)", marginBottom: 8, paddingRight: isTrending ? 100 : 0 }}>
-                    {prompt.title}
-                  </h3>
+                  <div style={{ flex: 1 }}>
+                    <h3 style={{ fontSize: 17, fontWeight: 700, color: "var(--text)", marginBottom: 8, paddingRight: isTrending ? 100 : 0 }}>
+                      {prompt.title}
+                    </h3>
+                    {prompt.module === "My Custom Prompts" && (
+                      <span style={{
+                        display: "inline-block",
+                        padding: "2px 8px",
+                        background: "#8b5cf6",
+                        color: "#fff",
+                        fontSize: 10,
+                        fontWeight: 700,
+                        borderRadius: "var(--radius-pill)",
+                        marginBottom: 4,
+                      }}>
+                        CUSTOM
+                      </span>
+                    )}
+                  </div>
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
@@ -1379,6 +1424,24 @@ export default function AIPromptVault() {
                       title="Download as .txt file"
                     >
                       💾
+                    </button>
+                    
+                    <button
+                      onClick={() => duplicatePrompt(selectedPrompt)}
+                      style={{
+                        padding: "12px 20px",
+                        fontSize: 15,
+                        fontWeight: 600,
+                        color: "var(--text)",
+                        background: "#f1f5f9",
+                        border: "none",
+                        borderRadius: "var(--radius-sm)",
+                        cursor: "pointer",
+                        transition: "all 160ms ease",
+                      }}
+                      title="Duplicate and customize"
+                    >
+                      📑
                     </button>
                     
                     <button
