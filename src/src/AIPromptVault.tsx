@@ -1,8 +1,10 @@
 "use client";
-import React, { useEffect, useState } from "react";
-import { prompts as fullPrompts } from "./prompts";
+
+import React, { useEffect, useMemo, useState } from "react";
+import { prompts as fullPromptsRaw } from "./prompts";
 
 /* ---------- Types ---------- */
+
 type PromptItem = {
   title: string;
   quick?: string;
@@ -21,22 +23,32 @@ type PromptItem = {
 };
 
 type RemotePrompt = Omit<PromptItem, "module" | "index">;
+
 type RemotePayload = {
   version?: string;
   modules?: Record<string, RemotePrompt[]>;
 };
 
+type BuilderValues = {
+  market: string;
+  persona: string;
+  channel: string;
+  goal: string;
+  budget: string;
+  timeHorizon: string;
+  tone: string;
+  platform: string;
+};
+
 /* ---------- Constants ---------- */
 
-// same Apps Script URL you already use
 const REMOTE_JSON_URL =
   "https://script.google.com/macros/s/AKfycbww3SrcmhMY8IMPiSmj7OdqM3cUSVtfU0LuyVtqF9mvdbQjhdoHXASfMhEg4cam577dRw/exec";
 
 const KEY_REMOTE_CACHE = "rpv:remoteCache";
 const KEY_REMOTE_VER = "rpv:remoteVersion";
 
-// internal module titles used when attaching data
-const MODULE_TITLES = [
+const moduleNames = [
   "Lead Generation & Marketing",
   "Operations & Time Management",
   "Goal Setting & Accountability",
@@ -51,181 +63,71 @@ const MODULE_TITLES = [
   "Realtor Resources & Intelligence",
 ];
 
-// strip "Module X —" for labels
 const displayName = (m: string) => m.replace(/^Module\s+\d+\s+—\s+/i, "");
 
-/* ---------- Tracking Hook ---------- */
+/* ---------- Tracking (lightweight) ---------- */
+
 const trackEvent = (name: string, data?: Record<string, any>) => {
   try {
-    window.dispatchEvent(
-      new CustomEvent("rpv_event", { detail: { name, ...data } })
-    );
-    // window.gtag?.("event", name, data);
-    // window.fbq?.("trackCustom", name, data);
+    window.dispatchEvent(new CustomEvent("rpv_event", { detail: { name, ...data } }));
   } catch {
-    // no-op if tracking not wired
+    // no-op
   }
 };
 
-/* ---------- Category Card Meta ---------- */
+/* ---------- Data helpers ---------- */
 
-type CategoryMeta = {
-  id: number;
-  moduleKey: string; // "Module X — Name"
-  label: string;
-  emoji: string;
-  tagline: string;
-};
-
-const CATEGORY_CARDS: CategoryMeta[] = [
-  {
-    id: 1,
-    moduleKey: `Module 1 — ${MODULE_TITLES[0]}`,
-    label: "Get More Leads",
-    emoji: "📣",
-    tagline: "Prompts for ads, content, funnels, and campaigns.",
-  },
-  {
-    id: 2,
-    moduleKey: `Module 2 — ${MODULE_TITLES[1]}`,
-    label: "Fix My Systems",
-    emoji: "🧩",
-    tagline: "Checklists, SOPs, and daily/weekly workflows.",
-  },
-  {
-    id: 3,
-    moduleKey: `Module 3 — ${MODULE_TITLES[2]}`,
-    label: "Hit My Goals",
-    emoji: "🎯",
-    tagline: "Scorecards, habit templates, and sprints.",
-  },
-  {
-    id: 4,
-    moduleKey: `Module 4 — ${MODULE_TITLES[3]}`,
-    label: "Win More Appointments",
-    emoji: "📅",
-    tagline: "Scripts and outlines for buyers and sellers.",
-  },
-  {
-    id: 5,
-    moduleKey: `Module 5 — ${MODULE_TITLES[4]}`,
-    label: "Wow My Clients",
-    emoji: "✨",
-    tagline: "Onboarding, updates, and surprise & delight.",
-  },
-  {
-    id: 6,
-    moduleKey: `Module 6 — ${MODULE_TITLES[5]}`,
-    label: "Boost My Profit",
-    emoji: "💰",
-    tagline: "Cashflow, budgets, and profitability audits.",
-  },
-  {
-    id: 7,
-    moduleKey: `Module 7 — ${MODULE_TITLES[6]}`,
-    label: "Win More Deals",
-    emoji: "🤝",
-    tagline: "Negotiation playbooks and deal rescues.",
-  },
-  {
-    id: 8,
-    moduleKey: `Module 8 — ${MODULE_TITLES[7]}`,
-    label: "Find Better Homes",
-    emoji: "🏡",
-    tagline: "Search strategies and buyer tools.",
-  },
-  {
-    id: 9,
-    moduleKey: `Module 9 — ${MODULE_TITLES[8]}`,
-    label: "Nurture My Sphere",
-    emoji: "🌱",
-    tagline: "Touch plans, events, and local content.",
-  },
-  {
-    id: 10,
-    moduleKey: `Module 10 — ${MODULE_TITLES[9]}`,
-    label: "Improve My Marketing",
-    emoji: "📈",
-    tagline: "Funnels, CRO, and AI-powered assets.",
-  },
-  {
-    id: 11,
-    moduleKey: `Module 11 — ${MODULE_TITLES[10]}`,
-    label: "Automate My Business",
-    emoji: "⚙️",
-    tagline: "Lead routing, drips, and bots.",
-  },
-  {
-    id: 12,
-    moduleKey: `Module 12 — ${MODULE_TITLES[11]}`,
-    label: "Level Up & Learn",
-    emoji: "📚",
-    tagline: "Curated learning and research prompts.",
-  },
-];
-
-/* ---------- Data: attach module labels ---------- */
+// prompts.ts should export `export const prompts = [M1, M2, ..., M12];`
+const fullPrompts = fullPromptsRaw as Array<Array<Omit<PromptItem, "module" | "index">>>;
 
 const attachModule = (
   moduleIndex: number,
-  items: Omit<PromptItem, "module" | "index">[]
+  prompts: Omit<PromptItem, "module" | "index">[]
 ): PromptItem[] => {
-  const moduleName = `Module ${moduleIndex} — ${MODULE_TITLES[moduleIndex - 1]}`;
-  return items.map((p, i) => ({
+  const moduleLabel = `Module ${moduleIndex} — ${moduleNames[moduleIndex - 1]}`;
+  return prompts.map((p, i) => ({
     ...p,
-    module: moduleName,
+    module: moduleLabel,
     index: i,
   }));
 };
 
-/* ---------- Prompt Builder ---------- */
+/* ---------- Prompt builder text ---------- */
 
 const buildFullPrompt = (p: PromptItem): string => {
-  const moduleName = p.module || "Category";
-  const title = p.title || "Prompt";
-  const audience =
-    p.audience || "[buyer/seller/investor/agent type in [market]]";
+  const audience = p.audience || "[buyer/seller/investor/agent type in [market]]";
+
   const inputs =
     p.inputs ||
-    "- KPIs = [list]\n- Tools = [list]\n- Timeline/Budget = [X]\n- Constraints = [plain, compliant language]";
+    "- KPIs = [list]\n- Tools = [list]\n- Timeline/Budget = [budget]\n- Constraints = [plain, compliant language]";
+
   const deliverable =
     p.deliverable || "Bulleted steps + 1 table (fields relevant to this prompt).";
-  const constraints =
-    p.constraints ||
-    "≤ 400 words; use headings; avoid guarantees; fair-housing safe.";
-  const quality =
-    (p as any).quality ||
-    "Add ‘Why this works’ and 3 clarifying questions. Propose 2 ways to improve the first draft.";
+
   const success =
     p.success ||
-    "Define measurable outcomes (response rate %, time saved, appointments set).";
+    "Define measurable outcomes (e.g., response rate %, time saved, appointments set).";
+
   const tools =
     p.tools ||
     "Prefer Google Workspace, CRM, Make.com/Zapier, Notion, Canva as applicable.";
+
   const iterate =
     p.iterate ||
     "End by asking 2–3 questions and offering a v2 refinement path.";
+
   const risk =
     p.risk ||
-    "Risk Check: keep claims verifiable; avoid protected-class targeting; keep language compliant.";
+    "Risk Check: avoid protected-class targeting or unverifiable claims.";
 
   return `Role & Outcome
-Act as a ${p.role || "top 1% real-estate coach"} and produce: “${title}” for ${audience} in ${moduleName}.
-
-Audience & Channel
-Primary user = ${audience}. Output format = ${p.format || "bulleted brief + 1 table"}.
+Act as a ${p.role || "top 1% real-estate coach"} and produce: “${p.title}” for ${audience} in ${p.module}.
 
 Facts / Inputs
 ${inputs}
 
-Constraints
-${constraints}
-
 Deliverable
 ${deliverable}
-
-Quality Controls
-${quality}
 
 Success Metrics
 ${success}
@@ -239,90 +141,136 @@ ${iterate}
 ${risk}`;
 };
 
-/* ---------- Merge Remote Prompts ---------- */
+/** Simple token replacer: swaps common bracketed fields with builder values */
+function applyBuilderValues(base: string, values: BuilderValues): string {
+  let out = base;
+
+  const replacements: Array<[string | RegExp, string]> = [
+    // Market
+    [/\[market\]/gi, values.market],
+    // Persona
+    [/\[buyer persona\]/gi, values.persona],
+    [/\[persona\]/gi, values.persona],
+    // Channel
+    [/\[channel\]/gi, values.channel],
+    // Goal
+    [/\[goal\]/gi, values.goal],
+    // Budget
+    [/\[budget\]/gi, values.budget],
+    [/\[\$X\]/gi, values.budget],
+    [/\[\$Y\]/gi, values.budget],
+    // Time horizon / timeline
+    [/\[time horizon\]/gi, values.timeHorizon],
+    [/\[timeline\]/gi, values.timeHorizon],
+    // Tone
+    [/\[tone\]/gi, values.tone],
+    // Platform
+    [/\[platform\]/gi, values.platform],
+  ];
+
+  replacements.forEach(([pattern, val]) => {
+    if (!val.trim()) return;
+    out = out.replace(pattern, val.trim());
+  });
+
+  return out;
+}
+
+/* ---------- Remote merge ---------- */
 
 function mergeRemote(base: PromptItem[], remote: RemotePayload): PromptItem[] {
   if (!remote?.modules) return base;
 
   const result = [...base];
-  const existing = new Set(
+  const existingTitles = new Set(
     base.map((b) => (b.title || "").toLowerCase().trim())
   );
 
-  const baseModules = Array.from(new Set(base.map((b) => b.module)));
+  Object.entries(remote.modules).forEach(([rawModule, prompts]) => {
+    if (!Array.isArray(prompts)) return;
 
-  const findModuleKey = (label: string): string | null => {
-    // try exact
-    const exact = baseModules.find((m) => m === label);
-    if (exact) return exact;
-
-    const target = label.trim().toLowerCase();
-    // try by displayName
-    const match = baseModules.find(
-      (m) => displayName(m).trim().toLowerCase() === target
-    );
-    return match || null;
-  };
-
-  Object.entries(remote.modules).forEach(([rawModule, arr]) => {
-    const targetModule = findModuleKey(rawModule);
-    if (!targetModule) return;
-
-    const existingInModule = result.filter((r) => r.module === targetModule);
-    let nextIndex = existingInModule.length;
-
-    arr.forEach((r) => {
+    prompts.forEach((r, idx) => {
       const t = (r.title || "").toLowerCase().trim();
-      if (!t || existing.has(t)) return;
+      if (!t || existingTitles.has(t)) return;
+
+      const matchedModule =
+        base.find(
+          (b) =>
+            displayName(b.module).toLowerCase().trim() ===
+            rawModule.toLowerCase().trim()
+        )?.module || `Module ? — ${rawModule}`;
 
       result.push({
         ...r,
-        module: targetModule,
-        index: nextIndex++,
+        module: matchedModule,
+        index: idx,
       });
-      existing.add(t);
+      existingTitles.add(t);
     });
   });
 
-  return result;
+  // reindex within each module
+  const byModule: Record<string, PromptItem[]> = {};
+  result.forEach((p) => {
+    if (!byModule[p.module]) byModule[p.module] = [];
+    byModule[p.module].push(p);
+  });
+
+  const final: PromptItem[] = [];
+  Object.keys(byModule).forEach((m) => {
+    byModule[m].forEach((p, i) => final.push({ ...p, index: i }));
+  });
+
+  return final;
 }
 
 /* ---------- Main Component ---------- */
 
 export default function AIPromptVault() {
   const [data, setData] = useState<PromptItem[]>([]);
+  const [modulesList, setModulesList] = useState<string[]>([]);
   const [selectedModule, setSelectedModule] = useState<string>("");
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
-  const [copied, setCopied] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [copiedBase, setCopiedBase] = useState(false);
+  const [copiedBuilt, setCopiedBuilt] = useState(false);
 
-  // preload base + remote
+  const [builderValues, setBuilderValues] = useState<BuilderValues>({
+    market: "",
+    persona: "",
+    channel: "",
+    goal: "",
+    budget: "",
+    timeHorizon: "",
+    tone: "",
+    platform: "",
+  });
+
+  // Load base + remote
   useEffect(() => {
     const baseArr: PromptItem[] = fullPrompts.flatMap((m, i) =>
       attachModule(i + 1, m)
     );
     setData(baseArr);
+    setModulesList(Array.from(new Set(baseArr.map((d) => d.module))));
 
     (async () => {
       try {
-        // apply cached remote if present
         const cachedStr = localStorage.getItem(KEY_REMOTE_CACHE);
         if (cachedStr) {
           try {
             const cached = JSON.parse(cachedStr) as RemotePayload;
             const merged = mergeRemote(baseArr, cached);
             setData(merged);
+            setModulesList(Array.from(new Set(merged.map((d) => d.module))));
           } catch {
             // ignore cache parse errors
           }
         }
 
-        // fetch fresh
         const res = await fetch(REMOTE_JSON_URL, { cache: "no-store" });
-        if (!res.ok) {
-          setLoading(false);
-          return;
-        }
+        if (!res.ok) return;
+
         const remote = (await res.json()) as RemotePayload;
         const ver = remote.version || "";
         const oldVer = localStorage.getItem(KEY_REMOTE_VER);
@@ -330,340 +278,451 @@ export default function AIPromptVault() {
         if (!oldVer || oldVer !== ver) {
           const merged = mergeRemote(baseArr, remote);
           setData(merged);
+          setModulesList(Array.from(new Set(merged.map((d) => d.module))));
           localStorage.setItem(KEY_REMOTE_CACHE, JSON.stringify(remote));
           localStorage.setItem(KEY_REMOTE_VER, ver);
         }
       } catch (e) {
-        console.warn("Remote prompts not loaded:", e);
+        console.warn("Remote load failed:", e);
       } finally {
         setLoading(false);
       }
     })();
   }, []);
 
-  const promptsForSelected = selectedModule
-    ? data.filter((d) => d.module === selectedModule)
-    : [];
+  const current = useMemo(
+    () =>
+      selectedModule && selectedIndex != null
+        ? data.find(
+            (d) => d.module === selectedModule && d.index === selectedIndex
+          ) || null
+        : null,
+    [data, selectedModule, selectedIndex]
+  );
 
-  const currentPrompt =
-    selectedModule != null && selectedIndex != null
-      ? data.find(
-          (d) => d.module === selectedModule && d.index === selectedIndex
-        ) || null
-      : null;
+  const basePromptText = useMemo(
+    () => (current ? buildFullPrompt(current) : ""),
+    [current]
+  );
 
-  const handleCopy = async () => {
-    if (!currentPrompt) return;
-    const txt = buildFullPrompt(currentPrompt);
+  const builtPromptText = useMemo(
+    () =>
+      current
+        ? applyBuilderValues(basePromptText, builderValues)
+        : "",
+    [basePromptText, builderValues, current]
+  );
 
+  const handleCopyBase = async () => {
+    if (!basePromptText) return;
     try {
-      await navigator.clipboard.writeText(txt);
+      await navigator.clipboard.writeText(basePromptText);
     } catch {
       const ta = document.createElement("textarea");
-      ta.value = txt;
+      ta.value = basePromptText;
       document.body.appendChild(ta);
       ta.select();
       document.execCommand("copy");
       ta.remove();
     }
+    setCopiedBase(true);
+    setTimeout(() => setCopiedBase(false), 1200);
+    if (current) {
+      trackEvent("prompt_copied_base", { title: current.title, module: current.module });
+    }
+  };
 
-    setCopied(true);
-    trackEvent("prompt_copied", {
-      title: currentPrompt.title,
-      module: currentPrompt.module,
-    });
-    setTimeout(() => setCopied(false), 1200);
+  const handleCopyBuilt = async () => {
+    if (!builtPromptText) return;
+    try {
+      await navigator.clipboard.writeText(builtPromptText);
+    } catch {
+      const ta = document.createElement("textarea");
+      ta.value = builtPromptText;
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand("copy");
+      ta.remove();
+    }
+    setCopiedBuilt(true);
+    setTimeout(() => setCopiedBuilt(false), 1200);
+    if (current) {
+      trackEvent("prompt_copied_built", { title: current.title, module: current.module });
+    }
+  };
+
+  const handleBuilderChange = (field: keyof BuilderValues, value: string) => {
+    setBuilderValues((prev) => ({ ...prev, [field]: value }));
+    trackEvent("builder_field_changed", { field, value });
   };
 
   return (
     <div
       style={{
-        maxWidth: 1040,
+        maxWidth: 960,
         margin: "0 auto",
-        padding: "32px 20px 40px",
+        padding: "28px 20px",
         fontFamily:
           "system-ui,-apple-system,Segoe UI,Roboto,Inter,Helvetica,Arial,sans-serif",
-        background: "linear-gradient(#f9fafb, #ffffff)",
       }}
     >
       {/* Header */}
-      <header style={{ marginBottom: 28 }}>
-        <div
-          style={{
-            fontSize: 26,
-            fontWeight: 900,
-            letterSpacing: "-0.03em",
-            color: "#020617",
-            marginBottom: 6,
-          }}
-        >
+      <div style={{ display: "grid", gap: 12, marginBottom: 16 }}>
+        <div style={{ fontSize: 28, fontWeight: 800 }}>
           AI Prompt Vault for Real Estate Agents
         </div>
-        <div style={{ fontSize: 14, color: "#6b7280", maxWidth: 620 }}>
-          Pick a category below and grab a ready-made prompt for your next
-          marketing, systems, or client problem.
+        <div style={{ color: "#6b7280", fontSize: 14 }}>
+          Step 1: pick a module & prompt. Step 2: fill in the builder fields.
+          Step 3: copy the built prompt into ChatGPT.
         </div>
-      </header>
-
-      {/* Category cards */}
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
-          gap: 14,
-          marginBottom: 18,
-        }}
-      >
-        {CATEGORY_CARDS.map((cat) => {
-          const isActive = selectedModule === cat.moduleKey;
-          return (
-            <button
-              key={cat.id}
-              onClick={() => {
-                const nextModule =
-                  selectedModule === cat.moduleKey ? "" : cat.moduleKey;
-                setSelectedModule(nextModule);
-                setSelectedIndex(null);
-                trackEvent("module_selected", {
-                  module: nextModule || "none",
-                  label: cat.label,
-                });
-              }}
-              style={{
-                textAlign: "left",
-                borderRadius: 16,
-                padding: "14px 14px 13px",
-                border: isActive ? "1px solid #2563eb" : "1px solid #e5e7eb",
-                background: isActive ? "#eef2ff" : "#ffffff",
-                boxShadow: isActive
-                  ? "0 14px 30px rgba(37,99,235,0.18)"
-                  : "0 10px 24px rgba(15,23,42,0.06)",
-                cursor: "pointer",
-                display: "flex",
-                flexDirection: "column",
-                gap: 6,
-                transition:
-                  "transform 120ms ease, box-shadow 120ms ease, background 120ms ease, border-color 120ms ease",
-              }}
-              onMouseEnter={(e) => {
-                (e.currentTarget as HTMLButtonElement).style.transform =
-                  "translateY(-2px)";
-              }}
-              onMouseLeave={(e) => {
-                (e.currentTarget as HTMLButtonElement).style.transform =
-                  "translateY(0)";
-              }}
-            >
-              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                <span style={{ fontSize: 18 }}>{cat.emoji}</span>
-                <span
-                  style={{
-                    fontSize: 15,
-                    fontWeight: 700,
-                    color: "#020617",
-                  }}
-                >
-                  {cat.label}
-                </span>
-              </div>
-              <span style={{ fontSize: 12, color: "#6b7280" }}>
-                {cat.tagline}
-              </span>
-            </button>
-          );
-        })}
       </div>
 
-      {/* Helper text */}
-      {!selectedModule && (
-        <p
+      {/* Module selector */}
+      <select
+        value={selectedModule}
+        onChange={(e) => {
+          const value = e.target.value;
+          setSelectedModule(value);
+          setSelectedIndex(null);
+          trackEvent("module_selected", { module: value });
+        }}
+        style={{
+          height: 42,
+          borderRadius: 10,
+          border: "1px solid #e5e7eb",
+          padding: "0 12px",
+          background: "#fff",
+          fontSize: 14,
+          marginBottom: 10,
+        }}
+      >
+        <option value="">Select a module</option>
+        {modulesList.map((m) => (
+          <option key={m} value={m}>
+            {displayName(m)}
+          </option>
+        ))}
+      </select>
+
+      {/* Prompt selector */}
+      <select
+        disabled={!selectedModule}
+        value={selectedIndex ?? ""}
+        onChange={(e) => {
+          const raw = e.target.value;
+          const idx = raw === "" ? null : Number(raw);
+          setSelectedIndex(idx);
+          if (idx != null) {
+            const p = data.find(
+              (d) => d.module === selectedModule && d.index === idx
+            );
+            trackEvent("prompt_selected", {
+              module: selectedModule,
+              title: p?.title,
+            });
+          }
+        }}
+        style={{
+          height: 42,
+          borderRadius: 10,
+          border: "1px solid #e5e7eb",
+          padding: "0 12px",
+          background: selectedModule ? "#fff" : "#f8fafc",
+          fontSize: 14,
+        }}
+      >
+        <option value="">Select a prompt…</option>
+        {selectedModule &&
+          data
+            .filter((d) => d.module === selectedModule)
+            .map((p) => (
+              <option key={p.index} value={p.index}>
+                {p.title}
+              </option>
+            ))}
+      </select>
+
+      {/* Prompt card */}
+      {current && (
+        <div
           style={{
-            fontSize: 12,
-            color: "#9ca3af",
-            marginBottom: 10,
+            marginTop: 18,
+            background: "#fff",
+            border: "1px solid #e5e7eb",
+            borderRadius: 16,
+            padding: 18,
+            boxShadow: "0 10px 24px rgba(12,35,64,.06)",
           }}
         >
-          Choose a category above to see the prompts.
-        </p>
-      )}
-
-      {/* Prompt selector + body */}
-      {selectedModule && (
-        <section style={{ marginTop: 8 }}>
+          {/* Chips */}
           <div
             style={{
-              marginBottom: 8,
               display: "flex",
-              justifyContent: "space-between",
-              alignItems: "baseline",
-              gap: 12,
+              gap: 10,
               flexWrap: "wrap",
+              marginBottom: 8,
             }}
           >
-            <div>
-              <div
-                style={{
-                  fontSize: 14,
-                  fontWeight: 600,
-                  color: "#0f172a",
-                }}
-              >
-                Prompts in {displayName(selectedModule)}
-              </div>
-              <div style={{ fontSize: 12, color: "#9ca3af" }}>
-                Pick a prompt, then copy the long version into ChatGPT and
-                personalize the bracketed fields.
-              </div>
-            </div>
-
-            <select
-              value={selectedIndex ?? ""}
-              onChange={(e) => {
-                const idx =
-                  e.target.value === "" ? null : Number(e.target.value);
-                setSelectedIndex(idx);
-                if (idx != null) {
-                  const p = promptsForSelected.find(
-                    (d) => d.index === idx
-                  );
-                  trackEvent("prompt_selected", {
-                    module: selectedModule,
-                    title: p?.title,
-                  });
-                }
-              }}
+            <span
               style={{
-                height: 40,
-                minWidth: 220,
+                fontSize: 12,
+                padding: "4px 8px",
+                background: "#eef2ff",
+                color: "#334155",
                 borderRadius: 999,
-                border: "1px solid #e5e7eb",
-                padding: "0 14px",
-                background: "#ffffff",
-                fontSize: 13,
-                color: "#111827",
               }}
             >
-              <option value="">
-                {promptsForSelected.length
-                  ? "Choose a prompt…"
-                  : "No prompts found"}
-              </option>
-              {promptsForSelected.map((p) => (
-                <option key={p.index} value={p.index}>
-                  {p.title}
-                </option>
-              ))}
-            </select>
+              {displayName(current.module)}
+            </span>
+            <span
+              style={{
+                fontSize: 12,
+                padding: "4px 8px",
+                background: "#eef2ff",
+                color: "#334155",
+                borderRadius: 999,
+              }}
+            >
+              Long Prompt
+            </span>
           </div>
 
-          {currentPrompt && (
+          {/* Title */}
+          <div
+            style={{
+              fontWeight: 800,
+              margin: "4px 0 8px",
+              fontSize: 18,
+            }}
+          >
+            {current.title}
+          </div>
+
+          {/* Base prompt (read-only text view) */}
+          <pre
+            style={{
+              whiteSpace: "pre-wrap",
+              lineHeight: 1.45,
+              color: "#111827",
+              fontSize: 14,
+              background: "#f9fafb",
+              borderRadius: 10,
+              padding: 10,
+              border: "1px solid #e5e7eb",
+            }}
+          >
+            {basePromptText}
+          </pre>
+
+          <div
+            style={{
+              marginTop: 10,
+              display: "flex",
+              gap: 10,
+              flexWrap: "wrap",
+              alignItems: "center",
+            }}
+          >
+            <button
+              onClick={handleCopyBase}
+              style={{
+                height: 40,
+                borderRadius: 10,
+                border: "1px solid #e5e7eb",
+                padding: "0 12px",
+                background: "#f1f5f9",
+                color: "#0c2340",
+                fontSize: 14,
+                fontWeight: 600,
+                cursor: "pointer",
+              }}
+            >
+              {copiedBase ? "Base prompt copied" : "Copy base prompt"}
+            </button>
+          </div>
+
+          {/* Builder */}
+          <div
+            style={{
+              marginTop: 24,
+              paddingTop: 16,
+              borderTop: "1px dashed #e5e7eb",
+            }}
+          >
+            <div
+              style={{
+                fontSize: 14,
+                fontWeight: 700,
+                marginBottom: 8,
+                display: "flex",
+                alignItems: "center",
+                gap: 8,
+              }}
+            >
+              Prompt Builder
+              <span
+                style={{
+                  fontSize: 11,
+                  padding: "2px 6px",
+                  borderRadius: 999,
+                  border: "1px solid #e5e7eb",
+                  color: "#6b7280",
+                }}
+              >
+                Fill fields → copy built prompt
+              </span>
+            </div>
+
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "repeat(auto-fit, minmax(190px, 1fr))",
+                gap: 10,
+                marginBottom: 12,
+              }}
+            >
+              <BuilderField
+                label="Market"
+                placeholder="Chicago North Side"
+                value={builderValues.market}
+                onChange={(v) => handleBuilderChange("market", v)}
+              />
+              <BuilderField
+                label="Buyer / Persona"
+                placeholder="first-time buyers, move-up sellers"
+                value={builderValues.persona}
+                onChange={(v) => handleBuilderChange("persona", v)}
+              />
+              <BuilderField
+                label="Primary Channel"
+                placeholder="YouTube, IG Reels, email"
+                value={builderValues.channel}
+                onChange={(v) => handleBuilderChange("channel", v)}
+              />
+              <BuilderField
+                label="Goal"
+                placeholder="15 qualified leads / month"
+                value={builderValues.goal}
+                onChange={(v) => handleBuilderChange("goal", v)}
+              />
+              <BuilderField
+                label="Budget"
+                placeholder="$1,500/mo ad spend"
+                value={builderValues.budget}
+                onChange={(v) => handleBuilderChange("budget", v)}
+              />
+              <BuilderField
+                label="Time Horizon"
+                placeholder="next 90 days"
+                value={builderValues.timeHorizon}
+                onChange={(v) => handleBuilderChange("timeHorizon", v)}
+              />
+              <BuilderField
+                label="Tone / Voice"
+                placeholder="casual but data-backed"
+                value={builderValues.tone}
+                onChange={(v) => handleBuilderChange("tone", v)}
+              />
+              <BuilderField
+                label="Platform"
+                placeholder="ChatGPT, Claude, Gemini"
+                value={builderValues.platform}
+                onChange={(v) => handleBuilderChange("platform", v)}
+              />
+            </div>
+
+            <div style={{ fontSize: 12, color: "#6b7280", marginBottom: 6 }}>
+              The builder auto-replaces common tokens like{" "}
+              <code>[market]</code>, <code>[buyer persona]</code>,{" "}
+              <code>[channel]</code>, <code>[goal]</code>, and{" "}
+              <code>[budget]</code> wherever they appear in this prompt.
+            </div>
+
+            <textarea
+              readOnly
+              value={builtPromptText || basePromptText}
+              style={{
+                width: "100%",
+                minHeight: 160,
+                borderRadius: 10,
+                border: "1px solid #e5e7eb",
+                padding: 10,
+                fontFamily: "inherit",
+                fontSize: 13,
+                lineHeight: 1.45,
+                resize: "vertical",
+                background: "#f9fafb",
+              }}
+            />
+
             <div
               style={{
                 marginTop: 10,
-                background: "#ffffff",
-                border: "1px solid #e5e7eb",
-                borderRadius: 18,
-                padding: 18,
-                boxShadow: "0 12px 30px rgba(15,23,42,0.08)",
+                display: "flex",
+                gap: 10,
+                flexWrap: "wrap",
+                alignItems: "center",
               }}
             >
-              <div
+              <button
+                onClick={handleCopyBuilt}
                 style={{
-                  display: "flex",
-                  gap: 10,
-                  flexWrap: "wrap",
-                  marginBottom: 8,
-                }}
-              >
-                <span
-                  style={{
-                    fontSize: 11,
-                    padding: "3px 9px",
-                    background: "#eef2ff",
-                    color: "#334155",
-                    borderRadius: 999,
-                    textTransform: "uppercase",
-                    letterSpacing: "0.04em",
-                    fontWeight: 600,
-                  }}
-                >
-                  {displayName(currentPrompt.module)}
-                </span>
-                <span
-                  style={{
-                    fontSize: 11,
-                    padding: "3px 9px",
-                    background: "#f9fafb",
-                    color: "#4b5563",
-                    borderRadius: 999,
-                  }}
-                >
-                  Long Prompt
-                </span>
-              </div>
-
-              <div
-                style={{
-                  fontWeight: 800,
-                  margin: "4px 0 8px",
-                  fontSize: 18,
-                  color: "#020617",
-                }}
-              >
-                {currentPrompt.title || "Untitled Prompt"}
-              </div>
-
-              <div
-                style={{
-                  whiteSpace: "pre-wrap",
-                  lineHeight: 1.5,
-                  color: "#111827",
+                  height: 40,
+                  borderRadius: 10,
+                  border: "1px solid #e5e7eb",
+                  padding: "0 12px",
+                  background: "#0f172a",
+                  color: "#f9fafb",
                   fontSize: 14,
+                  fontWeight: 600,
+                  cursor: "pointer",
                 }}
               >
-                {buildFullPrompt(currentPrompt)}
-              </div>
+                {copiedBuilt ? "Built prompt copied" : "Copy built prompt"}
+              </button>
 
-              <div
-                style={{
-                  marginTop: 14,
-                  display: "flex",
-                  gap: 10,
-                  flexWrap: "wrap",
-                  alignItems: "center",
-                }}
-              >
-                <button
-                  onClick={handleCopy}
-                  style={{
-                    height: 42,
-                    borderRadius: 999,
-                    border: "1px solid #e5e7eb",
-                    padding: "0 16px",
-                    background: "#0f172a",
-                    color: "#f9fafb",
-                    fontSize: 14,
-                    fontWeight: 600,
-                    cursor: "pointer",
-                  }}
-                >
-                  {copied ? "Copied!" : "Copy prompt"}
-                </button>
-                <span style={{ fontSize: 12, color: "#9ca3af" }}>
-                  Copy → paste into ChatGPT → tweak the bracketed fields →
-                  run.
-                </span>
-              </div>
+              <span style={{ fontSize: 11, color: "#6b7280" }}>
+                Leave fields blank to fall back to the original text in those spots.
+              </span>
             </div>
-          )}
-        </section>
+          </div>
+        </div>
       )}
 
-      {loading && !selectedModule && (
+      {loading && !current && (
         <p style={{ fontSize: 12, color: "#9ca3af", marginTop: 12 }}>
           Loading prompts…
         </p>
       )}
     </div>
+  );
+}
+
+/* ---------- Small subcomponent: builder input ---------- */
+
+type BuilderFieldProps = {
+  label: string;
+  placeholder?: string;
+  value: string;
+  onChange: (value: string) => void;
+};
+
+function BuilderField({ label, placeholder, value, onChange }: BuilderFieldProps) {
+  return (
+    <label style={{ display: "grid", gap: 4, fontSize: 12 }}>
+      <span style={{ color: "#374151", fontWeight: 600 }}>{label}</span>
+      <input
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder={placeholder}
+        style={{
+          height: 36,
+          borderRadius: 8,
+          border: "1px solid #e5e7eb",
+          padding: "0 10px",
+          fontSize: 13,
+        }}
+      />
+    </label>
   );
 }
