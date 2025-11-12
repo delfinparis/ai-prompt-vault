@@ -1,5 +1,6 @@
 "use client";
 import React, { useState, useMemo, useEffect } from "react";
+import confetti from "canvas-confetti";
 import "./AIPromptVault.css";
 import { prompts as fullPrompts } from "./prompts";
 import { PromptItem, buildFullPrompt, extractPlaceholders, applyReplacements, getPlaceholderHelp, simplifyJargon } from "./promptUtils";
@@ -11,6 +12,7 @@ const KEY_RECENT = "rpv:recentCopied";
 const KEY_SAVED_FIELDS = "rpv:savedFields";
 const KEY_ONBOARDED = "rpv:onboarded";
 const KEY_DARK_MODE = "rpv:darkMode";
+const KEY_FIRST_COPY = "rpv:firstCopy";
 
 // Module names (descriptive, not numbered)
 const MODULE_NAMES: Record<number, string> = {
@@ -268,6 +270,19 @@ export default function AIPromptVault() {
       
       setFollowUpPrompts(suggestions);
       setShowFollowUps(true);
+      
+      // Check if this is the user's first copy ever
+      const hasCompletedFirstCopy = localStorage.getItem(KEY_FIRST_COPY);
+      if (!hasCompletedFirstCopy) {
+        // Trigger confetti celebration!
+        confetti({
+          particleCount: 100,
+          spread: 70,
+          origin: { y: 0.6 },
+          colors: ['#2563eb', '#06b6d4', '#f59e0b', '#ec4899'],
+        });
+        localStorage.setItem(KEY_FIRST_COPY, 'true');
+      }
       
       trackEvent("prompt_copied", { title: prompt.title, module: prompt.module });
     } catch (err) {
