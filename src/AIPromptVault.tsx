@@ -199,6 +199,11 @@ export default function AIPromptVault() {
         document.body.classList.add('kale-branded');
       }
       
+      // Apply embed mode styling if parameter detected
+      if (isEmbedMode) {
+        document.body.classList.add('embed-mode');
+      }
+      
       // Listen for system theme changes
       const darkModeMediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
       const handleSystemThemeChange = (e: MediaQueryListEvent) => {
@@ -217,7 +222,7 @@ export default function AIPromptVault() {
       // Cleanup
       return () => darkModeMediaQuery.removeEventListener('change', handleSystemThemeChange);
     } catch {}
-  }, [isKaleBranded]);
+  }, [isKaleBranded, isEmbedMode]);
 
   // Keyboard shortcuts
   useEffect(() => {
