@@ -1069,6 +1069,7 @@ export default function AIPromptVault() {
                         placeholder={helpInfo.example}
                         style={{
                           width: "100%",
+                          maxWidth: 480,
                           padding: "14px 16px",
                           borderRadius: "var(--radius-sm)",
                           border: "2px solid #e5e7eb",
