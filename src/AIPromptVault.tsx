@@ -73,6 +73,7 @@ export default function AIPromptVault() {
   const [followUpPrompts, setFollowUpPrompts] = useState<PromptItem[]>([]);
   const [lastUpdated, setLastUpdated] = useState<string | null>(null);
   const [darkMode, setDarkMode] = useState<boolean>(false);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
   const searchInputRef = React.useRef<HTMLInputElement>(null);
   const fieldInputRef = React.useRef<HTMLInputElement>(null);
 
@@ -126,6 +127,9 @@ export default function AIPromptVault() {
       const timeStr = now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
       const dateStr = now.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
       setLastUpdated(`${dateStr} at ${timeStr}`);
+      
+      // Simulate brief loading for skeleton cards
+      setTimeout(() => setIsLoading(false), 300);
     } catch {}
   }, []);
 
@@ -678,7 +682,38 @@ export default function AIPromptVault() {
             </div>
           )}
           
-          {displayPrompts.map((prompt: any) => {
+          {isLoading ? (
+            // Loading skeleton cards
+            <div style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fill, minmax(320px, 1fr))",
+              gap: 20,
+            }}>
+              {[1, 2, 3, 4, 5, 6].map((n) => (
+                <div
+                  key={n}
+                  className="skeleton"
+                  style={{
+                    background: "var(--surface)",
+                    border: "1px solid rgba(15,23,42,0.08)",
+                    borderRadius: "var(--radius-md)",
+                    padding: 20,
+                    height: 160,
+                  }}
+                >
+                  <div className="skeleton" style={{ width: "70%", height: 20, borderRadius: 4, marginBottom: 12 }} />
+                  <div className="skeleton" style={{ width: "100%", height: 16, borderRadius: 4, marginBottom: 8 }} />
+                  <div className="skeleton" style={{ width: "90%", height: 16, borderRadius: 4, marginBottom: 16 }} />
+                  <div style={{ display: "flex", gap: 8 }}>
+                    <div className="skeleton" style={{ width: 60, height: 24, borderRadius: 12 }} />
+                    <div className="skeleton" style={{ width: 70, height: 24, borderRadius: 12 }} />
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <>
+              {displayPrompts.map((prompt: any) => {
             const isFavorite = favorites.includes(prompt.id);
             const uses = copyCounts[prompt.id] || 0;
             const isHovered = hoveredCard === prompt.id;
@@ -860,6 +895,8 @@ export default function AIPromptVault() {
               </div>
             );
           })}
+          </>
+          )}
         </div>
       </section>
 
