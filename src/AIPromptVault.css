@@ -97,50 +97,59 @@
   --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
 }
 
-/* Dark mode with improved contrast (WCAG AA compliant) */
+/* Dark mode with improved contrast (WCAG AA+ compliant with enhanced readability) */
 body.dark-mode {
-  --bg: #0f172a;
-  --surface: #1e293b;
-  --surface-elevated: #334155;
-  --surface-hover: #475569;
-  --text-primary: #f1f5f9;
-  --text-secondary: #cbd5e1;
-  --text-tertiary: #94a3b8;
-  --text-inverse: #111827;
+  /* Backgrounds - deeper contrast for better readability */
+  --bg: #0a0f1a;
+  --surface: #151b28;
+  --surface-elevated: #1e293b;
+  --surface-hover: #2a3646;
+  
+  /* Text - optimized for maximum readability on dark backgrounds */
+  --text-primary: #f8fafc;
+  --text-secondary: #d1d5db;
+  --text-tertiary: #9ca3af;
+  --text-inverse: #0f172a;
+  
+  /* Interactive colors - higher contrast for better visibility */
   --primary: #60a5fa;
   --primary-hover: #3b82f6;
   --accent: #22d3ee;
   --accent-hover: #06b6d4;
-  --border: #334155;
-  --border-hover: #475569;
   
-  /* Semantic colors - dark mode adjusted */
-  --success: #34d399;
-  --success-bg: #064e3b;
-  --success-text: #d1fae5;
+  /* Borders - more visible in dark mode */
+  --border: #3b4456;
+  --border-hover: #4b5563;
+  
+  /* Semantic colors - enhanced for dark backgrounds */
+  --success: #4ade80;
+  --success-bg: #14532d;
+  --success-text: #86efac;
   --warning: #fbbf24;
   --warning-bg: #78350f;
-  --warning-text: #fef3c7;
+  --warning-text: #fde68a;
   --error: #f87171;
   --error-bg: #7f1d1d;
-  --error-text: #fee2e2;
+  --error-text: #fecaca;
   --info: #38bdf8;
   --info-bg: #0c4a6e;
-  --info-text: #e0f2fe;
-  --purple: #a78bfa;
+  --info-text: #bae6fd;
+  --purple: #c4b5fd;
   --purple-bg: #4c1d95;
-  --purple-text: #ede9fe;
+  --purple-text: #e9d5ff;
   
-  /* Input & interactive states */
+  /* Input & interactive states - better visibility */
   --input-bg: #1e293b;
-  --input-border: #475569;
+  --input-border: #3b4456;
   --input-focus: #60a5fa;
-  --input-text: #f1f5f9;
-  --input-placeholder: #64748b;
+  --input-text: #f8fafc;
+  --input-placeholder: #6b7280;
   
-  /* Badge & tag colors */
-  --badge-bg: #334155;
-  --badge-text: #cbd5e1;
+  /* Badge & tag colors - improved contrast */
+  --badge-bg: #2a3646;
+  --badge-text: #e5e7eb;
+  --badge-primary-bg: #1e3a8a;
+  --badge-primary-text: #bfdbfe;
   --badge-primary-bg: #1e3a8a;
   --badge-primary-text: #dbeafe;
 
