@@ -575,6 +575,7 @@ export default function AIPromptVault() {
             const isFavorite = favorites.includes(prompt.id);
             const uses = copyCounts[prompt.id] || 0;
             const isHovered = hoveredCard === prompt.id;
+            const isTrending = hotPrompts.slice(0, 3).some((hp: any) => hp.id === prompt.id) && uses >= 5;
             
             return (
               <div
@@ -589,13 +590,33 @@ export default function AIPromptVault() {
                   transition: "all 180ms ease",
                   transform: isHovered ? "translateY(-2px)" : "translateY(0)",
                   boxShadow: isHovered ? "var(--shadow-md)" : "none",
+                  position: "relative",
                 }}
                 onClick={() => selectPrompt(prompt)}
                 onMouseEnter={() => setHoveredCard(prompt.id)}
                 onMouseLeave={() => setHoveredCard(null)}
               >
+                {isTrending && (
+                  <div style={{
+                    position: "absolute",
+                    top: 12,
+                    right: 12,
+                    background: "linear-gradient(135deg, #f97316 0%, #dc2626 100%)",
+                    color: "#fff",
+                    padding: "4px 10px",
+                    borderRadius: "var(--radius-pill)",
+                    fontSize: 11,
+                    fontWeight: 700,
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 4,
+                    boxShadow: "0 2px 8px rgba(249,115,22,0.3)",
+                  }}>
+                    🔥 Trending
+                  </div>
+                )}
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 10 }}>
-                  <h3 style={{ fontSize: 17, fontWeight: 700, color: "var(--text)", marginBottom: 8 }}>
+                  <h3 style={{ fontSize: 17, fontWeight: 700, color: "var(--text)", marginBottom: 8, paddingRight: isTrending ? 100 : 0 }}>
                     {prompt.title}
                   </h3>
                   <button
