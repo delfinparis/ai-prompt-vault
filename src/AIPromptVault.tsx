@@ -53,6 +53,21 @@ const MODULE_TAGS: Record<number, string[]> = {
 const trackEvent = (name: string, data?: Record<string, any>) => {
   try {
     window.dispatchEvent(new CustomEvent("rpv_event", { detail: { name, ...data } }));
+    
+    // Send to Plausible Analytics (if installed)
+    if (typeof window !== 'undefined' && (window as any).plausible) {
+      (window as any).plausible(name, { props: data });
+    }
+    
+    // Send to PostHog (if installed)
+    if (typeof window !== 'undefined' && (window as any).posthog) {
+      (window as any).posthog.capture(name, data);
+    }
+    
+    // Console log in development
+    if (process.env.NODE_ENV === 'development') {
+      console.log('[Analytics]', name, data);
+    }
   } catch {}
 };
 
@@ -396,15 +411,6 @@ export default function AIPromptVault() {
     setCollections(updatedCollections);
     localStorage.setItem(KEY_COLLECTIONS, JSON.stringify(updatedCollections));
     trackEvent("prompt_added_to_collection", { collectionName, promptId });
-  };
-
-  // Create new collection
-  const createCollection = (name: string) => {
-    if (!collections[name]) {
-      const updatedCollections = { ...collections, [name]: [] };
-      setCollections(updatedCollections);
-      localStorage.setItem(KEY_COLLECTIONS, JSON.stringify(updatedCollections));
-    }
   };
 
   // Duplicate prompt (create custom version)
