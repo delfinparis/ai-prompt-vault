@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useMemo, useState } from "react";
-import { prompts as fullPromptsRaw } from "./prompts";
+import { prompts as fullPrompts } from "./prompts";
 
 /* ---------- Types ---------- */
 
@@ -35,7 +35,7 @@ type BuilderValues = {
   channel: string;
   goal: string;
   budget: string;
-  timeHorizon: string;
+  timeline: string;
   tone: string;
   platform: string;
 };
@@ -65,20 +65,19 @@ const moduleNames = [
 
 const displayName = (m: string) => m.replace(/^Module\s+\d+\s+—\s+/i, "");
 
-/* ---------- Tracking (lightweight) ---------- */
+/* ---------- Tracking ---------- */
 
 const trackEvent = (name: string, data?: Record<string, any>) => {
   try {
     window.dispatchEvent(new CustomEvent("rpv_event", { detail: { name, ...data } }));
+    // window.gtag?.("event", name, data);
+    // window.fbq?.("trackCustom", name, data);
   } catch {
     // no-op
   }
 };
 
 /* ---------- Data helpers ---------- */
-
-// prompts.ts should export `export const prompts = [M1, M2, ..., M12];`
-const fullPrompts = fullPromptsRaw as Array<Array<Omit<PromptItem, "module" | "index">>>;
 
 const attachModule = (
   moduleIndex: number,
@@ -92,88 +91,45 @@ const attachModule = (
   }));
 };
 
-/* ---------- Prompt builder text ---------- */
-
-const buildFullPrompt = (p: PromptItem): string => {
-  const audience = p.audience || "[buyer/seller/investor/agent type in [market]]";
-
-  const inputs =
-    p.inputs ||
-    "- KPIs = [list]\n- Tools = [list]\n- Timeline/Budget = [budget]\n- Constraints = [plain, compliant language]";
-
-  const deliverable =
-    p.deliverable || "Bulleted steps + 1 table (fields relevant to this prompt).";
-
-  const success =
-    p.success ||
-    "Define measurable outcomes (e.g., response rate %, time saved, appointments set).";
-
-  const tools =
-    p.tools ||
-    "Prefer Google Workspace, CRM, Make.com/Zapier, Notion, Canva as applicable.";
-
-  const iterate =
-    p.iterate ||
-    "End by asking 2–3 questions and offering a v2 refinement path.";
-
-  const risk =
-    p.risk ||
-    "Risk Check: avoid protected-class targeting or unverifiable claims.";
-
+function buildFullPrompt(p: PromptItem): string {
   return `Role & Outcome
-Act as a ${p.role || "top 1% real-estate coach"} and produce: “${p.title}” for ${audience} in ${p.module}.
+Act as a ${p.role || "top 1% real-estate coach"} and produce: “${
+    p.title
+  }” for ${p.audience || "[buyer/seller/investor/agent type in [market]]"} in ${
+    p.module
+  }.
 
 Facts / Inputs
-${inputs}
+${
+  p.inputs ||
+  "- KPIs = [list]\n- Tools = [list]\n- Timeline/Budget = [budget]\n- Constraints = [plain, compliant language]"
+}
 
 Deliverable
-${deliverable}
+${
+  p.deliverable ||
+  "Bulleted steps + 1 table (fields relevant to this prompt)."
+}
 
 Success Metrics
-${success}
+${
+  p.success ||
+  "Define measurable outcomes (response rate %, time saved, appointments set, conversion rate)."
+}
 
 Tool Integration
-${tools}
+${
+  p.tools ||
+  "Prefer Google Workspace, CRM, Make.com/Zapier, Notion, Canva as applicable."
+}
 
 Iteration Loop
-${iterate}
+${p.iterate || "End by asking 2–3 questions and offering a v2 refinement path."}
 
-${risk}`;
-};
-
-/** Simple token replacer: swaps common bracketed fields with builder values */
-function applyBuilderValues(base: string, values: BuilderValues): string {
-  let out = base;
-
-  const replacements: Array<[string | RegExp, string]> = [
-    // Market
-    [/\[market\]/gi, values.market],
-    // Persona
-    [/\[buyer persona\]/gi, values.persona],
-    [/\[persona\]/gi, values.persona],
-    // Channel
-    [/\[channel\]/gi, values.channel],
-    // Goal
-    [/\[goal\]/gi, values.goal],
-    // Budget
-    [/\[budget\]/gi, values.budget],
-    [/\[\$X\]/gi, values.budget],
-    [/\[\$Y\]/gi, values.budget],
-    // Time horizon / timeline
-    [/\[time horizon\]/gi, values.timeHorizon],
-    [/\[timeline\]/gi, values.timeHorizon],
-    // Tone
-    [/\[tone\]/gi, values.tone],
-    // Platform
-    [/\[platform\]/gi, values.platform],
-  ];
-
-  replacements.forEach(([pattern, val]) => {
-    if (!val.trim()) return;
-    out = out.replace(pattern, val.trim());
-  });
-
-  return out;
+${
+  p.risk ||
+  "Risk Check: avoid protected-class targeting or unverifiable claims. Keep language fair-housing safe."
+}`;
 }
 
 /* ---------- Remote merge ---------- */
@@ -186,7 +142,7 @@ function mergeRemote(base: PromptItem[], remote: RemotePayload): PromptItem[] {
     base.map((b) => (b.title || "").toLowerCase().trim())
   );
 
-  Object.entries(remote.modules).forEach(([rawModule, prompts]) => {
+  Object.entries(remote.modules).forEach(([rawModuleName, prompts]) => {
     if (!Array.isArray(prompts)) return;
 
     prompts.forEach((r, idx) => {
@@ -197,8 +153,8 @@ function mergeRemote(base: PromptItem[], remote: RemotePayload): PromptItem[] {
         base.find(
           (b) =>
             displayName(b.module).toLowerCase().trim() ===
-            rawModule.toLowerCase().trim()
-        )?.module || `Module ? — ${rawModule}`;
+            rawModuleName.toLowerCase().trim()
+        )?.module || `Module ? — ${rawModuleName}`;
 
       result.push({
         ...r,
@@ -209,7 +165,7 @@ function mergeRemote(base: PromptItem[], remote: RemotePayload): PromptItem[] {
     });
   });
 
-  // reindex within each module
+  // Re-index within each module
   const byModule: Record<string, PromptItem[]> = {};
   result.forEach((p) => {
     if (!byModule[p.module]) byModule[p.module] = [];
@@ -224,6 +180,34 @@ function mergeRemote(base: PromptItem[], remote: RemotePayload): PromptItem[] {
   return final;
 }
 
+/* ---------- Builder substitution ---------- */
+
+function buildPromptWithBuilderValues(
+  base: string,
+  values: BuilderValues
+): string {
+  let out = base;
+
+  const replaceToken = (pattern: RegExp, value: string) => {
+    if (!value.trim()) return;
+    out = out.replace(pattern, value.trim());
+  };
+
+  // You can add more tokens later if you want
+  replaceToken(/\[market\]/gi, values.market);
+  replaceToken(/\[buyer persona\]/gi, values.persona);
+  replaceToken(/\[persona\]/gi, values.persona);
+  replaceToken(/\[channel\]/gi, values.channel);
+  replaceToken(/\[goal\]/gi, values.goal);
+  replaceToken(/\[budget\]/gi, values.budget);
+  replaceToken(/\[timeline\]/gi, values.timeline);
+  replaceToken(/\[time horizon\]/gi, values.timeline);
+  replaceToken(/\[tone\]/gi, values.tone);
+  replaceToken(/\[platform\]/gi, values.platform);
+
+  return out;
+}
+
 /* ---------- Main Component ---------- */
 
 export default function AIPromptVault() {
@@ -231,9 +215,9 @@ export default function AIPromptVault() {
   const [modulesList, setModulesList] = useState<string[]>([]);
   const [selectedModule, setSelectedModule] = useState<string>("");
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
-  const [loading, setLoading] = useState(true);
   const [copiedBase, setCopiedBase] = useState(false);
   const [copiedBuilt, setCopiedBuilt] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   const [builderValues, setBuilderValues] = useState<BuilderValues>({
     market: "",
@@ -241,16 +225,17 @@ export default function AIPromptVault() {
     channel: "",
     goal: "",
     budget: "",
-    timeHorizon: "",
+    timeline: "",
     tone: "",
     platform: "",
   });
 
   // Load base + remote
   useEffect(() => {
-    const baseArr: PromptItem[] = fullPrompts.flatMap((m, i) =>
-      attachModule(i + 1, m)
+    const baseArr = (fullPrompts as Omit<PromptItem, "module" | "index">[][]).flatMap(
+      (m, i) => attachModule(i + 1, m)
     );
+
     setData(baseArr);
     setModulesList(Array.from(new Set(baseArr.map((d) => d.module))));
 
@@ -270,7 +255,6 @@ export default function AIPromptVault() {
 
         const res = await fetch(REMOTE_JSON_URL, { cache: "no-store" });
         if (!res.ok) return;
-
         const remote = (await res.json()) as RemotePayload;
         const ver = remote.version || "";
         const oldVer = localStorage.getItem(KEY_REMOTE_VER);
@@ -307,10 +291,10 @@ export default function AIPromptVault() {
 
   const builtPromptText = useMemo(
     () =>
-      current
-        ? applyBuilderValues(basePromptText, builderValues)
+      basePromptText
+        ? buildPromptWithBuilderValues(basePromptText, builderValues)
         : "",
-    [basePromptText, builderValues, current]
+    [basePromptText, builderValues]
   );
 
   const handleCopyBase = async () => {
@@ -326,29 +310,36 @@ export default function AIPromptVault() {
       ta.remove();
     }
     setCopiedBase(true);
-    setTimeout(() => setCopiedBase(false), 1200);
     if (current) {
-      trackEvent("prompt_copied_base", { title: current.title, module: current.module });
+      trackEvent("prompt_copied_base", {
+        title: current.title,
+        module: current.module,
+      });
     }
+    setTimeout(() => setCopiedBase(false), 1200);
   };
 
   const handleCopyBuilt = async () => {
-    if (!builtPromptText) return;
+    const textToCopy = builtPromptText || basePromptText;
+    if (!textToCopy) return;
     try {
-      await navigator.clipboard.writeText(builtPromptText);
+      await navigator.clipboard.writeText(textToCopy);
     } catch {
       const ta = document.createElement("textarea");
-      ta.value = builtPromptText;
+      ta.value = textToCopy;
       document.body.appendChild(ta);
       ta.select();
       document.execCommand("copy");
       ta.remove();
     }
     setCopiedBuilt(true);
-    setTimeout(() => setCopiedBuilt(false), 1200);
     if (current) {
-      trackEvent("prompt_copied_built", { title: current.title, module: current.module });
+      trackEvent("prompt_copied_built", {
+        title: current.title,
+        module: current.module,
+      });
     }
+    setTimeout(() => setCopiedBuilt(false), 1200);
   };
 
   const handleBuilderChange = (field: keyof BuilderValues, value: string) => {
@@ -372,8 +363,8 @@ export default function AIPromptVault() {
           AI Prompt Vault for Real Estate Agents
         </div>
         <div style={{ color: "#6b7280", fontSize: 14 }}>
-          Step 1: pick a module & prompt. Step 2: fill in the builder fields.
-          Step 3: copy the built prompt into ChatGPT.
+          Browse advanced superprompts organized by module. Fill in your details
+          in the builder, then copy the full prompt into ChatGPT.
         </div>
       </div>
 
@@ -454,7 +445,6 @@ export default function AIPromptVault() {
             boxShadow: "0 10px 24px rgba(12,35,64,.06)",
           }}
         >
-          {/* Chips */}
           <div
             style={{
               display: "flex",
@@ -487,7 +477,6 @@ export default function AIPromptVault() {
             </span>
           </div>
 
-          {/* Title */}
           <div
             style={{
               fontWeight: 800,
@@ -498,29 +487,26 @@ export default function AIPromptVault() {
             {current.title}
           </div>
 
-          {/* Base prompt (read-only text view) */}
-          <pre
+          {/* Original prompt (for reference / manual copy) */}
+          <div
             style={{
               whiteSpace: "pre-wrap",
               lineHeight: 1.45,
               color: "#111827",
               fontSize: 14,
-              background: "#f9fafb",
-              borderRadius: 10,
-              padding: 10,
-              border: "1px solid #e5e7eb",
+              marginBottom: 16,
             }}
           >
             {basePromptText}
-          </pre>
+          </div>
 
           <div
             style={{
-              marginTop: 10,
+              marginBottom: 14,
               display: "flex",
               gap: 10,
-              flexWrap: "wrap",
               alignItems: "center",
+              flexWrap: "wrap",
             }}
           >
             <button
@@ -537,14 +523,14 @@ export default function AIPromptVault() {
                 cursor: "pointer",
               }}
             >
-              {copiedBase ? "Base prompt copied" : "Copy base prompt"}
+              {copiedBase ? "Copied original prompt!" : "Copy base prompt"}
             </button>
           </div>
 
           {/* Builder */}
           <div
             style={{
-              marginTop: 24,
+              marginTop: 4,
               paddingTop: 16,
               borderTop: "1px dashed #e5e7eb",
             }}
@@ -553,13 +539,14 @@ export default function AIPromptVault() {
               style={{
                 fontSize: 14,
                 fontWeight: 700,
-                marginBottom: 8,
+                marginBottom: 10,
                 display: "flex",
-                alignItems: "center",
                 gap: 8,
+                alignItems: "center",
+                flexWrap: "wrap",
               }}
             >
-              Prompt Builder
+              Prompt Builder (beta)
               <span
                 style={{
                   fontSize: 11,
@@ -576,7 +563,7 @@ export default function AIPromptVault() {
             <div
               style={{
                 display: "grid",
-                gridTemplateColumns: "repeat(auto-fit, minmax(190px, 1fr))",
+                gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
                 gap: 10,
                 marginBottom: 12,
               }}
@@ -595,13 +582,13 @@ export default function AIPromptVault() {
               />
               <BuilderField
                 label="Primary Channel"
-                placeholder="YouTube, IG Reels, email"
+                placeholder="YouTube, Instagram Reels, email"
                 value={builderValues.channel}
                 onChange={(v) => handleBuilderChange("channel", v)}
               />
               <BuilderField
-                label="Goal"
-                placeholder="15 qualified leads / month"
+                label="Main Goal"
+                placeholder="15 qualified leads/month"
                 value={builderValues.goal}
                 onChange={(v) => handleBuilderChange("goal", v)}
               />
@@ -612,10 +599,10 @@ export default function AIPromptVault() {
                 onChange={(v) => handleBuilderChange("budget", v)}
               />
               <BuilderField
-                label="Time Horizon"
+                label="Timeline / Time Horizon"
                 placeholder="next 90 days"
-                value={builderValues.timeHorizon}
-                onChange={(v) => handleBuilderChange("timeHorizon", v)}
+                value={builderValues.timeline}
+                onChange={(v) => handleBuilderChange("timeline", v)}
               />
               <BuilderField
                 label="Tone / Voice"
@@ -624,18 +611,18 @@ export default function AIPromptVault() {
                 onChange={(v) => handleBuilderChange("tone", v)}
               />
               <BuilderField
-                label="Platform"
+                label="AI Platform"
                 placeholder="ChatGPT, Claude, Gemini"
                 value={builderValues.platform}
                 onChange={(v) => handleBuilderChange("platform", v)}
               />
             </div>
 
-            <div style={{ fontSize: 12, color: "#6b7280", marginBottom: 6 }}>
-              The builder auto-replaces common tokens like{" "}
-              <code>[market]</code>, <code>[buyer persona]</code>,{" "}
-              <code>[channel]</code>, <code>[goal]</code>, and{" "}
-              <code>[budget]</code> wherever they appear in this prompt.
+            <div style={{ fontSize: 12, color: "#6b7280", marginBottom: 8 }}>
+              This builder auto-fills tokens like <code>[market]</code>,{" "}
+              <code>[buyer persona]</code>, <code>[channel]</code>,{" "}
+              <code>[goal]</code>, and <code>[budget]</code> wherever they
+              appear in the prompt.
             </div>
 
             <textarea
@@ -643,7 +630,7 @@ export default function AIPromptVault() {
               value={builtPromptText || basePromptText}
               style={{
                 width: "100%",
-                minHeight: 160,
+                minHeight: 180,
                 borderRadius: 10,
                 border: "1px solid #e5e7eb",
                 padding: 10,
@@ -669,7 +656,7 @@ export default function AIPromptVault() {
                 style={{
                   height: 40,
                   borderRadius: 10,
-                  border: "1px solid #e5e7eb",
+                  border: "1px solid #0f172a",
                   padding: "0 12px",
                   background: "#0f172a",
                   color: "#f9fafb",
@@ -678,13 +665,26 @@ export default function AIPromptVault() {
                   cursor: "pointer",
                 }}
               >
-                {copiedBuilt ? "Built prompt copied" : "Copy built prompt"}
+                {copiedBuilt ? "Built prompt copied!" : "Copy prompt with my details"}
               </button>
 
               <span style={{ fontSize: 11, color: "#6b7280" }}>
-                Leave fields blank to fall back to the original text in those spots.
+                Leave fields blank to fall back to the original prompt text.
               </span>
             </div>
+          </div>
+
+          <div
+            style={{
+              marginTop: 20,
+              paddingTop: 10,
+              borderTop: "1px dashed #e5e7eb",
+              fontSize: 12,
+              color: "#64748b",
+            }}
+          >
+            Fair-housing &amp; compliance: avoid protected-class targeting,
+            medical/financial inferences, and unverifiable claims.
           </div>
         </div>
       )}
@@ -698,7 +698,7 @@ export default function AIPromptVault() {
   );
 }
 
-/* ---------- Small subcomponent: builder input ---------- */
+/* ---------- Small subcomponent ---------- */
 
 type BuilderFieldProps = {
   label: string;
