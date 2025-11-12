@@ -97,6 +97,13 @@ export default function AIPromptVault() {
   const [activeCollection, setActiveCollection] = useState<string | null>(null);
   const [customPrompts, setCustomPrompts] = useState<PromptItem[]>([]);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+  
+  // Detect Kale branding from URL parameter
+  const isKaleBranded = useMemo(() => {
+    const params = new URLSearchParams(window.location.search);
+    return params.get('kale') === 'true';
+  }, []);
+  
   const searchInputRef = React.useRef<HTMLInputElement>(null);
   const fieldInputRef = React.useRef<HTMLInputElement>(null);
 
@@ -173,6 +180,11 @@ export default function AIPromptVault() {
       setDarkMode(isDark);
       document.body.classList.toggle('dark-mode', isDark);
       
+      // Apply Kale branding if parameter detected
+      if (isKaleBranded) {
+        document.body.classList.add('kale-branded');
+      }
+      
       // Listen for system theme changes
       const darkModeMediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
       const handleSystemThemeChange = (e: MediaQueryListEvent) => {
@@ -191,7 +203,7 @@ export default function AIPromptVault() {
       // Cleanup
       return () => darkModeMediaQuery.removeEventListener('change', handleSystemThemeChange);
     } catch {}
-  }, []);
+  }, [isKaleBranded]);
 
   // Keyboard shortcuts
   useEffect(() => {

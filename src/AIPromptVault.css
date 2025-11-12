@@ -810,3 +810,48 @@ html {
 /* Collapsible panels */
 .rpv-collapsible { border-radius: 10px; overflow: hidden; }
 .rpv-collapsible .rpv-collapsible-header { display:flex; justify-content:space-between; align-items:center; padding:8px 0; }
+
+/* ===================================================================
+   KALE REALTY WHITE-LABEL BRANDING
+   URL Parameter: ?kale=true
+   Applies when body.kale-branded class is present
+   =================================================================== */
+
+body.kale-branded {
+  /* Kale Brand Colors */
+  --kale-navy: #0c2340;
+  --kale-green: #8BC53F;
+  --kale-yellow: #F7B500;
+  
+  /* Override semantic colors with Kale palette */
+  --primary: #0c2340;
+  --primary-hover: #081729;
+  --accent: #8BC53F;
+  --accent-hover: #7ab335;
+  
+  /* Success states use Kale green */
+  --success: #8BC53F;
+  --success-bg: rgba(139, 197, 63, 0.1);
+  --success-text: #6a9930;
+  
+  /* Warning states use Kale yellow */
+  --warning: #F7B500;
+  --warning-bg: rgba(247, 181, 0, 0.1);
+  --warning-text: #c79200;
+  
+  /* Info states use Kale navy */
+  --info: #0c2340;
+  --info-bg: rgba(12, 35, 64, 0.1);
+  --info-text: #0c2340;
+}
+
+/* Kale Dark Mode Overrides */
+body.kale-branded.dark-mode {
+  --bg: #0a1a2e;
+  --surface: #0c2340;
+  --surface-hover: #102c4a;
+  --primary: #8BC53F;
+  --primary-hover: #7ab335;
+  --accent: #F7B500;
+  --accent-hover: #e0a600;
+}
