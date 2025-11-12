@@ -1,34 +1,293 @@
 /* src/AIPromptVault.css */
 
-/* Small top banner */
+/* Import professional font stack */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+/* Design tokens with improved typography */
+:root {
+  /* Colors - Light mode */
+  --bg: #fafafa;
+  --surface: #ffffff;
+  --surface-elevated: #ffffff;
+  --surface-hover: #f8fafc;
+  --text-primary: #111827;
+  --text-secondary: #6b7280;
+  --text-tertiary: #9ca3af;
+  --text-inverse: #ffffff;
+  --primary: #2563eb;
+  --primary-hover: #1d4ed8;
+  --accent: #06b6d4;
+  --accent-hover: #0891b2;
+  --border: #e5e7eb;
+  --border-hover: #d1d5db;
+  
+  /* Semantic colors */
+  --success: #10b981;
+  --success-bg: #d1fae5;
+  --success-text: #065f46;
+  --warning: #f59e0b;
+  --warning-bg: #fef3c7;
+  --warning-text: #92400e;
+  --error: #ef4444;
+  --error-bg: #fee2e2;
+  --error-text: #991b1b;
+  --info: #0ea5e9;
+  --info-bg: #e0f2fe;
+  --info-text: #075985;
+  --purple: #8b5cf6;
+  --purple-bg: #ede9fe;
+  --purple-text: #5b21b6;
+  
+  /* Input & interactive states */
+  --input-bg: #ffffff;
+  --input-border: #d1d5db;
+  --input-focus: #2563eb;
+  --input-text: #111827;
+  --input-placeholder: #9ca3af;
+  
+  /* Badge & tag colors */
+  --badge-bg: #f1f5f9;
+  --badge-text: #475569;
+  --badge-primary-bg: #dbeafe;
+  --badge-primary-text: #1e40af;
+
+  /* Typography scale (rem-based for accessibility) */
+  --font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  --font-size-xs: 0.75rem;    /* 12px */
+  --font-size-sm: 0.875rem;   /* 14px */
+  --font-size-base: 1rem;     /* 16px */
+  --font-size-lg: 1.125rem;   /* 18px */
+  --font-size-xl: 1.25rem;    /* 20px */
+  --font-size-2xl: 1.5rem;    /* 24px */
+  --font-size-3xl: 1.875rem;  /* 30px */
+  --font-size-4xl: 2.25rem;   /* 36px */
+
+  /* Line heights for optimal readability */
+  --line-height-tight: 1.25;
+  --line-height-snug: 1.375;
+  --line-height-normal: 1.5;
+  --line-height-relaxed: 1.625;
+  --line-height-loose: 2;
+
+  /* Letter spacing */
+  --letter-spacing-tight: -0.025em;
+  --letter-spacing-normal: 0;
+  --letter-spacing-wide: 0.025em;
+
+  /* Spacing (8pt grid system) */
+  --space-1: 0.25rem;  /* 4px */
+  --space-2: 0.5rem;   /* 8px */
+  --space-3: 0.75rem;  /* 12px */
+  --space-4: 1rem;     /* 16px */
+  --space-5: 1.5rem;   /* 24px */
+  --space-6: 2rem;     /* 32px */
+  --space-8: 3rem;     /* 48px */
+
+  /* Border radius */
+  --radius-sm: 0.375rem;  /* 6px */
+  --radius-md: 0.5rem;    /* 8px */
+  --radius-lg: 0.75rem;   /* 12px */
+  --radius-xl: 1rem;      /* 16px */
+  --radius-pill: 999px;
+
+  /* Shadows with better depth */
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+}
+
+/* Dark mode with improved contrast (WCAG AA+ compliant with enhanced readability) */
+body.dark-mode {
+  /* Backgrounds - deeper contrast for better readability */
+  --bg: #0a0f1a;
+  --surface: #151b28;
+  --surface-elevated: #1e293b;
+  --surface-hover: #2a3646;
+  
+  /* Text - optimized for maximum readability on dark backgrounds */
+  --text-primary: #f8fafc;
+  --text-secondary: #d1d5db;
+  --text-tertiary: #9ca3af;
+  --text-inverse: #0f172a;
+  
+  /* Interactive colors - higher contrast for better visibility */
+  --primary: #60a5fa;
+  --primary-hover: #3b82f6;
+  --accent: #22d3ee;
+  --accent-hover: #06b6d4;
+  
+  /* Borders - more visible in dark mode */
+  --border: #3b4456;
+  --border-hover: #4b5563;
+  
+  /* Semantic colors - enhanced for dark backgrounds */
+  --success: #4ade80;
+  --success-bg: #14532d;
+  --success-text: #86efac;
+  --warning: #fbbf24;
+  --warning-bg: #78350f;
+  --warning-text: #fde68a;
+  --error: #f87171;
+  --error-bg: #7f1d1d;
+  --error-text: #fecaca;
+  --info: #38bdf8;
+  --info-bg: #0c4a6e;
+  --info-text: #bae6fd;
+  --purple: #c4b5fd;
+  --purple-bg: #4c1d95;
+  --purple-text: #e9d5ff;
+  
+  /* Input & interactive states - better visibility */
+  --input-bg: #1e293b;
+  --input-border: #3b4456;
+  --input-focus: #60a5fa;
+  --input-text: #f8fafc;
+  --input-placeholder: #6b7280;
+  
+  /* Badge & tag colors - improved contrast */
+  --badge-bg: #2a3646;
+  --badge-text: #e5e7eb;
+  --badge-primary-bg: #1e3a8a;
+  --badge-primary-text: #bfdbfe;
+  --badge-primary-bg: #1e3a8a;
+  --badge-primary-text: #dbeafe;
+
+  /* Enhanced shadows for dark mode */
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.4), 0 2px 4px -1px rgba(0, 0, 0, 0.3);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.5), 0 4px 6px -2px rgba(0, 0, 0, 0.4);
+  --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.6), 0 10px 10px -5px rgba(0, 0, 0, 0.5);
+}
+
+body {
+  font-family: var(--font-family);
+  font-size: var(--font-size-base);
+  line-height: var(--line-height-normal);
+  letter-spacing: var(--letter-spacing-normal);
+  background: var(--bg);
+  color: var(--text-primary);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  margin: 0;
+  padding: 0;
+}
+
+/* Seamless embed mode - transparent background, no container padding */
+body.embed-mode {
+  background: transparent !important;
+}
+
+body.embed-mode .rpv-container {
+  max-width: 100% !important;
+  padding: 0 !important;
+  margin: 0 !important;
+}
+
+body.embed-mode .rpv-app {
+  background: transparent !important;
+}
+
+/* Motion utilities */
+.motion-fade-up { 
+  animation: rpvFadeUp 220ms cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+.lift-hover:hover { 
+  transform: translateY(-2px); 
+  box-shadow: var(--shadow-lg);
+  transition: all 150ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translate(-50%, 16px); }
+  to { opacity: 1; transform: translate(-50%, 0); }
+}
+
+@keyframes rpvFadeUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Skeleton shimmer for dark mode */
+.skeleton {
+  background: linear-gradient(
+    90deg, 
+    var(--surface) 0%, 
+    var(--surface-elevated) 50%, 
+    var(--surface) 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s ease-in-out infinite;
+}
+
+@keyframes shimmer { 
+  0% { background-position: 200% 0; } 
+  100% { background-position: -200% 0; } 
+}
+
+/* Respect reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Top banner with better typography */
 .rpv-banner {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
-  padding: 6px 12px;
-  border-radius: 999px;
-  background: #ecfdf5;        /* soft green */
-  color: #166534;             /* dark green text */
-  font-size: 12px;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-4);
+  border-radius: var(--radius-pill);
+  background: #ecfdf5;
+  color: #065f46;
+  font-size: var(--font-size-sm);
+  font-weight: 500;
+  line-height: var(--line-height-tight);
+}
+
+body.dark-mode .rpv-banner {
+  background: #064e3b;
+  color: #d1fae5;
 }
 
 .rpv-banner-badge {
-  font-size: 11px;
+  font-size: var(--font-size-xs);
   font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  padding: 3px 6px;
-  border-radius: 999px;
-  background: #0c2340;        /* Kale navy */
-  color: #ffffff;
+  letter-spacing: var(--letter-spacing-wide);
+  padding: 2px var(--space-2);
+  border-radius: var(--radius-sm);
+  background: #0c2340;
+  color: var(--text-inverse);
+}
+
+body.dark-mode .rpv-banner-badge {
+  background: #1e3a8a;
+  color: #dbeafe;
 }
 
 .rpv-banner-link {
-  margin-left: 4px;
+  margin-left: var(--space-1);
   font-weight: 600;
   text-decoration: underline;
   text-underline-offset: 2px;
-  cursor: pointer;
+  color: inherit;
+  transition: opacity 150ms ease;
+}
+
+.rpv-banner-link:hover {
+  opacity: 0.8;
 }
 
 /* Fade + slide up animation when a prompt card appears/changes */
@@ -47,4 +306,578 @@
     opacity: 1;
     transform: translateY(0);
   }
+}
+
+/* Responsive helpers */
+.rpv-row {
+  display: flex;
+  gap: 8px;
+}
+
+@media (max-width: 640px) {
+  .rpv-row { flex-direction: column; }
+  .rpv-banner { font-size: 11px; padding: 6px 8px; }
+}
+
+.rpv-muted { color: var(--text-secondary); font-size: 12px; }
+
+.rpv-app .rpv-search {
+  font-size: 13px;
+  border: 1px solid var(--border);
+  padding: 8px 12px;
+  border-radius: 999px;
+  min-width: 220px;
+  background: #fff;
+}
+
+.rpv-app .controls-row { display:flex; gap:8px; align-items:center; }
+
+/* Utility: visually hidden for screen readers */
+.sr-only {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  padding: 0 !important;
+  margin: -1px !important;
+  overflow: hidden !important;
+  clip: rect(0, 0, 0, 0) !important;
+  white-space: nowrap !important;
+  border: 0 !important;
+}
+
+/* Page container (moved from inline styles in TSX) */
+.rpv-container {
+  max-width: 1040px;
+  margin: 0 auto;
+  padding: 32px 20px 40px;
+  font-family: var(--font-stack);
+  background: linear-gradient(var(--bg), #ffffff);
+}
+
+/* Subtle radial vignette for depth like modern product pages */
+.rpv-container:before {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 0;
+  transform: translateX(-50%);
+  width: 1200px;
+  height: 360px;
+  pointer-events: none;
+  background: radial-gradient(closest-side, rgba(37,99,235,0.03), transparent 40%);
+  z-index: 0;
+}
+
+/* Keep content above vignette */
+.rpv-app > * { position: relative; z-index: 1; }
+
+/* Header title and subtitle matching screenshot */
+.rpv-header .title {
+  font-size: 30px;
+  font-weight: 900;
+  letter-spacing: -0.02em;
+  color: var(--text-primary);
+  margin-bottom: 6px;
+}
+.rpv-header .subtitle {
+  font-size: 14px;
+  color: var(--text-secondary);
+  max-width: 720px;
+}
+
+/* Header controls layout */
+.rpv-header .controls { display:flex; gap:8px; align-items:center; }
+
+/* Buttons: smoother hover and subtle elevation */
+.rpv-btn { transition: transform 160ms var(--ease, cubic-bezier(.2,.9,.2,1)), box-shadow 160ms; }
+.rpv-btn:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); }
+.rpv-btn-primary { background: var(--primary); border-color: var(--primary); }
+.rpv-btn-primary:hover { filter: brightness(.96); }
+.rpv-btn-ghost:hover { background: rgba(15,23,42,0.04); }
+
+/* Inputs & selects: unify look */
+.rpv-app input, .rpv-app select, .rpv-app textarea {
+  font-family: var(--font-stack);
+  border-radius: var(--radius-pill);
+  border: 1px solid rgba(15,23,42,0.06);
+  padding: 8px 12px;
+  background: #fff;
+}
+.rpv-app input:focus, .rpv-app select:focus, .rpv-app textarea:focus { outline: none; box-shadow: 0 6px 18px rgba(37,99,235,0.06); border-color: var(--primary); }
+
+/* Category grid tweaks */
+.category-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; margin-bottom: 18px; }
+
+/* Make tagline slightly lighter and one-line */
+.category-card .tagline { color: var(--muted); font-size: 13px; line-height: 1.2; max-height: 2.4em; overflow: hidden; }
+
+/* ========== V2 STYLES: Search-First Design ========== */
+
+/* Hero search bar */
+.rpv-search-hero {
+  transition: all 200ms ease;
+}
+.rpv-search-hero:focus {
+  outline: none;
+  border-color: var(--primary) !important;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+/* Prompt card (new design) */
+.prompt-card-v2:hover {
+  border-color: var(--primary) !important;
+  box-shadow: var(--shadow-md);
+  transform: translateY(-2px);
+}
+
+/* Modal overlay */
+.modal-overlay {
+  animation: fadeIn 200ms ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.modal-content {
+  animation: slideUp 220ms ease-out;
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Responsive: mobile adjustments */
+@media (max-width: 640px) {
+  .rpv-header .title {
+    font-size: 24px !important;
+  }
+  .rpv-search-hero {
+    font-size: 14px !important;
+    padding: 12px 16px !important;
+  }
+  .modal-content {
+    padding: 20px !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    border-radius: 16px 16px 0 0 !important;
+    max-height: 95vh !important;
+  }
+  
+  /* Larger tap targets for mobile */
+  button {
+    min-height: 44px !important;
+    padding: 12px 16px !important;
+  }
+  
+  /* Better input field sizing on mobile */
+  input[type="text"] {
+    font-size: 16px !important; /* Prevents iOS zoom */
+    padding: 14px 16px !important;
+    -webkit-appearance: none;
+    appearance: none;
+  }
+  
+  /* Card adjustments for mobile */
+  .prompt-card {
+    padding: 16px !important;
+  }
+  
+  /* Modal closes at bottom on mobile */
+  .modal-overlay {
+    align-items: flex-end !important;
+    padding: 0 !important;
+  }
+}
+
+/* Extra small devices (iPhone SE, etc.) */
+@media (max-width: 375px) {
+  .rpv-header .title {
+    font-size: 20px !important;
+  }
+  
+  button {
+    font-size: 14px !important;
+  }
+}
+
+/* ========== POLISH: Interactive Elements ========== */
+
+/* Recent chip hover */
+.recent-chip:hover {
+  background: #e2e8f0 !important;
+  border-color: var(--primary) !important;
+  transform: translateY(-1px);
+}
+
+/* Filter pill animations */
+.filter-pill {
+  animation: slideIn 200ms ease-out;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Tag badge interactive states */
+.tag-badge:hover {
+  transform: translateY(-1px);
+}
+
+.tag-badge:active {
+  transform: scale(0.95);
+}
+
+/* Button hover enhancements */
+.btn-primary:hover {
+  filter: brightness(1.05);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2);
+}
+
+.btn-primary:active {
+  transform: translateY(0);
+}
+
+/* Touch feedback for mobile */
+@media (hover: none) and (pointer: coarse) {
+  .btn-primary:active {
+    filter: brightness(0.95);
+    transform: scale(0.98);
+  }
+  
+  .prompt-card:active {
+    transform: scale(0.98);
+    transition: transform 100ms ease;
+  }
+  
+  /* Remove hover effects on touch devices */
+  .btn-primary:hover,
+  .lift-hover:hover {
+    transform: none;
+    box-shadow: none;
+    filter: none;
+  }
+}
+
+/* FAB pulse animation */
+@keyframes pulse {
+  0%, 100% {
+    box-shadow: 0 8px 24px rgba(37,99,235,0.3);
+  }
+  50% {
+    box-shadow: 0 8px 32px rgba(37,99,235,0.5);
+  }
+}
+
+/* Smooth scroll */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Focus visible for accessibility (WCAG compliant) */
+*:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}
+
+/* Typography utilities */
+.text-xs { font-size: var(--font-size-xs); }
+.text-sm { font-size: var(--font-size-sm); }
+.text-base { font-size: var(--font-size-base); }
+.text-lg { font-size: var(--font-size-lg); }
+.text-xl { font-size: var(--font-size-xl); }
+.text-2xl { font-size: var(--font-size-2xl); }
+.text-3xl { font-size: var(--font-size-3xl); }
+
+.font-medium { font-weight: 500; }
+.font-semibold { font-weight: 600; }
+.font-bold { font-weight: 700; }
+
+.text-primary { color: var(--text-primary); }
+.text-secondary { color: var(--text-secondary); }
+.text-tertiary { color: var(--text-tertiary); }
+
+.leading-tight { line-height: var(--line-height-tight); }
+.leading-normal { line-height: var(--line-height-normal); }
+.leading-relaxed { line-height: var(--line-height-relaxed); }
+
+/* Muted text with proper contrast */
+.muted { 
+  color: var(--text-secondary); 
+}
+
+/* Empty state styling */
+.empty-state {
+  text-align: center;
+  padding: var(--space-8) var(--space-5);
+  color: var(--text-secondary);
+}
+
+.empty-state h3 {
+  font-size: var(--font-size-lg);
+  font-weight: 600;
+  margin-bottom: var(--space-2);
+  color: var(--text-primary);
+  line-height: var(--line-height-tight);
+}
+
+.empty-state p {
+  font-size: var(--font-size-base);
+  color: var(--text-secondary);
+  line-height: var(--line-height-relaxed);
+}
+
+/* Intent pills with proper dark mode support */
+.intent-pills { 
+  display: flex; 
+  gap: var(--space-2); 
+  margin: var(--space-3) 0 var(--space-4); 
+  flex-wrap: wrap; 
+}
+
+.intent-pill { 
+  padding: var(--space-2) var(--space-4); 
+  border-radius: var(--radius-pill); 
+  border: 1px solid var(--border); 
+  background: var(--surface); 
+  cursor: pointer; 
+  font-weight: 600; 
+  font-size: var(--font-size-sm); 
+  color: var(--text-primary);
+  transition: all 150ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.intent-pill:hover {
+  border-color: var(--border-hover);
+  background: var(--surface-elevated);
+}
+
+.intent-pill.active { 
+  background: var(--primary); 
+  border-color: var(--primary); 
+  color: var(--text-inverse); 
+}
+
+.intent-pill:focus { 
+  outline: 2px solid var(--primary); 
+  outline-offset: 2px;
+}
+
+/* Recommended / faded states for cards */
+.category-card.faded { 
+  opacity: 0.45; 
+}
+
+.category-card.recommended { 
+  transform: translateY(-2px); 
+  box-shadow: var(--shadow-lg); 
+  border-color: var(--primary); 
+}
+
+/* Show all toggle */
+.show-all-toggle { 
+  margin-top: var(--space-2); 
+  display: inline-flex; 
+  align-items: center; 
+  gap: var(--space-2); 
+}
+
+.rpv-app .rpv-search:focus { 
+  outline: 2px solid var(--primary); 
+  outline-offset: 0;
+  box-shadow: var(--shadow-md); 
+}
+
+/* Make form controls full-width on mobile */
+@media (max-width: 640px) {
+  .rpv-app select,
+  .rpv-app input,
+  .rpv-app button,
+  .rpv-app a {
+    width: 100% !important;
+    box-sizing: border-box;
+  }
+
+  .rpv-app .favorites-card {
+    min-width: auto !important;
+    width: 100%;
+  }
+
+  .rpv-app .controls-row { display: flex; flex-direction: column; gap: 8px; }
+}
+
+/* Modal styles */
+.rpv-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(2,6,23,0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+}
+.rpv-modal {
+  background: #fff;
+  padding: 18px;
+  border-radius: 12px;
+  max-width: 480px;
+  width: 92%;
+  box-shadow: 0 20px 40px rgba(2,6,23,0.16);
+}
+.rpv-modal h3 { margin: 0 0 8px 0; font-size: 16px; }
+.rpv-modal .row { display:flex; gap:8px; margin-top:12px; }
+.rpv-modal .row button { flex: 0 0 auto; }
+.favorites-card { display: inline-block; }
+
+/* Polished buttons */
+.rpv-btn { display:inline-flex; align-items:center; justify-content:center; gap:8px; padding: 0 12px; height: 36px; border-radius: 8px; border:1px solid #e5e7eb; background:#fff; color:#0f172a; cursor:pointer; font-size: 13px; }
+.rpv-btn:focus { outline: 3px solid rgba(37,99,235,0.14); }
+.rpv-btn-primary { background: var(--primary); color:#fff; border-color: var(--text-primary); }
+.rpv-btn-ghost { background: transparent; border-color: transparent; color: var(--text-secondary); }
+
+/* Slightly larger pill style used for primary actions */
+.rpv-btn-lg { height: 42px; border-radius: 999px; padding: 0 16px; }
+
+/* Large modal variant used for onboarding */
+.rpv-modal-lg { max-width: 720px; }
+
+/* Header wrapper (moved from inline header styles) */
+.rpv-header { margin-bottom: 28px; }
+
+.prompt-header { margin-bottom: 8px; display:flex; justify-content:space-between; align-items:baseline; gap:12px; flex-wrap:wrap; }
+
+/* Small layout utilities used by TSX to replace inline styles */
+.rpv-header-row { display:flex; justify-content:space-between; align-items:center; gap:12px; }
+.mb-18 { margin-bottom: 18px; }
+.category-card-row { display:flex; align-items:center; gap:8px; }
+.top-picks-section { margin-bottom: 18px; }
+.helper-text { font-size: 12px; color: var(--text-tertiary); margin-bottom: 10px; }
+.rpv-select { height: 40px; min-width: 220px; border-radius: 999px; border: 1px solid var(--border); padding: 0 14px; background: var(--surface); font-size: 13px; color: var(--text-primary); }
+.badge { font-size: 11px; padding: 3px 9px; border-radius: 999px; text-transform: uppercase; letter-spacing: 0.04em; font-weight: 600; }
+.badge-muted { background: var(--surface-hover); color: var(--text-secondary); }
+.badge-accent { background: var(--badge-primary-bg); color: var(--text-primary); }
+.fill-variables-title { font-size: 13px; font-weight: 700; margin-bottom: 8px; color: var(--text-primary); }
+.field-label { display:flex; flex-direction:column; min-width:160px; }
+.modal-input { width:100%; height:36px; padding:0 8px; border-radius:8px; border:1px solid #e5e7eb; }
+
+/* Reduce heavier panel shadows to keep the look airy and minimal */
+.rpv-app .rpv-card, .rpv-app .favorites-card, .rpv-app .rpv-modal { box-shadow: 0 8px 20px rgba(15,23,42,0.06); }
+
+/* Prompt panel */
+.prompt-panel {
+  margin-top: 10px;
+  background: var(--surface);
+  border: 1px solid rgba(15,23,42,0.04);
+  border-radius: var(--radius-md);
+  padding: 18px;
+  box-shadow: var(--shadow-sm);
+}
+.prompt-title { font-weight: 800; margin: 4px 0 8px; font-size: 18px; color: var(--text); }
+.prompt-body { white-space: pre-wrap; line-height: 1.5; color: var(--text-primary); font-size: 14px; }
+.prompt-actions { margin-top: 14px; display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
+
+/* Top picks card */
+.top-pick-card { background: var(--surface); border: 1px solid rgba(15,23,42,0.04); padding: 12px; border-radius: 12px; min-width: 260px; box-shadow: var(--shadow-sm); }
+.top-pick-card .title { font-size: 13px; font-weight: 700; }
+.top-pick-card .desc { color: var(--muted); font-size: 12px; margin-top:6px; min-height:40px; }
+
+/* Favorites card refinement */
+.favorites-card { background: var(--surface); border: 1px solid rgba(15,23,42,0.04); padding: 10px; border-radius: 10px; min-width: 220px; box-shadow: var(--shadow-sm); }
+
+/* Modal header & stepper */
+.rpv-modal-header { display:flex; justify-content:space-between; align-items:center; gap:12px; margin-bottom:8px; }
+.rpv-stepper { display:flex; gap:8px; align-items:center; margin-bottom:12px; }
+.rpv-step { width:28px; height:28px; border-radius:999px; display:inline-flex; align-items:center; justify-content:center; font-size:12px; background:#f3f4f6; color:#374151; }
+.rpv-step.active { background: var(--primary); color:#fff; }
+
+/* Reduced card shadow to minimize visual noise */
+.rpv-app button { transition: transform 120ms ease, box-shadow 120ms ease; }
+.rpv-app .rpv-card { box-shadow: none; }
+
+/* Category card (clean, minimal) */
+.category-card {
+  text-align: left;
+  border-radius: 12px;
+  padding: 16px 18px;
+  background: var(--surface);
+  border: 1px solid rgba(16,24,40,0.06);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  cursor: pointer;
+  box-shadow: 0 8px 20px rgba(15,23,42,0.04);
+}
+.category-card:hover { transform: translateY(-3px); box-shadow: 0 10px 24px rgba(15,23,42,0.06); }
+.category-card.active { border-color: var(--primary); background: var(--badge-primary-bg); box-shadow: 0 24px 48px rgba(37,99,235,0.06); box-shadow: 0 18px 36px rgba(37,99,235,0.06); }
+.category-card span.emoji { font-size: 18px; margin-right: 6px; }
+.category-card .label { font-size: 15px; font-weight: 800; color: var(--text-primary); }
+.category-card .tagline { font-size: 13px; color: var(--text-secondary); }
+
+/* Pill outline to mimic the screenshot's subtle blue outline for active card */
+.category-card.active { outline: 3px solid rgba(37,99,235,0.08); outline-offset: 2px; }
+
+/* Collapsible panels */
+.rpv-collapsible { border-radius: 10px; overflow: hidden; }
+.rpv-collapsible .rpv-collapsible-header { display:flex; justify-content:space-between; align-items:center; padding:8px 0; }
+
+/* ===================================================================
+   KALE REALTY WHITE-LABEL BRANDING
+   URL Parameter: ?kale=true
+   Applies when body.kale-branded class is present
+   =================================================================== */
+
+body.kale-branded {
+  /* Kale Brand Colors */
+  --kale-navy: #0c2340;
+  --kale-green: #8BC53F;
+  --kale-yellow: #F7B500;
+  
+  /* Override semantic colors with Kale palette */
+  --primary: #0c2340;
+  --primary-hover: #081729;
+  --accent: #8BC53F;
+  --accent-hover: #7ab335;
+  
+  /* Success states use Kale green */
+  --success: #8BC53F;
+  --success-bg: rgba(139, 197, 63, 0.1);
+  --success-text: #6a9930;
+  
+  /* Warning states use Kale yellow */
+  --warning: #F7B500;
+  --warning-bg: rgba(247, 181, 0, 0.1);
+  --warning-text: #c79200;
+  
+  /* Info states use Kale navy */
+  --info: #0c2340;
+  --info-bg: rgba(12, 35, 64, 0.1);
+  --info-text: #0c2340;
+}
+
+/* Kale Dark Mode Overrides */
+body.kale-branded.dark-mode {
+  --bg: #0a1a2e;
+  --surface: #0c2340;
+  --surface-hover: #102c4a;
+  --primary: #8BC53F;
+  --primary-hover: #7ab335;
+  --accent: #F7B500;
+  --accent-hover: #e0a600;
 }

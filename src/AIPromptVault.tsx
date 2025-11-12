@@ -1,1671 +1,2283 @@
 "use client";
-import React, { useEffect, useState } from "react";
+import React, { useState, useMemo, useEffect } from "react";
+import confetti from "canvas-confetti";
+import "./AIPromptVault.css";
 import { prompts as fullPrompts } from "./prompts";
-import { labelOverrides, type LabelOverride } from "./labelOverrides";
-
-/* ---------- Types ---------- */
-type PromptItem = {
-  id: string;
-  title: string;
-  quick?: string;
-  role?: string;
-  deliverable?: string;
-  success?: string;
-  inputs?: string;
-  constraints?: string;
-  tools?: string;
-  iterate?: string;
-  risk?: string;
-  format?: string;
-  audience?: string;
-  module: string;
-  index: number;
-};
-
-type RemotePrompt = Omit<PromptItem, "module" | "index">;
-type RemotePayload = {
-  version?: string;
-  modules?: Record<string, RemotePrompt[]>;
-};
+import { PromptItem, buildFullPrompt, extractPlaceholders, applyReplacements, getPlaceholderHelp, simplifyJargon } from "./promptUtils";
 
 /* ---------- Constants ---------- */
+const KEY_FAVORITES = "rpv:favorites";
+const KEY_COUNTS = "rpv:copyCounts";
+const KEY_RECENT = "rpv:recentCopied";
+const KEY_SAVED_FIELDS = "rpv:savedFields";
+const KEY_ONBOARDED = "rpv:onboarded";
+const KEY_DARK_MODE = "rpv:darkMode";
+const KEY_FIRST_COPY = "rpv:firstCopy";
+const KEY_FIELD_HISTORY = "rpv:fieldHistory";
+const KEY_COLLECTIONS = "rpv:collections";
+const KEY_CUSTOM_PROMPTS = "rpv:customPrompts";
 
-// same Apps Script URL you already use
-const REMOTE_JSON_URL =
-  "https://script.google.com/macros/s/AKfycbww3SrcmhMY8IMPiSmj7OdqM3cUSVtfU0LuyVtqF9mvdbQjhdoHXASfMhEg4cam577dRw/exec";
-
-const KEY_REMOTE_CACHE = "rpv:remoteCache";
-const KEY_REMOTE_VER = "rpv:remoteVersion";
-
-// internal module titles used when attaching data
-const MODULE_TITLES = [
-  "Lead Generation & Marketing",
-  "Operations & Time Management",
-  "Goal Setting & Accountability",
-  "Listing & Buyer Presentations",
-  "Client Experience & Retention",
-  "Finance & Profitability",
-  "Negotiation & Deal Strategy",
-  "Buyer Journey & Search Tools",
-  "Sphere & Community Marketing",
-  "Digital Ads & AI Tools",
-  "Automation & Workflows",
-  "Realtor Resources & Intelligence",
-];
-
-// strip "Module X —" for labels
-const displayName = (m: string) => m.replace(/^Module\s+\d+\s+—\s+/i, "");
-
-/* ---------- ID Helpers ---------- */
-const slugify = (s: string): string =>
-  (s || "")
-    .toLowerCase()
-    .trim()
-    .replace(/&/g, " and ")
-    .replace(/[^a-z0-9\s-]/g, "")
-    .replace(/\s+/g, "-")
-    .replace(/-+/g, "-");
-
-const shortHash = (s: string): string => {
-  let h = 0;
-  for (let i = 0; i < s.length; i++) {
-    h = (h << 5) - h + s.charCodeAt(i);
-    h |= 0;
-  }
-  return (h >>> 0).toString(36).slice(0, 6);
+// Module names (descriptive, not numbered)
+const MODULE_NAMES: Record<number, string> = {
+  1: "Marketing & Lead Generation",
+  2: "Daily Systems & Productivity",
+  3: "Goals & Accountability",
+  4: "Listings & Buyer Presentations",
+  5: "Client Service & Follow-Up",
+  6: "Finance & Business Planning",
+  7: "Negotiation & Deal Strategy",
+  8: "Home Search & Market Intel",
+  9: "Database & Referral Engine",
+  10: "Tech, AI & Marketing Automation",
+  11: "AI Workflows & Automation",
+  12: "Learning & Industry Resources"
 };
 
-const generatePromptId = (title: string, moduleName: string, index?: number): string => {
-  const base = `${slugify(title || "untitled")}__${shortHash(displayName(moduleName))}`;
-  return typeof index === "number" ? `${base}-${index}` : base;
+// Tag mapping for each module
+const MODULE_TAGS: Record<number, string[]> = {
+  1: ["leads", "marketing", "content"],
+  2: ["systems", "productivity", "workflow"],
+  3: ["goals", "planning", "accountability"],
+  4: ["listing", "buyer", "presentation"],
+  5: ["client", "service", "followup"],
+  6: ["finance", "profit", "budget"],
+  7: ["negotiation", "deals", "strategy"],
+  8: ["buyer", "search", "tools"],
+  9: ["sphere", "community", "nurture"],
+  10: ["marketing", "ads", "ai"],
+  11: ["automation", "workflow", "tech"],
+  12: ["learning", "research", "intel"]
 };
 
 /* ---------- Tracking ---------- */
 const trackEvent = (name: string, data?: Record<string, any>) => {
   try {
-    window.dispatchEvent(
-      new CustomEvent("rpv_event", { detail: { name, ...data } })
-    );
-    // window.gtag?.("event", name, data);
-    // window.fbq?.("trackCustom", name, data);
-  } catch {
-    // no-op if tracking not wired
-  }
+    window.dispatchEvent(new CustomEvent("rpv_event", { detail: { name, ...data } }));
+    
+    // Send to Plausible Analytics (if installed)
+    if (typeof window !== 'undefined' && (window as any).plausible) {
+      (window as any).plausible(name, { props: data });
+    }
+    
+    // Send to PostHog (if installed)
+    if (typeof window !== 'undefined' && (window as any).posthog) {
+      (window as any).posthog.capture(name, data);
+    }
+    
+    // Console log in development
+    if (process.env.NODE_ENV === 'development') {
+      console.log('[Analytics]', name, data);
+    }
+  } catch {}
 };
-
-/* ---------- Category Card Meta ---------- */
-
-type CategoryMeta = {
-  id: number;
-  moduleKey: string; // "Module X — Name"
-  label: string;
-  emoji: string;
-  tagline: string;
-};
-
-/* ---------- Challenge Card Meta ---------- */
-
-type ChallengeMeta = {
-  id: number;
-  problem: string;
-  emoji: string;
-  moduleKey: string;
-  promptIndex: number; // Which prompt in that module to jump to
-};
-
-const CHALLENGE_CARDS: ChallengeMeta[] = [
-  {
-    id: 1,
-    problem: "I'm not getting enough leads",
-    emoji: "📣",
-    moduleKey: `Module 1 — ${MODULE_TITLES[0]}`,
-    promptIndex: 0, // First prompt in lead gen module
-  },
-  {
-    id: 2,
-    problem: "My follow-up is inconsistent",
-    emoji: "🔄",
-    moduleKey: `Module 2 — ${MODULE_TITLES[1]}`,
-    promptIndex: 2, // Follow-up workflow prompt
-  },
-  {
-    id: 3,
-    problem: "I keep missing my goals",
-    emoji: "🎯",
-    moduleKey: `Module 3 — ${MODULE_TITLES[2]}`,
-    promptIndex: 0, // Goal-setting prompt
-  },
-  {
-    id: 4,
-    problem: "My listing presentations fall flat",
-    emoji: "📊",
-    moduleKey: `Module 4 — ${MODULE_TITLES[3]}`,
-    promptIndex: 0, // Listing presentation prompt
-  },
-  {
-    id: 5,
-    problem: "Clients don't refer me",
-    emoji: "💫",
-    moduleKey: `Module 5 — ${MODULE_TITLES[4]}`,
-    promptIndex: 3, // Referral/wow prompt
-  },
-  {
-    id: 6,
-    problem: "I'm busy but not profitable",
-    emoji: "💰",
-    moduleKey: `Module 6 — ${MODULE_TITLES[5]}`,
-    promptIndex: 0, // Profitability audit
-  },
-  {
-    id: 7,
-    problem: "I lose deals to other agents",
-    emoji: "🤝",
-    moduleKey: `Module 7 — ${MODULE_TITLES[6]}`,
-    promptIndex: 0, // Negotiation strategy
-  },
-  {
-    id: 8,
-    problem: "My sphere has gone cold",
-    emoji: "🌱",
-    moduleKey: `Module 9 — ${MODULE_TITLES[8]}`,
-    promptIndex: 0, // Sphere nurture plan
-  },
-];
-
-const CATEGORY_CARDS: CategoryMeta[] = [
-  {
-    id: 1,
-    moduleKey: `Module 1 — ${MODULE_TITLES[0]}`,
-    label: "Get More Leads",
-    emoji: "📣",
-    tagline: "Prompts for ads, content, funnels, and campaigns.",
-  },
-  {
-    id: 2,
-    moduleKey: `Module 2 — ${MODULE_TITLES[1]}`,
-    label: "Fix My Systems",
-    emoji: "🧩",
-    tagline: "Checklists, SOPs, and daily/weekly workflows.",
-  },
-  {
-    id: 3,
-    moduleKey: `Module 3 — ${MODULE_TITLES[2]}`,
-    label: "Hit My Goals",
-    emoji: "🎯",
-    tagline: "Scorecards, habit templates, and sprints.",
-  },
-  {
-    id: 4,
-    moduleKey: `Module 4 — ${MODULE_TITLES[3]}`,
-    label: "Win More Appointments",
-    emoji: "📅",
-    tagline: "Scripts and outlines for buyers and sellers.",
-  },
-  {
-    id: 5,
-    moduleKey: `Module 5 — ${MODULE_TITLES[4]}`,
-    label: "Wow My Clients",
-    emoji: "✨",
-    tagline: "Onboarding, updates, and surprise & delight.",
-  },
-  {
-    id: 6,
-    moduleKey: `Module 6 — ${MODULE_TITLES[5]}`,
-    label: "Boost My Profit",
-    emoji: "💰",
-    tagline: "Cashflow, budgets, and profitability audits.",
-  },
-  {
-    id: 7,
-    moduleKey: `Module 7 — ${MODULE_TITLES[6]}`,
-    label: "Win More Deals",
-    emoji: "🤝",
-    tagline: "Negotiation playbooks and deal rescues.",
-  },
-  {
-    id: 8,
-    moduleKey: `Module 8 — ${MODULE_TITLES[7]}`,
-    label: "Find Better Homes",
-    emoji: "🏡",
-    tagline: "Search strategies and buyer tools.",
-  },
-  {
-    id: 9,
-    moduleKey: `Module 9 — ${MODULE_TITLES[8]}`,
-    label: "Nurture My Sphere",
-    emoji: "🌱",
-    tagline: "Touch plans, events, and local content.",
-  },
-  {
-    id: 10,
-    moduleKey: `Module 10 — ${MODULE_TITLES[9]}`,
-    label: "Improve My Marketing",
-    emoji: "📈",
-    tagline: "Funnels, CRO, and AI-powered assets.",
-  },
-  {
-    id: 11,
-    moduleKey: `Module 11 — ${MODULE_TITLES[10]}`,
-    label: "Automate My Business",
-    emoji: "⚙️",
-    tagline: "Lead routing, drips, and bots.",
-  },
-  {
-    id: 12,
-    moduleKey: `Module 12 — ${MODULE_TITLES[11]}`,
-    label: "Level Up & Learn",
-    emoji: "📚",
-    tagline: "Curated learning and research prompts.",
-  },
-];
-
-/* ---------- Data: attach module labels ---------- */
-
-const attachModule = (
-  moduleIndex: number,
-  items: Array<Omit<PromptItem, "module" | "index" | "id"> & { id?: string }>
-): PromptItem[] => {
-  const moduleName = `Module ${moduleIndex} — ${MODULE_TITLES[moduleIndex - 1]}`;
-  return items.map((p, i) => {
-    const id = p.id || generatePromptId(p.title, moduleName, i);
-    return {
-      id,
-      ...p,
-      module: moduleName,
-      index: i,
-    } as PromptItem;
-  });
-};
-
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-function getLabelOverride(moduleKey: string, originalTitle: string):
-  { title: string; subtitle?: string } {
-  const list: LabelOverride[] | undefined = labelOverrides[moduleKey];
-  if (!list) return { title: originalTitle };
-  const hit = list.find((l) => l.match === originalTitle);
-  return hit ? { title: hit.title, subtitle: hit.subtitle } : { title: originalTitle };
-}
-
-/* ---------- Build long prompt ---------- */
-
-const buildFullPrompt = (p: PromptItem): string => {
-  const moduleName = p.module || "Category";
-  const title = p.title || "Prompt";
-  const audience =
-    p.audience || "[buyer/seller/investor/agent type in [market]]";
-  const inputs =
-    p.inputs ||
-    "- KPIs = [list]\n- Tools = [list]\n- Timeline/Budget = [X]\n- Constraints = [plain, compliant language]";
-  const deliverable =
-    p.deliverable || "Bulleted steps + 1 table (fields relevant to this prompt).";
-  const constraints =
-    p.constraints ||
-    "≤ 400 words; use headings; avoid guarantees; fair-housing safe.";
-  const quality =
-    (p as any).quality ||
-    "Add ‘Why this works’ and 3 clarifying questions. Propose 2 ways to improve the first draft.";
-  const success =
-    p.success ||
-    "Define measurable outcomes (response rate %, time saved, appointments set).";
-  const tools =
-    p.tools ||
-    "Prefer Google Workspace, CRM, Make.com/Zapier, Notion, Canva as applicable.";
-  const iterate =
-    p.iterate ||
-    "End by asking 2–3 questions and offering a v2 refinement path.";
-  const risk =
-    p.risk ||
-    "Risk Check: keep claims verifiable; avoid protected-class targeting; keep language compliant.";
-
-  return `Role & Outcome
-Act as a ${p.role || "top 1% real-estate coach"} and produce: “${title}” for ${audience} in ${moduleName}.
-
-Audience & Channel
-Primary user = ${audience}. Output format = ${p.format || "bulleted brief + 1 table"}.
-
-Facts / Inputs
-${inputs}
-
-Constraints
-${constraints}
-
-Deliverable
-${deliverable}
-
-Quality Controls
-${quality}
-
-Success Metrics
-${success}
-
-Tool Integration
-${tools}
-
-Iteration Loop
-${iterate}
-
-${risk}`;
-};
-
-/* ---------- Personalization Helpers ---------- */
-
-const extractTokens = (text: string): string[] => {
-  const out = new Set<string>();
-  // eslint-disable-next-line no-useless-escape
-  const re = /\[([^\[\]]+)\]/g;
-  let m: RegExpExecArray | null;
-  while ((m = re.exec(text))) {
-    const token = (m[1] || "").trim();
-    if (token) out.add(token);
-  }
-  return Array.from(out);
-};
-
-const explainToken = (token: string): string => {
-  const raw = token.trim();
-  const t = raw.toLowerCase();
-
-  // Locations
-  if (t === "market" || t === "city" || t === "area" || t.includes("market/city") || t.includes("city/county") || t.includes("neighborhood") || t.includes("submarket") || t.includes("county")) {
-    return "Your location (e.g., 'Austin, TX', 'West Loop, Chicago', or 'Orange County, CA').";
-  }
-
-  // Audience / niche / persona
-  if (t.includes("buyer/seller") || t.includes("buyer / seller") || t.includes("investor") || t.includes("niche")) {
-    return "Choose the audience or niche (e.g., 'first‑time buyers', 'move‑up sellers', 'small multi‑fam investors').";
-  }
-  if (t.includes("persona") || t.includes("profile")) {
-    return "Brief client description (e.g., 'young family relocating', 'VA buyer, 10% down').";
-  }
-
-  // Channels & sources
-  if (t === "channel" || t.includes("channel")) {
-    return "Marketing channel (e.g., Instagram Reels, YouTube, Google Ads, Email).";
-  }
-  if (t.includes("source")) {
-    return "Lead source (e.g., 'Zillow', 'Open House', 'Website form', 'Facebook Ads').";
-  }
-
-  // Numbers, money, ranges
-  if (raw.startsWith("$") || t === "$x" || t === "$y") {
-    return "Dollar amount (e.g., '$500', '$2,000/mo', '$15 CPL').";
-  }
-  if (t === "#" || raw.includes("#")) {
-    return "A number/count (e.g., '3', '10', '25').";
-  }
-  if (t === "x" || t === "y") {
-    return "A number, date, or percent that fits the line (e.g., '90 days', '20%', 'T+14').";
-  }
-  if (/[xy]\s*–\s*[xy]/i.test(t) || t.includes("–")) {
-    return "A range (usually minutes, %, or count), e.g., '15–30'.";
-  }
-
-  // Tools / tech
-  if (t === "tools" || t === "tool" || t.includes("tools")) {
-    return "List the tools you use (e.g., 'Follow Up Boss, Zapier, Google Sheets, Notion').";
-  }
-
-  // Criteria / search
-  if (t.includes("criteria")) {
-    return "Buyer search criteria (price, beds, baths, area, features).";
-  }
-
-  // Compliance / organization
-  if (t.includes("state/brokerage")) {
-    return "Your state or brokerage context for compliance (e.g., 'Texas', 'Keller Williams').";
-  }
-
-  // Financing
-  if (t.includes("credit/income")) {
-    return "Borrower profile (e.g., '720 FICO, W‑2, 10% down', 'Self‑employed, 2 yrs').";
-  }
-
-  // Links / pages
-  if (t === "url" || t === "page") {
-    return "Paste the web page URL (e.g., 'https://yourdomain.com/landing').";
-  }
-
-  // Event themes
-  if (t.includes("season/theme") || t.includes("theme")) {
-    return "Event theme/season (e.g., 'Summer BBQ', 'Holiday Toy Drive').";
-  }
-
-  // List helper
-  if (t.includes("list")) {
-    return "Paste a short list with a clear structure (e.g., 10–25 items).";
-  }
-
-  // Default fallback
-  return "Replace with your details. If it looks like a place, use your city/area; if it looks numeric, use a realistic number or $ amount.";
-};
-
-const replaceTokensInText = (text: string, values: Record<string, string>) => {
-  // eslint-disable-next-line no-useless-escape
-  return text.replace(/\[([^\[\]]+)\]/g, (m, g1) => {
-    const key = (g1 || "").trim();
-    const val = values[key];
-    return typeof val === "string" && val.length ? val : m;
-  });
-};
-
-const canPersonalizeWithSaved = (text: string, tokenValues: Record<string, string>): boolean => {
-  const toks = extractTokens(text);
-  return toks.some((t) => (tokenValues[t] || "").length > 0);
-};
-
-/* ---------- Merge Remote Prompts ---------- */
-
-function mergeRemote(base: PromptItem[], remote: RemotePayload): PromptItem[] {
-  if (!remote?.modules) return base;
-
-  const result = [...base];
-  const existing = new Set(
-    base.map((b) => (b.title || "").toLowerCase().trim())
-  );
-
-  const baseModules = Array.from(new Set(base.map((b) => b.module)));
-
-  const findModuleKey = (label: string): string | null => {
-    // try exact
-    const exact = baseModules.find((m) => m === label);
-    if (exact) return exact;
-
-    const target = label.trim().toLowerCase();
-    // try by displayName
-    const match = baseModules.find(
-      (m) => displayName(m).trim().toLowerCase() === target
-    );
-    return match || null;
-  };
-
-  Object.entries(remote.modules).forEach(([rawModule, arr]) => {
-    const targetModule = findModuleKey(rawModule);
-    if (!targetModule) return;
-
-    const existingInModule = result.filter((r) => r.module === targetModule);
-    let nextIndex = existingInModule.length;
-
-    arr.forEach((r) => {
-      const t = (r.title || "").toLowerCase().trim();
-      if (!t || existing.has(t)) return;
-
-      const idx = nextIndex++;
-      const id = (r as any).id || generatePromptId(r.title, targetModule, idx);
-      result.push({
-        id,
-        ...(r as any),
-        module: targetModule,
-        index: idx,
-      } as PromptItem);
-      existing.add(t);
-    });
-  });
-
-  return result;
-}
 
 /* ---------- Main Component ---------- */
-
 export default function AIPromptVault() {
-  const [data, setData] = useState<PromptItem[]>([]);
-  const [selectedModule, setSelectedModule] = useState<string>("");
-  const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
+  const [search, setSearch] = useState("");
+  const [selectedPrompt, setSelectedPrompt] = useState<PromptItem | null>(null);
+  const [favorites, setFavorites] = useState<string[]>([]);
+  const [copyCounts, setCopyCounts] = useState<Record<string, number>>({});
   const [copied, setCopied] = useState(false);
-  const [loading, setLoading] = useState(true);
-  const [favorites, setFavorites] = useState<Set<string>>(() => {
-    try {
-      const rawIds = localStorage.getItem("rpv:favoritesIds");
-      return rawIds ? new Set(JSON.parse(rawIds) as string[]) : new Set();
-    } catch {
-      return new Set();
-    }
-  });
-  const [recentPrompts, setRecentPrompts] = useState<Array<{id: string; timestamp: number}>>(() => {
-    try {
-      const rawIds = localStorage.getItem("rpv:recentIds");
-      return rawIds ? JSON.parse(rawIds) : [];
-    } catch {
-      return [];
-    }
-  });
-  const [viewMode, setViewMode] = useState<"browse" | "library">("browse");
-  const [searchQuery, setSearchQuery] = useState("");
-  const [showFillModal, setShowFillModal] = useState(false);
-  const [fillTokens, setFillTokens] = useState<string[]>([]);
-  const [fillValues, setFillValues] = useState<Record<string, string>>({});
-  const [saveDefaults, setSaveDefaults] = useState(true);
-  const [tokenValues, setTokenValues] = useState<Record<string, string>>(() => {
-    try {
-      const raw = localStorage.getItem("rpv:tokenVals");
-      return raw ? (JSON.parse(raw) as Record<string, string>) : {};
-    } catch {
-      return {};
-    }
-  });
-
-  // Onboarding state
-  const [showOnboarding, setShowOnboarding] = useState<boolean>(() => {
-    try {
-      const seen = localStorage.getItem("rpv:onboardingCompleted");
-      return seen !== "true"; // Show onboarding if not completed
-    } catch {
-      return true;
-    }
-  });
-
-  // preload base + remote
-  useEffect(() => {
-    const baseArr: PromptItem[] = fullPrompts.flatMap((m, i) =>
-      attachModule(i + 1, m)
-    );
-    setData(baseArr);
-
-    (async () => {
-      try {
-        // apply cached remote if present
-        const cachedStr = localStorage.getItem(KEY_REMOTE_CACHE);
-        if (cachedStr) {
-          try {
-            const cached = JSON.parse(cachedStr) as RemotePayload;
-            const merged = mergeRemote(baseArr, cached);
-            setData(merged);
-          } catch {
-            // ignore cache parse errors
-          }
-        }
-
-        // fetch fresh
-        const res = await fetch(REMOTE_JSON_URL, { cache: "no-store" });
-        if (!res.ok) {
-          setLoading(false);
-          return;
-        }
-        const remote = (await res.json()) as RemotePayload;
-        const ver = remote.version || "";
-        const oldVer = localStorage.getItem(KEY_REMOTE_VER);
-
-        if (!oldVer || oldVer !== ver) {
-          const merged = mergeRemote(baseArr, remote);
-          setData(merged);
-          localStorage.setItem(KEY_REMOTE_CACHE, JSON.stringify(remote));
-          localStorage.setItem(KEY_REMOTE_VER, ver);
-        }
-      } catch (e) {
-        console.warn("Remote prompts not loaded:", e);
-      } finally {
-        setLoading(false);
-      }
-    })();
+  const [fieldValues, setFieldValues] = useState<Record<string, string>>({});
+  const [savedFieldValues, setSavedFieldValues] = useState<Record<string, string>>({});
+  const [activeTag, setActiveTag] = useState<string | null>(null);
+  const [recentlyCopied, setRecentlyCopied] = useState<string[]>([]);
+  const [hoveredCard, setHoveredCard] = useState<string | null>(null);
+  const [showFavoritesView, setShowFavoritesView] = useState<boolean>(false);
+  const [currentFieldIndex, setCurrentFieldIndex] = useState<number>(0);
+  const [showOnboarding, setShowOnboarding] = useState<boolean>(false);
+  const [onboardingStep, setOnboardingStep] = useState<number>(0);
+  const [showFollowUps, setShowFollowUps] = useState<boolean>(false);
+  const [followUpPrompts, setFollowUpPrompts] = useState<PromptItem[]>([]);
+  const [lastUpdated, setLastUpdated] = useState<string | null>(null);
+  const [darkMode, setDarkMode] = useState<boolean>(false);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [fieldHistory, setFieldHistory] = useState<Record<string, string[]>>({});
+  const [collections, setCollections] = useState<Record<string, string[]>>({ "My Favorites": [] });
+  const [activeCollection, setActiveCollection] = useState<string | null>(null);
+  const [customPrompts, setCustomPrompts] = useState<PromptItem[]>([]);
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
+  
+  // Detect Kale branding from URL parameter
+  const isKaleBranded = useMemo(() => {
+    const params = new URLSearchParams(window.location.search);
+    return params.get('kale') === 'true';
   }, []);
+  
+  // Detect embed mode (hide header for iframe embedding)
+  const isEmbedMode = useMemo(() => {
+    const params = new URLSearchParams(window.location.search);
+    return params.get('embed') === 'true';
+  }, []);
+  
+  // Calculate current dark mode state (for tooltip)
+  const getDarkModeState = () => {
+    const saved = localStorage.getItem(KEY_DARK_MODE);
+    if (saved === null) return 'auto';
+    if (saved === 'true') return 'dark';
+    return 'light';
+  };
+  
+  const searchInputRef = React.useRef<HTMLInputElement>(null);
+  const fieldInputRef = React.useRef<HTMLInputElement>(null);
 
-  const promptsForSelected = selectedModule
-    ? data.filter((d) => d.module === selectedModule)
-    : [];
-
-  const filteredData = searchQuery.trim()
-    ? data.filter((p) => {
-        const q = searchQuery.toLowerCase();
-        return (
-          (p.title || "").toLowerCase().includes(q) ||
-          (p.quick || "").toLowerCase().includes(q) ||
-          (p.role || "").toLowerCase().includes(q) ||
-          (p.module || "").toLowerCase().includes(q)
-        );
-      })
-    : data;
-
-  const currentPrompt =
-    selectedModule != null && selectedIndex != null
-      ? data.find(
-          (d) => d.module === selectedModule && d.index === selectedIndex
-        ) || null
-      : null;
-
-  const handleCopy = async () => {
-    if (!currentPrompt) return;
-    const txt = buildFullPrompt(currentPrompt);
-
-    try {
-      await navigator.clipboard.writeText(txt);
-    } catch {
-      const ta = document.createElement("textarea");
-      ta.value = txt;
-      document.body.appendChild(ta);
-      ta.select();
-      document.execCommand("copy");
-      ta.remove();
-    }
-
-    setCopied(true);
-    trackEvent("prompt_copied", {
-      title: currentPrompt.title,
-      module: currentPrompt.module,
+  // Load all prompts with tags
+  const allPrompts = useMemo(() => {
+    const basePrompts = fullPrompts.flatMap((modulePrompts, moduleIdx) => {
+      const moduleName = MODULE_NAMES[moduleIdx + 1] || `Module ${moduleIdx + 1}`;
+      const tags = MODULE_TAGS[moduleIdx + 1] || [];
+      
+      return modulePrompts.map((p: any, idx: number) => ({
+        ...p,
+        module: moduleName,
+        index: idx,
+        tags,
+        id: `${moduleName}-${idx}`,
+      }));
     });
-    addToRecent(currentPrompt);
-    setTimeout(() => setCopied(false), 1200);
-  };
+    
+    // Merge with custom prompts
+    return [...basePrompts, ...customPrompts];
+  }, [customPrompts]);
 
-  const handleCopyText = async (txt: string) => {
+  // Load favorites & counts from localStorage
+  useEffect(() => {
     try {
-      await navigator.clipboard.writeText(txt);
-    } catch {
-      const ta = document.createElement("textarea");
-      ta.value = txt;
-      document.body.appendChild(ta);
-      ta.select();
-      document.execCommand("copy");
-      ta.remove();
-    }
-    setCopied(true);
-    if (currentPrompt) {
-      addToRecent(currentPrompt);
-    }
-    setTimeout(() => setCopied(false), 1200);
-  };
-
-  const addToRecent = (prompt: PromptItem) => {
-    const entry = { id: prompt.id, timestamp: Date.now() };
-    setRecentPrompts((prev) => {
-      const filtered = prev.filter((p) => p.id !== entry.id);
-      const updated = [entry, ...filtered].slice(0, 10);
-      try { localStorage.setItem("rpv:recentIds", JSON.stringify(updated)); } catch {}
-      return updated;
-    });
-  };
-
-  const toggleFavorite = (id: string) => {
-    setFavorites((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) {
-        next.delete(id);
-      } else {
-        next.add(id);
+      const savedFavs = localStorage.getItem(KEY_FAVORITES);
+      if (savedFavs) setFavorites(JSON.parse(savedFavs));
+      
+      const savedCounts = localStorage.getItem(KEY_COUNTS);
+      if (savedCounts) setCopyCounts(JSON.parse(savedCounts));
+      
+      const savedRecent = localStorage.getItem(KEY_RECENT);
+      if (savedRecent) setRecentlyCopied(JSON.parse(savedRecent));
+      
+      const savedFields = localStorage.getItem(KEY_SAVED_FIELDS);
+      if (savedFields) setSavedFieldValues(JSON.parse(savedFields));
+      
+      // Load field history
+      const savedHistory = localStorage.getItem(KEY_FIELD_HISTORY);
+      if (savedHistory) setFieldHistory(JSON.parse(savedHistory));
+      
+      // Load collections
+      const savedCollections = localStorage.getItem(KEY_COLLECTIONS);
+      if (savedCollections) setCollections(JSON.parse(savedCollections));
+      
+      // Load custom prompts
+      const savedCustomPrompts = localStorage.getItem(KEY_CUSTOM_PROMPTS);
+      if (savedCustomPrompts) setCustomPrompts(JSON.parse(savedCustomPrompts));
+      
+      // Check if user has seen onboarding
+      const hasOnboarded = localStorage.getItem(KEY_ONBOARDED);
+      if (!hasOnboarded) {
+        setShowOnboarding(true);
       }
-      try { localStorage.setItem("rpv:favoritesIds", JSON.stringify(Array.from(next))); } catch {}
-      trackEvent("favorite_toggled", { id, isFavorite: next.has(id) });
-      return next;
-    });
+      
+      // Set last updated timestamp
+      const now = new Date();
+      const timeStr = now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+      const dateStr = now.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+      setLastUpdated(`${dateStr} at ${timeStr}`);
+      
+      // Load dark mode preference (or detect system preference)
+      const savedDarkMode = localStorage.getItem(KEY_DARK_MODE);
+      let isDark = false;
+      
+      if (savedDarkMode) {
+        // User has explicit preference
+        isDark = savedDarkMode === 'true';
+      } else {
+        // Auto-detect system preference
+        isDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+      }
+      
+      setDarkMode(isDark);
+      document.body.classList.toggle('dark-mode', isDark);
+      
+      // Apply Kale branding if parameter detected
+      if (isKaleBranded) {
+        document.body.classList.add('kale-branded');
+      }
+      
+      // Apply embed mode styling if parameter detected
+      if (isEmbedMode) {
+        document.body.classList.add('embed-mode');
+      }
+      
+      // Listen for system theme changes
+      const darkModeMediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+      const handleSystemThemeChange = (e: MediaQueryListEvent) => {
+        // Only auto-update if user hasn't set explicit preference
+        if (!localStorage.getItem(KEY_DARK_MODE)) {
+          setDarkMode(e.matches);
+          document.body.classList.toggle('dark-mode', e.matches);
+        }
+      };
+      
+      darkModeMediaQuery.addEventListener('change', handleSystemThemeChange);
+      
+      // Simulate brief loading for skeleton cards
+      setTimeout(() => setIsLoading(false), 300);
+      
+      // Cleanup
+      return () => darkModeMediaQuery.removeEventListener('change', handleSystemThemeChange);
+    } catch {}
+  }, [isKaleBranded, isEmbedMode]);
+
+  // Keyboard shortcuts
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Cmd/Ctrl+K to focus search
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault();
+        searchInputRef.current?.focus();
+        return;
+      }
+      
+      // Escape to close modals or clear search
+      if (e.key === 'Escape') {
+        if (selectedPrompt) {
+          setSelectedPrompt(null);
+        } else if (showOnboarding) {
+          setShowOnboarding(false);
+          localStorage.setItem(KEY_ONBOARDED, 'true');
+        } else if (showFollowUps) {
+          setShowFollowUps(false);
+        } else if (search) {
+          setSearch('');
+          searchInputRef.current?.blur();
+        }
+        return;
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [selectedPrompt, showOnboarding, showFollowUps, search]);
+
+    // Keyboard shortcuts
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // "/" to focus search
+      if (e.key === "/" && !selectedPrompt) {
+        e.preventDefault();
+        searchInputRef.current?.focus();
+      }
+      // ESC to close modal or clear search
+      if (e.key === "Escape") {
+        if (selectedPrompt) {
+          setSelectedPrompt(null);
+        } else if (search || activeTag) {
+          setSearch("");
+          setActiveTag(null);
+        }
+      }
+      // Enter to copy in modal (removed to avoid dependency issue)
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedPrompt, search, activeTag]);
+
+  // Search/filter prompts
+  const filteredPrompts = useMemo(() => {
+    let filtered = allPrompts;
+    
+    // Filter by active collection
+    if (activeCollection) {
+      const collectionIds = collections[activeCollection] || [];
+      filtered = filtered.filter((p: any) => collectionIds.includes(p.id));
+    }
+    
+    // Filter by active tag
+    if (activeTag) {
+      filtered = filtered.filter((p: any) => p.tags?.includes(activeTag));
+    }
+    
+    // Filter by search term
+    if (search.trim()) {
+      const term = search.toLowerCase();
+      filtered = filtered.filter((p: any) => 
+        p.title.toLowerCase().includes(term) ||
+        p.quick?.toLowerCase().includes(term) ||
+        p.tags?.some((t: string) => t.includes(term))
+      );
+    }
+    
+    return filtered;
+  }, [search, activeTag, activeCollection, collections, allPrompts]);
+
+  // Hot prompts: top 5 by copy count
+  const hotPrompts = useMemo(() => {
+    return [...allPrompts]
+      .sort((a: any, b: any) => (copyCounts[b.id] || 0) - (copyCounts[a.id] || 0))
+      .slice(0, 5);
+  }, [allPrompts, copyCounts]);
+
+  // Prompts to display
+  const displayPrompts = (search || activeTag || activeCollection) ? filteredPrompts : hotPrompts;
+
+  // Favorite prompts
+  const favoritePrompts = useMemo(() => {
+    return allPrompts.filter((p: any) => favorites.includes(p.id));
+  }, [favorites, allPrompts]);
+
+  // Recently copied prompts
+  const recentPrompts = useMemo(() => {
+    return recentlyCopied
+      .map(id => allPrompts.find((p: any) => p.id === id))
+      .filter(Boolean)
+      .slice(0, 3);
+  }, [recentlyCopied, allPrompts]);
+
+  // Copy handler
+  const handleCopy = async (prompt: PromptItem) => {
+    const fullText = buildFullPrompt(prompt);
+    const finalText = applyReplacements(fullText, fieldValues);
+    
+    try {
+      await navigator.clipboard.writeText(finalText);
+      setCopied(true);
+      setTimeout(() => {
+        setCopied(false);
+      }, 5000);
+      
+      // Update copy count
+      const id = (prompt as any).id;
+      const newCounts = { ...copyCounts, [id]: (copyCounts[id] || 0) + 1 };
+      setCopyCounts(newCounts);
+      localStorage.setItem(KEY_COUNTS, JSON.stringify(newCounts));
+      
+      // Update recently copied (keep last 10)
+      const newRecent = [id, ...recentlyCopied.filter(rid => rid !== id)].slice(0, 10);
+      setRecentlyCopied(newRecent);
+      localStorage.setItem(KEY_RECENT, JSON.stringify(newRecent));
+      
+      // Generate follow-up suggestions based on tags and module
+      const promptTags = (prompt as any).tags || [];
+      const promptModule = prompt.module;
+      
+      const suggestions = allPrompts
+        .filter((p: any) => {
+          if (p.id === id) return false; // Don't suggest the same prompt
+          // Match by tags or same module
+          const pTags = p.tags || [];
+          const hasCommonTag = promptTags.some((tag: string) => pTags.includes(tag));
+          const sameModule = p.module === promptModule;
+          return hasCommonTag || sameModule;
+        })
+        .slice(0, 3); // Take top 3
+      
+      setFollowUpPrompts(suggestions);
+      setShowFollowUps(true);
+      
+      // Check if this is the user's first copy ever
+      const hasCompletedFirstCopy = localStorage.getItem(KEY_FIRST_COPY);
+      if (!hasCompletedFirstCopy) {
+        // Trigger confetti celebration!
+        confetti({
+          particleCount: 100,
+          spread: 70,
+          origin: { y: 0.6 },
+          colors: ['#2563eb', '#06b6d4', '#f59e0b', '#ec4899'],
+        });
+        localStorage.setItem(KEY_FIRST_COPY, 'true');
+      }
+      
+      trackEvent("prompt_copied", { title: prompt.title, module: prompt.module });
+    } catch (err) {
+      // Fallback
+      const textarea = document.createElement("textarea");
+      textarea.value = finalText;
+      document.body.appendChild(textarea);
+      textarea.select();
+      document.execCommand("copy");
+      document.body.removeChild(textarea);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
   };
 
-  const dismissOnboarding = () => {
-    setShowOnboarding(false);
-    try {
-      localStorage.setItem("rpv:onboardingCompleted", "true");
-    } catch {}
-    trackEvent("onboarding_dismissed", {});
+  // Export prompt as .txt file
+  const handleExport = (prompt: PromptItem) => {
+    const fullText = buildFullPrompt(prompt);
+    const finalText = applyReplacements(fullText, fieldValues);
+    
+    // Create filename from prompt title (sanitized)
+    const filename = `${prompt.title.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.txt`;
+    
+    // Create blob and download
+    const blob = new Blob([finalText], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    
+    trackEvent("prompt_exported", { title: prompt.title, module: prompt.module });
   };
 
-  const handleChallengeClick = (challenge: ChallengeMeta) => {
-    setShowOnboarding(false);
-    try {
-      localStorage.setItem("rpv:onboardingCompleted", "true");
-    } catch {}
-    setViewMode("browse");
-    setSelectedModule(challenge.moduleKey);
-    setSelectedIndex(challenge.promptIndex);
-    trackEvent("challenge_selected", {
-      problem: challenge.problem,
-      module: challenge.moduleKey,
-    });
+  // Toggle favorite
+  const toggleFavorite = (promptId: string) => {
+    const newFavs = favorites.includes(promptId)
+      ? favorites.filter(id => id !== promptId)
+      : [...favorites, promptId];
+    
+    setFavorites(newFavs);
+    localStorage.setItem(KEY_FAVORITES, JSON.stringify(newFavs));
+    
+    // Also sync with "My Favorites" collection
+    if (newFavs.includes(promptId)) {
+      addToCollection("My Favorites", promptId);
+    } else {
+      // Remove from My Favorites collection
+      const updatedCollections = {
+        ...collections,
+        "My Favorites": (collections["My Favorites"] || []).filter(id => id !== promptId)
+      };
+      setCollections(updatedCollections);
+      localStorage.setItem(KEY_COLLECTIONS, JSON.stringify(updatedCollections));
+    }
+    
+    trackEvent("favorite_toggled", { promptId, action: newFavs.includes(promptId) ? "add" : "remove" });
   };
+
+  // Toggle dark mode (3-state: light → dark → auto)
+  const toggleDarkMode = () => {
+    const savedDarkMode = localStorage.getItem(KEY_DARK_MODE);
+    
+    if (savedDarkMode === null) {
+      // Currently auto, user in light mode → switch to dark
+      setDarkMode(true);
+      localStorage.setItem(KEY_DARK_MODE, 'true');
+      document.body.classList.add('dark-mode');
+      trackEvent("dark_mode_toggled", { enabled: true, mode: 'dark' });
+    } else if (savedDarkMode === 'true') {
+      // Currently dark → switch to light
+      setDarkMode(false);
+      localStorage.setItem(KEY_DARK_MODE, 'false');
+      document.body.classList.remove('dark-mode');
+      trackEvent("dark_mode_toggled", { enabled: false, mode: 'light' });
+    } else {
+      // Currently light → switch to auto (system preference)
+      localStorage.removeItem(KEY_DARK_MODE);
+      const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+      setDarkMode(systemPrefersDark);
+      document.body.classList.toggle('dark-mode', systemPrefersDark);
+      trackEvent("dark_mode_toggled", { enabled: systemPrefersDark, mode: 'auto' });
+    }
+  };
+
+  // Add prompt to collection
+  const addToCollection = (collectionName: string, promptId: string) => {
+    const updatedCollections = {
+      ...collections,
+      [collectionName]: [...(collections[collectionName] || []), promptId].filter((id, idx, arr) => arr.indexOf(id) === idx)
+    };
+    setCollections(updatedCollections);
+    localStorage.setItem(KEY_COLLECTIONS, JSON.stringify(updatedCollections));
+    trackEvent("prompt_added_to_collection", { collectionName, promptId });
+  };
+
+  // Duplicate prompt (create custom version)
+  const duplicatePrompt = (prompt: PromptItem) => {
+    const customId = `custom-${Date.now()}`;
+    const duplicated: any = {
+      ...prompt,
+      id: customId,
+      title: `${prompt.title} (My Version)`,
+      module: "My Custom Prompts",
+      tags: [...((prompt as any).tags || []), "custom"],
+    };
+    
+    const updatedCustomPrompts = [...customPrompts, duplicated];
+    setCustomPrompts(updatedCustomPrompts);
+    localStorage.setItem(KEY_CUSTOM_PROMPTS, JSON.stringify(updatedCustomPrompts));
+    
+    // Auto-select the new custom prompt for editing
+    setSelectedPrompt(duplicated);
+    showToast("✨ Custom version created!");
+    trackEvent("prompt_duplicated", { originalId: (prompt as any).id, customId });
+  };
+
+  // Show toast notification
+  const showToast = (message: string) => {
+    setToastMessage(message);
+    setTimeout(() => setToastMessage(null), 3000);
+  };
+
+  // Select prompt for detail view
+  const selectPrompt = (prompt: PromptItem) => {
+    setSelectedPrompt(prompt);
+    
+    // Pre-fill field values from saved fields
+    const placeholders = extractPlaceholders(prompt);
+    const prefilledValues: Record<string, string> = {};
+    placeholders.forEach(ph => {
+      if (savedFieldValues[ph]) {
+        prefilledValues[ph] = savedFieldValues[ph];
+      }
+    });
+    
+    setFieldValues(prefilledValues);
+    setCurrentFieldIndex(0);
+    trackEvent("prompt_selected", { title: prompt.title });
+  };
+  
+  // Update field value and save to localStorage
+  const updateFieldValue = (field: string, value: string) => {
+    const newFieldValues = { ...fieldValues, [field]: value };
+    setFieldValues(newFieldValues);
+    
+    // Save to localStorage for future use
+    if (value.trim()) {
+      const newSavedFields = { ...savedFieldValues, [field]: value };
+      setSavedFieldValues(newSavedFields);
+      localStorage.setItem(KEY_SAVED_FIELDS, JSON.stringify(newSavedFields));
+      
+      // Update field history (keep last 5 unique values per field)
+      const currentHistory = fieldHistory[field] || [];
+      const newHistory = [value, ...currentHistory.filter(v => v !== value)].slice(0, 5);
+      const updatedHistory = { ...fieldHistory, [field]: newHistory };
+      setFieldHistory(updatedHistory);
+      localStorage.setItem(KEY_FIELD_HISTORY, JSON.stringify(updatedHistory));
+    }
+  };
+
+  // Focus field input when field changes
+  React.useEffect(() => {
+    if (selectedPrompt && fieldInputRef.current) {
+      setTimeout(() => fieldInputRef.current?.focus(), 100);
+    }
+  }, [currentFieldIndex, selectedPrompt]);
 
   return (
-    <div
-      style={{
-        maxWidth: 1040,
-        margin: "0 auto",
-        padding: "32px 20px 40px",
-        fontFamily:
-          "system-ui,-apple-system,Segoe UI,Roboto,Inter,Helvetica,Arial,sans-serif",
-        background: "linear-gradient(#f9fafb, #ffffff)",
-      }}
-    >
-      {/* Header */}
-      <header style={{ marginBottom: 28 }}>
-        <div
+    <div className="rpv-app rpv-container">
+      {/* Header - hidden in embed mode */}
+      {!isEmbedMode && (
+      <header className="rpv-header" style={{ marginBottom: 32, position: "relative" }}>
+        {/* Dark mode toggle */}
+        <button
+          onClick={toggleDarkMode}
           style={{
-            fontSize: 26,
-            fontWeight: 900,
-            letterSpacing: "-0.03em",
-            color: "#020617",
-            marginBottom: 6,
+            position: "absolute",
+            top: 0,
+            right: 0,
+            padding: "8px 12px",
+            background: "transparent",
+            border: "2px solid var(--border)",
+            borderRadius: "var(--radius-sm)",
+            cursor: "pointer",
+            fontSize: 18,
+            transition: "all 180ms ease",
           }}
+          title={
+            getDarkModeState() === 'auto' 
+              ? `Auto mode (currently ${darkMode ? 'dark' : 'light'}). Click for ${darkMode ? 'light' : 'dark'} mode.`
+              : getDarkModeState() === 'dark'
+              ? 'Dark mode. Click for light mode.'
+              : 'Light mode. Click for auto mode.'
+          }
         >
-          AI Prompt Vault for Real Estate Agents
+          {darkMode ? "☀️" : "🌙"}
+        </button>
+        
+        <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 8, justifyContent: "center", flexWrap: "wrap" }}>
+          <h1 className="title" style={{ margin: 0 }}>
+            🏡 AI Prompt Vault
+          </h1>
+          <span style={{
+            background: "linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%)",
+            color: "var(--text-inverse)",
+            padding: "4px 12px",
+            borderRadius: "var(--radius-pill)",
+            fontSize: 14,
+            fontWeight: 700,
+            boxShadow: "var(--shadow-md)",
+            animation: "pulse 2s ease-in-out infinite",
+          }}>
+            {allPrompts.length} Prompts
+          </span>
         </div>
-        <div style={{ fontSize: 14, color: "#6b7280", maxWidth: 620 }}>
-          Pick a category below and grab a ready-made prompt for your next
-          marketing, systems, or client problem.
-        </div>
-        <div style={{ marginTop: 14 }}>
+        <p className="subtitle" style={{ marginBottom: 8 }}>
+          The best AI prompts for real estate agents. Copy, paste, close deals.
+        </p>
+        {lastUpdated && (
+          <p style={{ fontSize: 12, color: "var(--text-secondary)", marginBottom: 16 }}>
+            ✨ Last updated: {lastUpdated}
+          </p>
+        )}
+
+        {/* Search Bar */}
+        <div style={{ maxWidth: 640, position: "relative" }}>
           <input
-            type="text"
-            value={searchQuery}
-            onChange={(e) => {
-              setSearchQuery(e.target.value);
-              if (e.target.value.trim()) {
-                setViewMode("browse");
-                setSelectedModule("");
-              }
-            }}
-            placeholder="Search prompts by keyword, role, or module..."
+            ref={searchInputRef}
+            type="search"
+            placeholder="What do you need help with? Try: 'listing description', 'social media', 'open house'..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="rpv-search-hero"
             style={{
               width: "100%",
-              maxWidth: 500,
-              height: 42,
-              borderRadius: 999,
-              border: "1px solid #e5e7eb",
-              padding: "0 18px",
-              fontSize: 14,
-              background: "#ffffff",
-              outline: "none",
-            }}
-            onFocus={(e) => {
-              e.currentTarget.style.borderColor = "#2563eb";
-              e.currentTarget.style.boxShadow = "0 0 0 3px rgba(37,99,235,0.1)";
-            }}
-            onBlur={(e) => {
-              e.currentTarget.style.borderColor = "#e5e7eb";
-              e.currentTarget.style.boxShadow = "none";
+              fontSize: 16,
+              padding: "14px 20px",
+              paddingRight: search ? "20px" : "120px",
+              borderRadius: "var(--radius-pill)",
+              border: "2px solid var(--border)",
+              background: "var(--surface)",
+              fontFamily: "var(--font-stack)",
             }}
           />
-        </div>
-        <div style={{ display: "flex", gap: 10, marginTop: 14, flexWrap: "wrap" }}>
-          <button
-            onClick={() => setViewMode("browse")}
-            style={{
-              padding: "8px 16px",
-              borderRadius: 999,
-              border: viewMode === "browse" ? "1px solid #2563eb" : "1px solid #e5e7eb",
-              background: viewMode === "browse" ? "#eef2ff" : "#ffffff",
-              color: viewMode === "browse" ? "#1e40af" : "#64748b",
-              fontSize: 13,
-              fontWeight: 600,
-              cursor: "pointer",
-            }}
-          >
-            Browse All
-          </button>
-          <button
-            onClick={() => setViewMode("library")}
-            style={{
-              padding: "8px 16px",
-              borderRadius: 999,
-              border: viewMode === "library" ? "1px solid #2563eb" : "1px solid #e5e7eb",
-              background: viewMode === "library" ? "#eef2ff" : "#ffffff",
-              color: viewMode === "library" ? "#1e40af" : "#64748b",
-              fontSize: 13,
-              fontWeight: 600,
-              cursor: "pointer",
-            }}
-          >
-            My Library {(() => {
-              const uniqueIds = new Set<string>([...Array.from(favorites), ...recentPrompts.map(r => r.id)]);
-              return uniqueIds.size > 0 ? `(${uniqueIds.size})` : "";
-            })()}
-          </button>
-          <button
-            onClick={() => {
-              const json = JSON.stringify(tokenValues, null, 2);
-              const blob = new Blob([json], { type: "application/json" });
-              const url = URL.createObjectURL(blob);
-              const a = document.createElement("a");
-              a.href = url;
-              a.download = "ai-prompt-vault-settings.json";
-              a.click();
-              URL.revokeObjectURL(url);
-              trackEvent("settings_exported", {});
-            }}
-            style={{
-              padding: "8px 16px",
-              borderRadius: 999,
-              border: "1px solid #e5e7eb",
-              background: "#ffffff",
-              color: "#64748b",
-              fontSize: 13,
-              fontWeight: 600,
-              cursor: "pointer",
-            }}
-          >
-            Export Settings
-          </button>
-          <button
-            onClick={() => {
-              const input = prompt("Paste your exported JSON settings:");
-              if (!input) return;
-              try {
-                const parsed = JSON.parse(input);
-                if (typeof parsed === "object" && parsed !== null) {
-                  const merged = { ...tokenValues, ...parsed };
-                  setTokenValues(merged);
-                  try { localStorage.setItem("rpv:tokenVals", JSON.stringify(merged)); } catch {}
-                  alert("Settings imported successfully!");
-                  trackEvent("settings_imported", {});
-                } else {
-                  alert("Invalid JSON format");
-                }
-              } catch (err) {
-                alert("Failed to parse JSON. Please check the format.");
-              }
-            }}
-            style={{
-              padding: "8px 16px",
-              borderRadius: 999,
-              border: "1px solid #e5e7eb",
-              background: "#ffffff",
-              color: "#64748b",
-              fontSize: 13,
-              fontWeight: 600,
-              cursor: "pointer",
-            }}
-          >
-            Import Settings
-          </button>
-          {!showOnboarding && (
-            <button
-              onClick={() => setShowOnboarding(true)}
+          {!search && (
+            <span
               style={{
-                padding: "8px 16px",
-                borderRadius: 999,
-                border: "1px solid #e0e7ff",
-                background: "#eef2ff",
-                color: "#4338ca",
-                fontSize: 13,
-                fontWeight: 600,
-                cursor: "pointer",
+                position: "absolute",
+                right: 16,
+                top: "50%",
+                transform: "translateY(-50%)",
+                fontSize: 12,
+                color: "var(--muted)",
+                pointerEvents: "none",
               }}
             >
-              Show Challenges
-            </button>
+              Press <kbd style={{ 
+                padding: "2px 6px", 
+                background: "var(--badge-bg)", 
+                borderRadius: 4,
+                fontSize: 11,
+                fontWeight: 600 
+              }}>⌘K</kbd> to search
+            </span>
           )}
         </div>
-      </header>
 
-      {/* Challenge-Based Onboarding */}
-      {showOnboarding && (
-        <div
-          style={{
-            marginBottom: 32,
-            padding: 24,
-            background: "linear-gradient(135deg, #eef2ff 0%, #fef3c7 100%)",
-            border: "1px solid #e0e7ff",
-            borderRadius: 18,
-            boxShadow: "0 10px 28px rgba(99,102,241,0.12)",
-          }}
-        >
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 18 }}>
-            <div>
-              <div style={{ fontSize: 22, fontWeight: 800, color: "#1e1b4b", marginBottom: 6 }}>
-                🚀 What challenge can we help you solve today?
-              </div>
-              <div style={{ fontSize: 14, color: "#4338ca", fontWeight: 500 }}>
-                Pick a problem below to jump straight to the perfect prompt.
-              </div>
-            </div>
-            <button
-              onClick={dismissOnboarding}
-              style={{
-                padding: "6px 14px",
-                borderRadius: 999,
-                border: "1px solid #c7d2fe",
-                background: "#ffffff",
-                color: "#4338ca",
-                fontSize: 13,
-                fontWeight: 600,
-                cursor: "pointer",
-                whiteSpace: "nowrap",
-              }}
-            >
-              Skip →
-            </button>
-          </div>
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
-              gap: 12,
-            }}
-          >
-            {CHALLENGE_CARDS.map((challenge) => (
+        {/* Active filters */}
+        {(activeTag || search) && (
+          <div style={{ marginTop: 12, display: "flex", gap: 8, alignItems: "center" }}>
+            <span style={{ fontSize: 13, color: "var(--muted)" }}>Active filters:</span>
+            {activeTag && (
               <button
-                key={challenge.id}
-                onClick={() => handleChallengeClick(challenge)}
+                onClick={() => setActiveTag(null)}
+                className="filter-pill"
                 style={{
-                  textAlign: "left",
-                  padding: "14px 16px",
-                  borderRadius: 12,
-                  border: "1px solid #e0e7ff",
-                  background: "#ffffff",
-                  boxShadow: "0 4px 12px rgba(99,102,241,0.08)",
+                  padding: "4px 10px",
+                  borderRadius: "var(--radius-pill)",
+                  background: "var(--primary)",
+                  color: "var(--text-inverse)",
+                  border: "none",
+                  fontSize: 12,
                   cursor: "pointer",
-                  transition: "all 0.2s",
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.transform = "translateY(-2px)";
-                  e.currentTarget.style.boxShadow = "0 8px 20px rgba(99,102,241,0.15)";
-                  e.currentTarget.style.borderColor = "#6366f1";
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.transform = "translateY(0)";
-                  e.currentTarget.style.boxShadow = "0 4px 12px rgba(99,102,241,0.08)";
-                  e.currentTarget.style.borderColor = "#e0e7ff";
-                }}
-              >
-                <div style={{ fontSize: 28, marginBottom: 8 }}>{challenge.emoji}</div>
-                <div style={{ fontSize: 14, fontWeight: 600, color: "#1e1b4b", lineHeight: 1.3 }}>
-                  {challenge.problem}
-                </div>
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {viewMode === "browse" && (
-        <>
-      {/* Search Results */}
-      {searchQuery.trim() && (
-        <div style={{ marginBottom: 20 }}>
-          <div style={{ fontSize: 16, fontWeight: 600, color: "#0f172a", marginBottom: 12 }}>
-            Search Results ({filteredData.length})
-          </div>
-          {filteredData.length === 0 ? (
-            <div style={{ textAlign: "center", padding: "40px 20px", color: "#9ca3af" }}>
-              <div style={{ fontSize: 14 }}>
-                No prompts found for "{searchQuery}"
-              </div>
-            </div>
-          ) : (
-            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-              {filteredData.map((p) => (
-                <div
-                  key={`${p.module}-${p.index}`}
-                  style={{
-                    background: "#ffffff",
-                    border: "1px solid #e5e7eb",
-                    borderRadius: 12,
-                    padding: 14,
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                    gap: 12,
-                    cursor: "pointer",
-                  }}
-                  onClick={() => {
-                    setSelectedModule(p.module);
-                    setSelectedIndex(p.index);
-                    setSearchQuery("");
-                    trackEvent("search_prompt_selected", { title: p.title, query: searchQuery });
-                  }}
-                >
-                  <div style={{ flex: 1 }}>
-                    <div style={{ fontSize: 14, fontWeight: 600, color: "#0f172a", marginBottom: 4 }}>
-                      {p.title}
-                    </div>
-                    <div style={{ fontSize: 12, color: "#64748b", marginBottom: 4 }}>
-                      {displayName(p.module)}
-                    </div>
-                    {p.quick && (
-                      <div style={{ fontSize: 12, color: "#9ca3af", lineHeight: 1.4 }}>
-                        {p.quick.length > 120 ? p.quick.substring(0, 120) + "..." : p.quick}
-                      </div>
-                    )}
-                  </div>
-                  <div style={{ display: "flex", gap: 8 }}>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        toggleFavorite(p.id);
-                      }}
-                      style={{
-                        padding: "6px 10px",
-                        borderRadius: 999,
-                        border: favorites.has(p.id) ? "1px solid #fbbf24" : "1px solid #e5e7eb",
-                        background: favorites.has(p.id) ? "#fef3c7" : "#ffffff",
-                        color: favorites.has(p.id) ? "#92400e" : "#94a3b8",
-                        fontSize: 16,
-                        cursor: "pointer",
-                      }}
-                    >
-                      {favorites.has(p.id) ? "⭐" : "☆"}
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      )}
-
-      {!searchQuery.trim() && (
-        <>
-      {/* Category cards */}
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
-          gap: 14,
-          marginBottom: 18,
-        }}
-      >
-        {CATEGORY_CARDS.map((cat) => {
-          const isActive = selectedModule === cat.moduleKey;
-          return (
-            <button
-              key={cat.id}
-              onClick={() => {
-                const nextModule =
-                  selectedModule === cat.moduleKey ? "" : cat.moduleKey;
-                setSelectedModule(nextModule);
-                setSelectedIndex(null);
-                trackEvent("module_selected", {
-                  module: nextModule || "none",
-                  label: cat.label,
-                });
-              }}
-              style={{
-                textAlign: "left",
-                borderRadius: 16,
-                padding: "14px 14px 13px",
-                border: isActive ? "1px solid #2563eb" : "1px solid #e5e7eb",
-                background: isActive ? "#eef2ff" : "#ffffff",
-                boxShadow: isActive
-                  ? "0 14px 30px rgba(37,99,235,0.18)"
-                  : "0 10px 24px rgba(15,23,42,0.06)",
-                cursor: "pointer",
-                display: "flex",
-                flexDirection: "column",
-                gap: 6,
-                transition:
-                  "transform 120ms ease, box-shadow 120ms ease, background 120ms ease, border-color 120ms ease",
-              }}
-              onMouseEnter={(e) => {
-                (e.currentTarget as HTMLButtonElement).style.transform =
-                  "translateY(-2px)";
-              }}
-              onMouseLeave={(e) => {
-                (e.currentTarget as HTMLButtonElement).style.transform =
-                  "translateY(0)";
-              }}
-            >
-              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                <span style={{ fontSize: 18 }}>{cat.emoji}</span>
-                <span
-                  style={{
-                    fontSize: 15,
-                    fontWeight: 700,
-                    color: "#020617",
-                  }}
-                >
-                  {cat.label}
-                </span>
-              </div>
-              <span style={{ fontSize: 12, color: "#6b7280" }}>
-                {cat.tagline}
-              </span>
-            </button>
-          );
-        })}
-      </div>
-
-      {/* Helper text */}
-      {!selectedModule && (
-        <p
-          style={{
-            fontSize: 12,
-            color: "#9ca3af",
-            marginBottom: 10,
-          }}
-        >
-          Choose a category above to see the prompts.
-        </p>
-      )}
-      </>
-      )}
-
-      {/* Prompt selector + body */}
-      {selectedModule && (
-        <section style={{ marginTop: 8 }}>
-          <div
-            style={{
-              marginBottom: 8,
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "baseline",
-              gap: 12,
-              flexWrap: "wrap",
-            }}
-          >
-            <div>
-              <div
-                style={{
-                  fontSize: 14,
-                  fontWeight: 600,
-                  color: "#0f172a",
-                }}
-              >
-                Prompts in {displayName(selectedModule)}
-              </div>
-              <div style={{ fontSize: 12, color: "#9ca3af" }}>
-                Pick a prompt, then copy the long version into ChatGPT and
-                personalize the bracketed fields.
-              </div>
-            </div>
-
-            <select
-              value={selectedIndex ?? ""}
-              onChange={(e) => {
-                const idx =
-                  e.target.value === "" ? null : Number(e.target.value);
-                setSelectedIndex(idx);
-                if (idx != null) {
-                  const p = promptsForSelected.find(
-                    (d) => d.index === idx
-                  );
-                  trackEvent("prompt_selected", {
-                    module: selectedModule,
-                    title: p?.title,
-                  });
-                }
-              }}
-              style={{
-                height: 40,
-                minWidth: 220,
-                borderRadius: 999,
-                border: "1px solid #e5e7eb",
-                padding: "0 14px",
-                background: "#ffffff",
-                fontSize: 13,
-                color: "#111827",
-              }}
-            >
-              <option value="">
-                {promptsForSelected.length
-                  ? "Choose a prompt…"
-                  : "No prompts found"}
-              </option>
-              {promptsForSelected.map((p) => (
-                <option key={p.index} value={p.index}>
-                  {p.title}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {currentPrompt && (
-            <div
-              style={{
-                marginTop: 10,
-                background: "#ffffff",
-                border: "1px solid #e5e7eb",
-                borderRadius: 18,
-                padding: 18,
-                boxShadow: "0 12px 30px rgba(15,23,42,0.08)",
-              }}
-            >
-              <div
-                style={{
                   display: "flex",
-                  gap: 10,
-                  flexWrap: "wrap",
-                  marginBottom: 8,
-                }}
-              >
-                <span
-                  style={{
-                    fontSize: 11,
-                    padding: "3px 9px",
-                    background: "#eef2ff",
-                    color: "#334155",
-                    borderRadius: 999,
-                    textTransform: "uppercase",
-                    letterSpacing: "0.04em",
-                    fontWeight: 600,
-                  }}
-                >
-                  {displayName(currentPrompt.module)}
-                </span>
-                <span
-                  style={{
-                    fontSize: 11,
-                    padding: "3px 9px",
-                    background: "#f9fafb",
-                    color: "#4b5563",
-                    borderRadius: 999,
-                  }}
-                >
-                  Long Prompt
-                </span>
-                <button
-                  onClick={() => toggleFavorite(currentPrompt.id)}
-                  style={{
-                    fontSize: 11,
-                    padding: "3px 9px",
-                    border: favorites.has(currentPrompt.id) ? "1px solid #fbbf24" : "1px solid #e5e7eb",
-                    background: favorites.has(currentPrompt.id) ? "#fef3c7" : "#ffffff",
-                    color: favorites.has(currentPrompt.id) ? "#92400e" : "#94a3b8",
-                    borderRadius: 999,
-                    cursor: "pointer",
-                    marginLeft: "auto",
-                  }}
-                  title={favorites.has(currentPrompt.id) ? "Remove from favorites" : "Add to favorites"}
-                >
-                  {favorites.has(currentPrompt.id) ? "⭐ Favorited" : "☆ Favorite"}
-                </button>
-              </div>
-
-              <div
-                style={{
-                  fontWeight: 800,
-                  margin: "4px 0 8px",
-                  fontSize: 18,
-                  color: "#020617",
-                }}
-              >
-                {currentPrompt.title || "Untitled Prompt"}
-              </div>
-
-              <div
-                style={{
-                  whiteSpace: "pre-wrap",
-                  lineHeight: 1.5,
-                  color: "#111827",
-                  fontSize: 14,
-                }}
-              >
-                {buildFullPrompt(currentPrompt)}
-              </div>
-
-              <div
-                style={{
-                  marginTop: 14,
-                  display: "flex",
-                  gap: 10,
-                  flexWrap: "wrap",
                   alignItems: "center",
+                  gap: 6,
                 }}
               >
-                {(() => {
-                  const txt = currentPrompt ? buildFullPrompt(currentPrompt) : "";
-                  if (txt && canPersonalizeWithSaved(txt, tokenValues)) {
-                    const personalized = replaceTokensInText(txt, tokenValues);
-                    return (
-                      <button
-                        onClick={() => handleCopyText(personalized)}
-                        style={{
-                          height: 42,
-                          borderRadius: 999,
-                          border: "1px solid #e5e7eb",
-                          padding: "0 16px",
-                          background: "#2563eb",
-                          color: "#f9fafb",
-                          fontSize: 14,
-                          fontWeight: 600,
-                          cursor: "pointer",
-                        }}
-                      >
-                        {copied ? "Copied!" : "Copy personalized"}
-                      </button>
-                    );
-                  }
-                  return null;
-                })()}
-                <button
-                  onClick={handleCopy}
-                  style={{
-                    height: 42,
-                    borderRadius: 999,
-                    border: "1px solid #e5e7eb",
-                    padding: "0 16px",
-                    background: "#0f172a",
-                    color: "#f9fafb",
-                    fontSize: 14,
-                    fontWeight: 600,
-                    cursor: "pointer",
-                  }}
-                >
-                  {copied ? "Copied!" : "Copy prompt"}
-                </button>
-                <button
-                  onClick={() => {
-                    const txt = currentPrompt ? buildFullPrompt(currentPrompt) : "";
-                    const toks = txt ? extractTokens(txt) : [];
-                    setFillTokens(toks);
-                    setFillValues(toks.reduce((acc, t) => {
-                      acc[t] = tokenValues[t] || "";
-                      return acc;
-                    }, {} as Record<string,string>));
-                    setShowFillModal(true);
-                  }}
-                  style={{
-                    height: 42,
-                    borderRadius: 999,
-                    border: "1px solid #e5e7eb",
-                    padding: "0 16px",
-                    background: "#ffffff",
-                    color: "#0f172a",
-                    fontSize: 14,
-                    fontWeight: 600,
-                    cursor: "pointer",
-                  }}
-                >
-                  Quick Fill
-                </button>
-                <span style={{ fontSize: 12, color: "#9ca3af" }}>
-                  Copy → paste into ChatGPT → tweak the bracketed fields →
-                  run.
-                </span>
+                #{activeTag} <span style={{ fontSize: 14 }}>×</span>
+              </button>
+            )}
+            {(search || activeTag) && (
+              <button
+                onClick={() => {
+                  setSearch("");
+                  setActiveTag(null);
+                }}
+                style={{
+                  fontSize: 12,
+                  color: "var(--muted)",
+                  background: "transparent",
+                  border: "none",
+                  cursor: "pointer",
+                  textDecoration: "underline",
+                }}
+              >
+                Clear all
+              </button>
+            )}
+          </div>
+        )}
+      </header>
+      )}
+
+      {/* Usage Dashboard */}
+      {!search && !activeTag && !activeCollection && (
+        <section style={{ 
+          marginBottom: 32,
+          padding: 20,
+          background: "linear-gradient(135deg, var(--surface) 0%, var(--surface-hover) 100%)",
+          borderRadius: "var(--radius-md)",
+          border: "1px solid var(--border)",
+          animation: "fadeIn 400ms ease-out",
+        }}>
+          <h2 style={{ fontSize: 16, fontWeight: 700, color: "var(--text)", marginBottom: 16 }}>
+            📊 Your Activity
+          </h2>
+          <div style={{ 
+            display: "grid", 
+            gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))",
+            gap: 16,
+          }}>
+            <div>
+              <div style={{ fontSize: 28, fontWeight: 800, color: "var(--primary)", marginBottom: 4 }}>
+                {Object.values(copyCounts).reduce((sum, count) => sum + count, 0)}
+              </div>
+              <div style={{ fontSize: 12, color: "var(--muted)", fontWeight: 500 }}>
+                Prompts Copied
               </div>
             </div>
-          )}
+            <div>
+              <div style={{ fontSize: 28, fontWeight: 800, color: "var(--success)", marginBottom: 4 }}>
+                {favorites.length}
+              </div>
+              <div style={{ fontSize: 12, color: "var(--muted)", fontWeight: 500 }}>
+                Favorites
+              </div>
+            </div>
+            <div>
+              <div style={{ fontSize: 28, fontWeight: 800, color: "var(--warning)", marginBottom: 4 }}>
+                {recentlyCopied.length}
+              </div>
+              <div style={{ fontSize: 12, color: "var(--muted)", fontWeight: 500 }}>
+                Recently Used
+              </div>
+            </div>
+            <div>
+              <div style={{ fontSize: 28, fontWeight: 800, color: "var(--purple)", marginBottom: 4 }}>
+                {Object.keys(collections).length}
+              </div>
+              <div style={{ fontSize: 12, color: "var(--muted)", fontWeight: 500 }}>
+                Collections
+              </div>
+            </div>
+          </div>
         </section>
       )}
 
-      {loading && !selectedModule && (
-        <p style={{ fontSize: 12, color: "#9ca3af", marginTop: 12 }}>
-          Loading prompts…
-        </p>
-      )}
-      </>
+      {/* Recently Copied (if exists and not searching) */}
+      {recentPrompts.length > 0 && !search && !activeTag && (
+        <section style={{ marginBottom: 32 }}>
+          <h2 style={{ fontSize: 16, fontWeight: 600, color: "var(--text)", marginBottom: 12 }}>
+            ⚡ Recently Copied
+          </h2>
+          <div style={{ display: "flex", gap: 8, overflowX: "auto", paddingBottom: 8 }}>
+            {recentPrompts.map((prompt: any) => (
+              <button
+                key={prompt.id}
+                onClick={() => selectPrompt(prompt)}
+                className="recent-chip"
+                style={{
+                  padding: "8px 14px",
+                  borderRadius: "var(--radius-pill)",
+                  background: "var(--surface-hover)",
+                  border: "1px solid var(--border)",
+                  fontSize: 13,
+                  whiteSpace: "nowrap",
+                  cursor: "pointer",
+                  transition: "all 180ms ease",
+                }}
+              >
+                {prompt.title}
+              </button>
+            ))}
+          </div>
+        </section>
       )}
 
-      {viewMode === "library" && (
-        <div style={{ marginTop: 20 }}>
-          {favorites.size === 0 && recentPrompts.length === 0 && (
-            <div style={{ textAlign: "center", padding: "60px 20px", color: "#9ca3af" }}>
-              <div style={{ fontSize: 48, marginBottom: 12 }}>⭐</div>
-              <div style={{ fontSize: 16, fontWeight: 600, color: "#64748b", marginBottom: 6 }}>
-                No favorites yet
-              </div>
-              <div style={{ fontSize: 13 }}>
-                Star prompts while browsing to save them here for quick access.
-              </div>
-            </div>
+      {/* Collections Filter */}
+      {Object.keys(collections).length > 0 && (
+        <section style={{ marginBottom: 24 }}>
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
+            <span style={{ fontSize: 13, fontWeight: 600, color: "var(--muted)" }}>Collections:</span>
+            {Object.keys(collections).map((collectionName) => (
+              <button
+                key={collectionName}
+                onClick={() => setActiveCollection(activeCollection === collectionName ? null : collectionName)}
+                style={{
+                  padding: "6px 14px",
+                  fontSize: 13,
+                  fontWeight: 600,
+                  background: activeCollection === collectionName ? "var(--primary)" : "var(--surface-hover)",
+                  color: activeCollection === collectionName ? "var(--surface)" : "var(--text)",
+                  border: "none",
+                  borderRadius: "var(--radius-pill)",
+                  cursor: "pointer",
+                  transition: "all 160ms ease",
+                  transform: "scale(1)",
+                }}
+                onMouseEnter={(e) => e.currentTarget.style.transform = "scale(1.05)"}
+                onMouseLeave={(e) => e.currentTarget.style.transform = "scale(1)"}
+              >
+                📁 {collectionName} ({collections[collectionName].length})
+              </button>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* Hot Right Now / Search Results */}
+      <section style={{ marginBottom: 40 }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
+          <h2 style={{ fontSize: 20, fontWeight: 700, color: "var(--text)" }}>
+            {activeTag ? `#${activeTag} (${filteredPrompts.length})` : search ? `Search Results (${filteredPrompts.length})` : "🔥 Hot Right Now"}
+          </h2>
+          {!search && !activeTag && (
+            <button
+              onClick={() => setSearch(" ")}
+              style={{
+                fontSize: 14,
+                color: "var(--primary)",
+                background: "transparent",
+                border: "none",
+                cursor: "pointer",
+                textDecoration: "underline",
+              }}
+            >
+              Browse all {allPrompts.length} prompts →
+            </button>
           )}
+        </div>
 
-          {favorites.size > 0 && (
-            <div style={{ marginBottom: 32 }}>
-              <div style={{ fontSize: 18, fontWeight: 700, color: "#0f172a", marginBottom: 12 }}>
-                ⭐ Favorites ({favorites.size})
-              </div>
-              <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                {data.filter((p) => favorites.has(p.id)).map((p) => (
-                  <div
-                    key={p.id}
+        {/* Prompt Cards */}
+        <div className="prompt-list" style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+          {displayPrompts.length === 0 && (
+            <div className="empty-state" style={{ padding: "60px 20px", textAlign: "center" }}>
+              <div style={{ fontSize: 48, marginBottom: 16 }}>🔍</div>
+              <h3 style={{ fontSize: 18, fontWeight: 600, marginBottom: 8, color: "var(--text)" }}>
+                {search || activeTag ? "No prompts found" : "No prompts available"}
+              </h3>
+              <p style={{ color: "var(--muted)", marginBottom: 20, maxWidth: 400, margin: "0 auto 20px" }}>
+                {search 
+                  ? `We couldn't find any prompts matching "${search}". Try a different search term.`
+                  : activeTag
+                  ? `No prompts tagged with #${activeTag}. Try a different tag.`
+                  : "Start by searching for what you need."
+                }
+              </p>
+              {(search || activeTag) && (
+                <div style={{ display: "flex", flexDirection: "column", gap: 12, alignItems: "center" }}>
+                  <p style={{ fontSize: 13, color: "var(--muted)", marginBottom: 8 }}>
+                    Popular searches:
+                  </p>
+                  <div style={{ display: "flex", gap: 8, flexWrap: "wrap", justifyContent: "center" }}>
+                    {["listing", "leads", "social", "followup", "negotiation"].map(term => (
+                      <button
+                        key={term}
+                        onClick={() => {
+                          setSearch(term);
+                          setActiveTag(null);
+                        }}
+                        style={{
+                          padding: "6px 14px",
+                          borderRadius: "var(--radius-pill)",
+                          background: "var(--badge-bg)",
+                          border: "1px solid var(--border)",
+                          color: "var(--text)",
+                          fontSize: 13,
+                          cursor: "pointer",
+                          transition: "all 160ms ease",
+                        }}
+                      >
+                        {term}
+                      </button>
+                    ))}
+                  </div>
+                  <button
+                    onClick={() => {
+                      setSearch("");
+                      setActiveTag(null);
+                    }}
                     style={{
-                      background: "#ffffff",
-                      border: "1px solid #e5e7eb",
-                      borderRadius: 12,
-                      padding: 14,
-                      display: "flex",
-                      justifyContent: "space-between",
-                      alignItems: "center",
-                      gap: 12,
+                      marginTop: 12,
+                      padding: "8px 16px",
+                      fontSize: 14,
+                      color: "var(--primary)",
+                      background: "transparent",
+                      border: "none",
+                      cursor: "pointer",
+                      textDecoration: "underline",
                     }}
                   >
-                    <div style={{ flex: 1 }}>
-                      <div style={{ fontSize: 14, fontWeight: 600, color: "#0f172a", marginBottom: 4 }}>
-                        {p.title}
-                      </div>
-                      <div style={{ fontSize: 12, color: "#64748b" }}>{displayName(p.module)}</div>
-                    </div>
-                    <div style={{ display: "flex", gap: 8 }}>
-                      <button
-                        onClick={() => {
-                          setSelectedModule(p.module);
-                          setSelectedIndex(p.index);
-                          setViewMode("browse");
-                          trackEvent("library_prompt_opened", { id: p.id });
-                        }}
-                        style={{
-                          padding: "6px 12px",
-                          borderRadius: 999,
-                          border: "1px solid #e5e7eb",
-                          background: "#0f172a",
-                          color: "#f9fafb",
-                          fontSize: 12,
-                          fontWeight: 600,
-                          cursor: "pointer",
-                        }}
-                      >
-                        Open
-                      </button>
-                      <button
-                        onClick={() => toggleFavorite(p.id)}
-                        style={{
-                          padding: "6px 10px",
-                          borderRadius: 999,
-                          border: "1px solid #fbbf24",
-                          background: "#fef3c7",
-                          color: "#92400e",
-                          fontSize: 16,
-                          cursor: "pointer",
-                        }}
-                      >
-                        ⭐
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
+                    ← Clear and browse all
+                  </button>
+                </div>
+              )}
             </div>
           )}
+          
+          {displayPrompts.length === 0 && (
+            <div style={{
+              textAlign: "center",
+              padding: "80px 20px",
+              maxWidth: 480,
+              margin: "0 auto",
+            }}>
+              <div style={{ fontSize: 64, marginBottom: 16 }}>🔍</div>
+              <h3 style={{ fontSize: 20, fontWeight: 700, marginBottom: 8, color: "var(--text)" }}>
+                No prompts found
+              </h3>
+              <p style={{ fontSize: 15, color: "var(--muted)", marginBottom: 24, lineHeight: 1.6 }}>
+                {search 
+                  ? `Try different keywords or browse all ${allPrompts.length} prompts`
+                  : activeTag 
+                    ? "No prompts match this category"
+                    : "No prompts available"}
+              </p>
+              {(search || activeTag) && (
+                <button
+                  onClick={() => {
+                    setSearch("");
+                    setActiveTag(null);
+                  }}
+                  style={{
+                    padding: "12px 24px",
+                    background: "var(--primary)",
+                    color: "var(--text-inverse)",
+                    border: "none",
+                    borderRadius: "var(--radius-sm)",
+                    fontSize: 15,
+                    fontWeight: 600,
+                    cursor: "pointer",
+                  }}
+                >
+                  View All Prompts
+                </button>
+              )}
+            </div>
+          )}
+          
+          {isLoading ? (
+            // Loading skeleton cards
+            <div style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fill, minmax(320px, 1fr))",
+              gap: 20,
+            }}>
+              {[1, 2, 3, 4, 5, 6].map((n) => (
+                <div
+                  key={n}
+                  className="skeleton"
+                  style={{
+                    background: "var(--surface)",
+                    border: "1px solid var(--border)",
+                    borderRadius: "var(--radius-md)",
+                    padding: 20,
+                    height: 160,
+                  }}
+                >
+                  <div className="skeleton" style={{ width: "70%", height: 20, borderRadius: 4, marginBottom: 12 }} />
+                  <div className="skeleton" style={{ width: "100%", height: 16, borderRadius: 4, marginBottom: 8 }} />
+                  <div className="skeleton" style={{ width: "90%", height: 16, borderRadius: 4, marginBottom: 16 }} />
+                  <div style={{ display: "flex", gap: 8 }}>
+                    <div className="skeleton" style={{ width: 60, height: 24, borderRadius: 12 }} />
+                    <div className="skeleton" style={{ width: 70, height: 24, borderRadius: 12 }} />
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <>
+              {displayPrompts.map((prompt: any) => {
+            const isFavorite = favorites.includes(prompt.id);
+            const uses = copyCounts[prompt.id] || 0;
+            const isHovered = hoveredCard === prompt.id;
+            const isTrending = hotPrompts.slice(0, 3).some((hp: any) => hp.id === prompt.id) && uses >= 5;
+            
+            return (
+              <div
+                key={prompt.id}
+                className="prompt-card-v2"
+                style={{
+                  background: "var(--surface)",
+                  border: `1px solid ${isHovered ? "var(--primary)" : "var(--border)"}`,
+                  borderRadius: "var(--radius-md)",
+                  padding: 20,
+                  cursor: "pointer",
+                  transition: "all 180ms ease",
+                  transform: isHovered ? "translateY(-2px)" : "translateY(0)",
+                  boxShadow: isHovered ? "var(--shadow-md)" : "none",
+                  position: "relative",
+                }}
+                onClick={() => selectPrompt(prompt)}
+                onMouseEnter={() => setHoveredCard(prompt.id)}
+                onMouseLeave={() => setHoveredCard(null)}
+              >
+                {isTrending && (
+                  <div style={{
+                    position: "absolute",
+                    top: 12,
+                    right: 12,
+                    background: "linear-gradient(135deg, var(--error) 0%, var(--warning) 100%)",
+                    color: "var(--text-inverse)",
+                    padding: "4px 10px",
+                    borderRadius: "var(--radius-pill)",
+                    fontSize: 11,
+                    fontWeight: 700,
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 4,
+                    boxShadow: "0 2px 8px rgba(249,115,22,0.3)",
+                  }}>
+                    🔥 Trending
+                  </div>
+                )}
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 10 }}>
+                  <div style={{ flex: 1 }}>
+                    <h3 style={{ fontSize: 17, fontWeight: 700, color: "var(--text)", marginBottom: 8, paddingRight: isTrending ? 100 : 0 }}>
+                      {prompt.title}
+                    </h3>
+                    {prompt.module === "My Custom Prompts" && (
+                      <span style={{
+                        display: "inline-block",
+                        padding: "2px 8px",
+                        background: "var(--purple)",
+                        color: "var(--text-inverse)",
+                        fontSize: 10,
+                        fontWeight: 700,
+                        borderRadius: "var(--radius-pill)",
+                        marginBottom: 4,
+                      }}>
+                        CUSTOM
+                      </span>
+                    )}
+                  </div>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      toggleFavorite(prompt.id);
+                    }}
+                    style={{
+                      background: "transparent",
+                      border: "none",
+                      fontSize: 20,
+                      cursor: "pointer",
+                      padding: 4,
+                      transition: "transform 160ms ease",
+                    }}
+                    onMouseEnter={(e) => (e.currentTarget.style.transform = "scale(1.2)")}
+                    onMouseLeave={(e) => (e.currentTarget.style.transform = "scale(1)")}
+                    title={isFavorite ? "Remove from favorites" : "Add to favorites"}
+                  >
+                    {isFavorite ? "⭐" : "☆"}
+                  </button>
+                </div>
 
-          {recentPrompts.length > 0 && (
-            <div>
-              <div style={{ fontSize: 18, fontWeight: 700, color: "#0f172a", marginBottom: 12 }}>
-                🕒 Recent ({recentPrompts.length})
-              </div>
-              <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                {recentPrompts.map((r, i) => {
-                  const prompt = data.find((p) => p.id === r.id);
-                  if (!prompt) return null;
-                  const isFav = favorites.has(r.id);
-                  return (
-                    <div
-                      key={i}
-                      style={{
-                        background: "#ffffff",
-                        border: "1px solid #e5e7eb",
-                        borderRadius: 12,
-                        padding: 14,
-                        display: "flex",
-                        justifyContent: "space-between",
-                        alignItems: "center",
-                        gap: 12,
-                      }}
-                    >
-                      <div style={{ flex: 1 }}>
-                        <div style={{ fontSize: 14, fontWeight: 600, color: "#0f172a", marginBottom: 4 }}>
-                          {prompt.title}
-                        </div>
-                        <div style={{ fontSize: 12, color: "#64748b" }}>
-                          {displayName(prompt.module)} · {new Date(r.timestamp).toLocaleDateString()}
-                        </div>
-                      </div>
-                      <div style={{ display: "flex", gap: 8 }}>
+                <p style={{ 
+                  fontSize: 14, 
+                  color: "var(--muted)", 
+                  lineHeight: 1.5, 
+                  marginBottom: 12,
+                  overflow: "hidden",
+                  display: "-webkit-box",
+                  WebkitLineClamp: isHovered ? 3 : 2,
+                  WebkitBoxOrient: "vertical",
+                  transition: "all 180ms ease",
+                }}>
+                  {prompt.quick}
+                </p>
+
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 8 }}>
+                  <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                    {prompt.tags?.map((tag: string) => (
+                      <button
+                        key={tag}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setActiveTag(tag);
+                          setSearch("");
+                          trackEvent("tag_clicked", { tag });
+                        }}
+                        className="badge tag-badge"
+                        style={{
+                          fontSize: 11,
+                          padding: "3px 8px",
+                          borderRadius: "var(--radius-pill)",
+                          background: activeTag === tag ? "var(--primary)" : "var(--surface-hover)",
+                          color: activeTag === tag ? "var(--surface)" : "var(--text-secondary)",
+                          border: "none",
+                          cursor: "pointer",
+                          transition: "all 160ms ease",
+                        }}
+                        onMouseEnter={(e) => {
+                          if (activeTag !== tag) {
+                            e.currentTarget.style.background = "#e2e8f0";
+                          }
+                        }}
+                        onMouseLeave={(e) => {
+                          if (activeTag !== tag) {
+                            e.currentTarget.style.background = "var(--surface-hover)";
+                          }
+                        }}
+                        title={`Filter by #${tag}`}
+                      >
+                        #{tag}
+                      </button>
+                    ))}
+                  </div>
+                  
+                  <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                    {uses > 0 && (
+                      <span style={{ fontSize: 12, color: "var(--muted)" }}>
+                        👥 {uses}
+                      </span>
+                    )}
+                    {isHovered && (
+                      <>
                         <button
-                          onClick={() => {
-                            setSelectedModule(prompt.module);
-                            setSelectedIndex(prompt.index);
-                            setViewMode("browse");
-                            trackEvent("library_prompt_opened", { id: prompt.id });
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            const shareUrl = `${window.location.origin}${window.location.pathname}?prompt=${encodeURIComponent(prompt.title)}`;
+                            navigator.clipboard.writeText(shareUrl);
+                            // Could show a mini-toast here
                           }}
                           style={{
                             padding: "6px 12px",
-                            borderRadius: 999,
-                            border: "1px solid #e5e7eb",
-                            background: "#0f172a",
-                            color: "#f9fafb",
                             fontSize: 12,
                             fontWeight: 600,
+                            color: "var(--text)",
+                            background: "var(--badge-bg)",
+                            border: "1px solid var(--border)",
+                            borderRadius: "var(--radius-pill)",
                             cursor: "pointer",
+                            animation: "slideIn 200ms ease-out",
+                            transition: "all 160ms ease",
                           }}
+                          title="Copy link to this prompt"
                         >
-                          Open
+                          🔗 Share
                         </button>
                         <button
-                          onClick={() => toggleFavorite(r.id)}
-                          style={{
-                            padding: "6px 10px",
-                            borderRadius: 999,
-                            border: isFav ? "1px solid #fbbf24" : "1px solid #e5e7eb",
-                            background: isFav ? "#fef3c7" : "#ffffff",
-                            color: isFav ? "#92400e" : "#94a3b8",
-                            fontSize: 16,
-                            cursor: "pointer",
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleCopy(prompt);
                           }}
+                          className="quick-copy-btn"
+                          style={{
+                            padding: "6px 12px",
+                            fontSize: 12,
+                            fontWeight: 600,
+                            color: "var(--text-inverse)",
+                            background: "var(--primary)",
+                            border: "none",
+                            borderRadius: "var(--radius-pill)",
+                            cursor: "pointer",
+                            animation: "slideIn 200ms ease-out",
+                            transition: "all 160ms ease",
+                          }}
+                          title="Quick copy (without opening details)"
                         >
-                          {isFav ? "⭐" : "☆"}
+                          📋 Quick Copy
                         </button>
+                      </>
+                    )}
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+          </>
+          )}
+        </div>
+      </section>
+
+      {/* Detail Modal */}
+      {selectedPrompt && (
+        <div
+          className="modal-overlay"
+          style={{
+            position: "fixed",
+            inset: 0,
+            background: "rgba(0,0,0,0.5)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 1000,
+            padding: 20,
+          }}
+          onClick={() => setSelectedPrompt(null)}
+        >
+          <div
+            className="modal-content"
+            style={{
+              background: "var(--surface)",
+              borderRadius: "var(--radius-md)",
+              maxWidth: 680,
+              width: "100%",
+              maxHeight: "90vh",
+              overflow: "hidden",
+              display: "flex",
+              flexDirection: "column",
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div style={{ 
+              padding: 32, 
+              overflowY: "auto",
+              flex: 1,
+            }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 8 }}>
+              <h2 style={{ fontSize: 22, fontWeight: 800, color: "var(--text)" }}>
+                {selectedPrompt.title}
+              </h2>
+              <button
+                onClick={() => setSelectedPrompt(null)}
+                style={{
+                  background: "transparent",
+                  border: "none",
+                  fontSize: 24,
+                  cursor: "pointer",
+                  color: "var(--muted)",
+                }}
+              >
+                ×
+              </button>
+            </div>
+            
+            {/* What You'll Get */}
+            {selectedPrompt.deliverable && (
+              <div style={{ 
+                background: "var(--info-bg)",
+                border: "1px solid var(--info)",
+                borderRadius: "var(--radius-sm)",
+                padding: "12px 16px",
+                marginBottom: 20,
+              }}>
+                <p style={{ 
+                  fontSize: 13, 
+                  fontWeight: 600,
+                  color: "var(--info-text)", 
+                  marginBottom: 4,
+                }}>
+                  📦 What you'll get:
+                </p>
+                <p style={{ 
+                  fontSize: 14, 
+                  color: "var(--info-text)", 
+                  lineHeight: 1.5,
+                  margin: 0,
+                }}>
+                  {simplifyJargon(selectedPrompt.deliverable)}
+                </p>
+              </div>
+            )}
+
+            {/* Editable Fields - DocuSign Style Progressive Flow */}
+            {(() => {
+              const placeholders = extractPlaceholders(selectedPrompt);
+              if (placeholders.length > 0) {
+                const currentField = placeholders[currentFieldIndex];
+                const isLastField = currentFieldIndex === placeholders.length - 1;
+                const helpInfo = getPlaceholderHelp(currentField);
+
+                return (
+                  <div style={{ marginBottom: 20 }}>
+                    {/* Progress Header */}
+                    <div style={{ marginBottom: 20 }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+                        <h3 style={{ fontSize: 15, fontWeight: 600, color: "var(--text)" }}>
+                          Quick Setup
+                        </h3>
+                        <span style={{ fontSize: 13, color: "var(--muted)", fontWeight: 500 }}>
+                          Step {currentFieldIndex + 1} of {placeholders.length}
+                        </span>
+                      </div>
+                      
+                      {/* Progress bar */}
+                      <div style={{ 
+                        height: 4, 
+                        background: "var(--border)", 
+                        borderRadius: 999,
+                        overflow: "hidden",
+                      }}>
+                        <div style={{
+                          height: "100%",
+                          width: `${((currentFieldIndex + 1) / placeholders.length) * 100}%`,
+                          background: "var(--primary)",
+                          transition: "width 300ms ease",
+                        }} />
+                      </div>
+                    </div>
+
+                    {/* Current Field - Large & Focused */}
+                    <div 
+                      style={{
+                        background: "var(--surface-hover)",
+                        border: "2px solid var(--primary)",
+                        borderRadius: "var(--radius-md)",
+                        padding: 24,
+                        marginBottom: 16,
+                        animation: "slideIn 220ms ease-out",
+                      }}
+                    >
+                      <label
+                        style={{
+                          display: "block",
+                          fontSize: 15,
+                          fontWeight: 600,
+                          marginBottom: 8,
+                          color: "var(--text)",
+                          lineHeight: 1.4,
+                        }}
+                      >
+                        {helpInfo.description}
+                      </label>
+                      
+                      {savedFieldValues[currentField] && (
+                        <p style={{
+                          fontSize: 11,
+                          color: "var(--success)",
+                          marginBottom: 8,
+                          fontWeight: 500,
+                        }}>
+                          ✓ Pre-filled from last time
+                        </p>
+                      )}
+                      
+                      {/* Quick-select chips for field history */}
+                      {fieldHistory[currentField] && fieldHistory[currentField].length > 0 && (
+                        <div style={{ marginBottom: 12 }}>
+                          <p style={{ fontSize: 11, color: "var(--muted)", marginBottom: 6, fontWeight: 500 }}>
+                            Recently used:
+                          </p>
+                          <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                            {fieldHistory[currentField].slice(0, 3).map((historyValue, idx) => (
+                              <button
+                                key={idx}
+                                onClick={() => updateFieldValue(currentField, historyValue)}
+                                style={{
+                                  padding: "4px 10px",
+                                  fontSize: 12,
+                                  background: fieldValues[currentField] === historyValue ? "var(--primary)" : "var(--surface-hover)",
+                                  color: fieldValues[currentField] === historyValue ? "var(--surface)" : "var(--text)",
+                                  border: "1px solid",
+                                  borderColor: fieldValues[currentField] === historyValue ? "var(--primary)" : "var(--border)",
+                                  borderRadius: "var(--radius-pill)",
+                                  cursor: "pointer",
+                                  transition: "all 160ms ease",
+                                  fontFamily: "var(--font-stack)",
+                                  fontWeight: 500,
+                                }}
+                              >
+                                {historyValue.length > 20 ? `${historyValue.substring(0, 20)}...` : historyValue}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                      
+                      <input
+                        ref={fieldInputRef}
+                        type="text"
+                        value={fieldValues[currentField] || ""}
+                        onChange={(e) => updateFieldValue(currentField, e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter" && !isLastField) {
+                            e.preventDefault();
+                            setCurrentFieldIndex(currentFieldIndex + 1);
+                          } else if (e.key === "Enter" && isLastField && fieldValues[currentField]?.trim()) {
+                            handleCopy(selectedPrompt);
+                          }
+                        }}
+                        placeholder={helpInfo.example}
+                        style={{
+                          width: "100%",
+                          maxWidth: 480,
+                          padding: "14px 16px",
+                          borderRadius: "var(--radius-sm)",
+                          border: "2px solid var(--border)",
+                          fontSize: 15,
+                          fontFamily: "var(--font-stack)",
+                          transition: "all 160ms ease",
+                        }}
+                        autoFocus
+                      />
+                    </div>
+
+                    {/* Navigation Buttons */}
+                    <div style={{ display: "flex", gap: 12, justifyContent: "space-between" }}>
+                      <button
+                        onClick={() => setCurrentFieldIndex(Math.max(0, currentFieldIndex - 1))}
+                        disabled={currentFieldIndex === 0}
+                        style={{
+                          padding: "10px 20px",
+                          fontSize: 14,
+                          fontWeight: 600,
+                          color: currentFieldIndex === 0 ? "var(--muted)" : "var(--text)",
+                          background: currentFieldIndex === 0 ? "var(--surface-hover)" : "var(--surface)",
+                          border: "1px solid var(--border)",
+                          borderRadius: "var(--radius-sm)",
+                          cursor: currentFieldIndex === 0 ? "not-allowed" : "pointer",
+                          opacity: currentFieldIndex === 0 ? 0.5 : 1,
+                        }}
+                      >
+                        ← Back
+                      </button>
+
+                      <div style={{ display: "flex", gap: 8 }}>
+                        {!isLastField ? (
+                          <button
+                            onClick={() => setCurrentFieldIndex(currentFieldIndex + 1)}
+                            style={{
+                              padding: "10px 24px",
+                              fontSize: 14,
+                              fontWeight: 600,
+                              color: "var(--text-inverse)",
+                              background: "var(--primary)",
+                              border: "none",
+                              borderRadius: "var(--radius-sm)",
+                              cursor: "pointer",
+                            }}
+                          >
+                            Next →
+                          </button>
+                        ) : (
+                          <button
+                            onClick={() => handleCopy(selectedPrompt)}
+                            style={{
+                              padding: "12px 28px",
+                              fontSize: 15,
+                              fontWeight: 700,
+                              color: "var(--text-inverse)",
+                              background: "var(--primary)",
+                              border: "none",
+                              borderRadius: "var(--radius-sm)",
+                              cursor: "pointer",
+                            }}
+                          >
+                            📋 Copy Prompt
+                          </button>
+                        )}
+                      </div>
+                    </div>
+
+                  </div>
+                );
+              }
+              
+              // No fields - show prompt preview
+              return (
+                <div
+                  style={{
+                    background: "var(--surface-hover)",
+                    padding: 16,
+                    borderRadius: "var(--radius-sm)",
+                    fontSize: 14,
+                    lineHeight: 1.6,
+                    color: "var(--text-secondary)",
+                    marginBottom: 20,
+                    fontFamily: "ui-monospace, monospace",
+                    whiteSpace: "pre-wrap",
+                  }}
+                >
+                  {buildFullPrompt(selectedPrompt)}
+                </div>
+              );
+            })()}
+
+            {/* Action Buttons - Only show if no fields OR all fields viewed */}
+            {(() => {
+              const placeholders = extractPlaceholders(selectedPrompt);
+              const hasFields = placeholders.length > 0;
+              
+              // Only show action buttons if no fields, or if we're on the last field
+              if (!hasFields) {
+                return (
+                  <div style={{ display: "flex", gap: 12, marginBottom: 12 }}>
+                    <button
+                      onClick={() => handleCopy(selectedPrompt)}
+                      className="btn-primary"
+                      style={{
+                        flex: 1,
+                        padding: "12px 24px",
+                        fontSize: 15,
+                        fontWeight: 600,
+                        color: "var(--text-inverse)",
+                        background: "var(--primary)",
+                        border: "none",
+                        borderRadius: "var(--radius-sm)",
+                        cursor: "pointer",
+                        transition: "all 160ms ease",
+                      }}
+                    >
+                      {copied ? "✓ Copied!" : "📋 Copy Prompt"}
+                    </button>
+                    
+                    <button
+                      onClick={() => handleExport(selectedPrompt)}
+                      style={{
+                        padding: "12px 20px",
+                        fontSize: 15,
+                        fontWeight: 600,
+                        color: "var(--text)",
+                        background: "var(--badge-bg)",
+                        border: "none",
+                        borderRadius: "var(--radius-sm)",
+                        cursor: "pointer",
+                        transition: "all 160ms ease",
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.background = "#e2e8f0";
+                        e.currentTarget.style.transform = "translateY(-1px)";
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.background = "var(--surface-hover)";
+                        e.currentTarget.style.transform = "translateY(0)";
+                      }}
+                      title="Download as .txt file"
+                    >
+                      💾
+                    </button>
+                    
+                    <button
+                      onClick={() => duplicatePrompt(selectedPrompt)}
+                      style={{
+                        padding: "12px 20px",
+                        fontSize: 15,
+                        fontWeight: 600,
+                        color: "var(--text)",
+                        background: "var(--badge-bg)",
+                        border: "none",
+                        borderRadius: "var(--radius-sm)",
+                        cursor: "pointer",
+                        transition: "all 160ms ease",
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.background = "#e2e8f0";
+                        e.currentTarget.style.transform = "translateY(-1px)";
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.background = "var(--surface-hover)";
+                        e.currentTarget.style.transform = "translateY(0)";
+                      }}
+                      title="Duplicate and customize"
+                    >
+                      📑
+                    </button>
+                    
+                    <button
+                      onClick={() => toggleFavorite((selectedPrompt as any).id)}
+                      style={{
+                        padding: "12px 20px",
+                        fontSize: 15,
+                        fontWeight: 600,
+                        color: "var(--text)",
+                        background: "var(--badge-bg)",
+                        border: "none",
+                        borderRadius: "var(--radius-sm)",
+                        cursor: "pointer",
+                        transition: "all 160ms ease",
+                      }}
+                    >
+                      {favorites.includes((selectedPrompt as any).id) ? "⭐ Saved" : "☆ Save"}
+                    </button>
+                  </div>
+                );
+              }
+              return null;
+            })()}
+
+            {/* Keyboard shortcuts hint */}
+            <div style={{ 
+              fontSize: 11, 
+              color: "var(--muted)", 
+              textAlign: "center",
+              padding: "8px 0"
+            }}>
+              <kbd style={{ padding: "2px 6px", background: "var(--badge-bg)", borderRadius: 4, fontWeight: 600 }}>⌘</kbd> + <kbd style={{ padding: "2px 6px", background: "var(--badge-bg)", borderRadius: 4, fontWeight: 600 }}>Enter</kbd> to copy · <kbd style={{ padding: "2px 6px", background: "var(--badge-bg)", borderRadius: 4, fontWeight: 600 }}>ESC</kbd> to close
+            </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Favorites Quick Access (Bottom Right FAB) */}
+      {favorites.length > 0 && !showFavoritesView && (
+        <button
+          onClick={() => {
+            setShowFavoritesView(true);
+            setSearch("");
+            setActiveTag(null);
+            trackEvent("favorites_opened");
+          }}
+          style={{
+            position: "fixed",
+            bottom: 24,
+            right: 24,
+            width: 56,
+            height: 56,
+            borderRadius: "50%",
+            background: "var(--primary)",
+            color: "var(--text-inverse)",
+            border: "none",
+            fontSize: 24,
+            cursor: "pointer",
+            boxShadow: "0 8px 24px rgba(37,99,235,0.3)",
+            transition: "all 180ms ease",
+          }}
+          title={`View ${favorites.length} saved prompts`}
+        >
+          ⭐
+          <span
+            style={{
+              position: "absolute",
+              top: -4,
+              right: -4,
+              background: "var(--error)",
+              color: "var(--text-inverse)",
+              fontSize: 11,
+              fontWeight: 700,
+              borderRadius: "50%",
+              width: 20,
+              height: 20,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            {favorites.length}
+          </span>
+        </button>
+      )}
+
+      {/* Favorites Panel */}
+      {showFavoritesView && (
+        <div
+          className="modal-overlay"
+          style={{
+            position: "fixed",
+            inset: 0,
+            background: "rgba(0,0,0,0.5)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 1000,
+            padding: 20,
+          }}
+          onClick={() => setShowFavoritesView(false)}
+        >
+          <div
+            className="modal-content"
+            style={{
+              background: "var(--surface)",
+              borderRadius: "var(--radius-md)",
+              maxWidth: 720,
+              width: "100%",
+              maxHeight: "90vh",
+              overflow: "auto",
+              padding: 32,
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
+              <div>
+                <h2 style={{ fontSize: 22, fontWeight: 800, color: "var(--text)", marginBottom: 4 }}>
+                  ⭐ Saved Prompts
+                </h2>
+                <p style={{ fontSize: 13, color: "var(--muted)" }}>
+                  {favoritePrompts.length} prompt{favoritePrompts.length !== 1 ? "s" : ""} saved for quick access
+                </p>
+              </div>
+              <button
+                onClick={() => setShowFavoritesView(false)}
+                style={{
+                  background: "transparent",
+                  border: "none",
+                  fontSize: 24,
+                  cursor: "pointer",
+                  color: "var(--muted)",
+                }}
+              >
+                ×
+              </button>
+            </div>
+
+            {favoritePrompts.length === 0 ? (
+              <div className="empty-state" style={{ padding: "40px 20px" }}>
+                <div style={{ fontSize: 48, marginBottom: 16 }}>⭐</div>
+                <h3 style={{ fontSize: 18, fontWeight: 600, marginBottom: 8, color: "var(--text)" }}>
+                  No saved prompts yet
+                </h3>
+                <p style={{ color: "var(--muted)", marginBottom: 20 }}>
+                  Click the star on any prompt to save it here for quick access.
+                </p>
+                <button
+                  onClick={() => setShowFavoritesView(false)}
+                  style={{
+                    padding: "10px 20px",
+                    fontSize: 14,
+                    fontWeight: 600,
+                    color: "var(--text-inverse)",
+                    background: "var(--primary)",
+                    border: "none",
+                    borderRadius: "var(--radius-sm)",
+                    cursor: "pointer",
+                  }}
+                >
+                  Browse Prompts
+                </button>
+              </div>
+            ) : (
+              <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                {favoritePrompts.map((prompt: any) => {
+                  const uses = copyCounts[prompt.id] || 0;
+                  return (
+                    <div
+                      key={prompt.id}
+                      style={{
+                        background: "var(--surface-hover)",
+                        border: "1px solid var(--border)",
+                        borderRadius: "var(--radius-sm)",
+                        padding: 16,
+                        cursor: "pointer",
+                        transition: "all 180ms ease",
+                      }}
+                      onClick={() => {
+                        selectPrompt(prompt);
+                        setShowFavoritesView(false);
+                      }}
+                    >
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 8 }}>
+                        <h3 style={{ fontSize: 15, fontWeight: 600, color: "var(--text)" }}>
+                          {prompt.title}
+                        </h3>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            toggleFavorite(prompt.id);
+                          }}
+                          style={{
+                            background: "transparent",
+                            border: "none",
+                            fontSize: 18,
+                            cursor: "pointer",
+                            padding: 4,
+                          }}
+                          title="Remove from favorites"
+                        >
+                          ⭐
+                        </button>
+                      </div>
+                      <p style={{ fontSize: 13, color: "var(--muted)", lineHeight: 1.5, marginBottom: 8 }}>
+                        {prompt.quick?.slice(0, 120)}...
+                      </p>
+                      <div style={{ display: "flex", alignItems: "center", gap: 12, fontSize: 12, color: "var(--muted)" }}>
+                        <span>{prompt.tags?.map((t: string) => `#${t}`).join(" ")}</span>
+                        {uses > 0 && <span>· Copied {uses}×</span>}
                       </div>
                     </div>
                   );
                 })}
               </div>
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* Quick Fill Modal */}
-      {showFillModal && (
-        <div
-          style={{
-            position: "fixed",
-            inset: 0,
-            background: "rgba(15,23,42,0.55)",
-            backdropFilter: "blur(3px)",
-            display: "flex",
-            alignItems: "flex-start",
-            justifyContent: "center",
-            padding: "80px 20px 40px",
-            zIndex: 1000,
-          }}
-        >
-          <div
-            style={{
-              width: "100%",
-              maxWidth: 520,
-              background: "#ffffff",
-              border: "1px solid #e5e7eb",
-              borderRadius: 18,
-              padding: 22,
-              boxShadow: "0 18px 40px rgba(15,23,42,0.25)",
-              display: "flex",
-              flexDirection: "column",
-              gap: 16,
-              position: "relative",
-            }}
-          >
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <div style={{ fontSize: 18, fontWeight: 700, color: "#0f172a" }}>Quick Fill Personalization</div>
-              <button
-                onClick={() => setShowFillModal(false)}
-                style={{
-                  background: "#f1f5f9",
-                  border: "1px solid #cbd5e1",
-                  borderRadius: 8,
-                  fontSize: 12,
-                  padding: "6px 10px",
-                  cursor: "pointer",
-                }}
-              >
-                Close
-              </button>
-            </div>
-            <div style={{ fontSize: 12, color: "#64748b" }}>
-              Fill in your details below. These replace the matching [tokens] when you copy the personalized prompt.
-            </div>
-            <form
-              onSubmit={(e) => {
-                e.preventDefault();
-                if (saveDefaults) {
-                  const merged = { ...tokenValues, ...fillValues };
-                  setTokenValues(merged);
-                  try { localStorage.setItem("rpv:tokenVals", JSON.stringify(merged)); } catch {}
-                }
-                if (currentPrompt) {
-                  const personalized = replaceTokensInText(buildFullPrompt(currentPrompt), fillValues);
-                  handleCopyText(personalized);
-                  trackEvent("prompt_personalized_copied", { title: currentPrompt.title, module: currentPrompt.module });
-                }
-                setShowFillModal(false);
-              }}
-              style={{ display: "flex", flexDirection: "column", gap: 14 }}
-            >
-              <div style={{ display: "flex", flexDirection: "column", gap: 10, maxHeight: 300, overflowY: "auto", paddingRight: 4 }}>
-                {fillTokens.map((tk) => (
-                  <label key={tk} style={{ display: "flex", flexDirection: "column", gap: 4, fontSize: 12, color: "#0f172a" }}>
-                    <span style={{ fontWeight: 600 }}>[{tk}]</span>
-                    <input
-                      value={fillValues[tk] || ""}
-                      onChange={(e) => {
-                        const val = e.target.value;
-                        setFillValues((prev) => ({ ...prev, [tk]: val }));
-                      }}
-                      placeholder={explainToken(tk)}
-                      style={{
-                        height: 36,
-                        borderRadius: 8,
-                        border: "1px solid #cbd5e1",
-                        padding: "0 10px",
-                        fontSize: 13,
-                        background: "#ffffff",
-                      }}
-                    />
-                  </label>
-                ))}
-              </div>
-              <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, color: "#0f172a" }}>
-                <input
-                  type="checkbox"
-                  checked={saveDefaults}
-                  onChange={(e) => setSaveDefaults(e.target.checked)}
-                  style={{ width: 14, height: 14 }}
-                />
-                Save these values for next time
-              </label>
-              <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-                <button
-                  type="submit"
-                  style={{
-                    height: 40,
-                    borderRadius: 999,
-                    border: "1px solid #0f172a",
-                    background: "#0f172a",
-                    color: "#f8fafc",
-                    padding: "0 20px",
-                    fontSize: 14,
-                    fontWeight: 600,
-                    cursor: "pointer",
-                  }}
-                >
-                  {copied ? "Copied!" : "Copy personalized"}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setShowFillModal(false)}
-                  style={{
-                    height: 40,
-                    borderRadius: 999,
-                    border: "1px solid #cbd5e1",
-                    background: "#ffffff",
-                    color: "#0f172a",
-                    padding: "0 18px",
-                    fontSize: 14,
-                    fontWeight: 600,
-                    cursor: "pointer",
-                  }}
-                >
-                  Cancel
-                </button>
-              </div>
-            </form>
+            )}
           </div>
         </div>
       )}
 
+      {/* Copy Success Toast */}
+      {copied && (
+        <div
+          style={{
+            position: "fixed",
+            bottom: 24,
+            left: "50%",
+            transform: "translateX(-50%)",
+            background: "var(--success)",
+            color: "var(--text-inverse)",
+            padding: "16px 24px",
+            borderRadius: "var(--radius-md)",
+            boxShadow: "0 10px 40px rgba(0,0,0,0.3)",
+            zIndex: 10000,
+            animation: "slideUp 300ms ease-out",
+            maxWidth: "90vw",
+            textAlign: "center",
+          }}
+        >
+          <div style={{ fontSize: 15, fontWeight: 700, marginBottom: 8 }}>
+            ✓ Copied!
+          </div>
+          <div style={{ fontSize: 13, marginBottom: 12, opacity: 0.9 }}>
+            Now paste into ChatGPT or Claude
+          </div>
+          <div style={{ display: "flex", gap: 12, justifyContent: "center" }}>
+            <a
+              href="https://chatgpt.com"
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{
+                padding: "8px 16px",
+                background: "rgba(255,255,255,0.2)",
+                border: "1px solid rgba(255,255,255,0.3)",
+                borderRadius: "var(--radius-sm)",
+                color: "var(--text-inverse)",
+                textDecoration: "none",
+                fontSize: 13,
+                fontWeight: 600,
+                transition: "all 160ms ease",
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = "rgba(255,255,255,0.3)";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = "rgba(255,255,255,0.2)";
+              }}
+            >
+              Open ChatGPT →
+            </a>
+            <a
+              href="https://claude.ai"
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{
+                padding: "8px 16px",
+                background: "rgba(255,255,255,0.2)",
+                border: "1px solid rgba(255,255,255,0.3)",
+                borderRadius: "var(--radius-sm)",
+                color: "var(--text-inverse)",
+                textDecoration: "none",
+                fontSize: 13,
+                fontWeight: 600,
+                transition: "all 160ms ease",
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = "rgba(255,255,255,0.3)";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = "rgba(255,255,255,0.2)";
+              }}
+            >
+              Open Claude →
+            </a>
+          </div>
+        </div>
+      )}
+
+      {/* Follow-up Suggestions Modal */}
+      {showFollowUps && followUpPrompts.length > 0 && (
+        <div
+          style={{
+            position: "fixed",
+            inset: 0,
+            background: "rgba(0,0,0,0.5)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 1500,
+            padding: 20,
+          }}
+          onClick={() => setShowFollowUps(false)}
+        >
+          <div
+            style={{
+              background: "var(--surface)",
+              borderRadius: "var(--radius-md)",
+              maxWidth: 520,
+              width: "100%",
+              padding: 32,
+              animation: "slideUp 300ms ease-out",
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div style={{ textAlign: "center", marginBottom: 24 }}>
+              <div style={{ fontSize: 32, marginBottom: 12 }}>�</div>
+              <h3 style={{ fontSize: 20, fontWeight: 700, marginBottom: 8, color: "var(--text)" }}>
+                Continue Your Workflow
+              </h3>
+              <p style={{ fontSize: 14, color: "var(--muted)" }}>
+                Complete the sequence with these related prompts
+              </p>
+            </div>
+            
+            <div style={{ display: "flex", flexDirection: "column", gap: 12, marginBottom: 20 }}>
+              {followUpPrompts.map((prompt: any, idx: number) => (
+                <button
+                  key={prompt.id}
+                  onClick={() => {
+                    setShowFollowUps(false);
+                    setSelectedPrompt(prompt);
+                  }}
+                  style={{
+                    padding: "16px",
+                    background: "var(--surface-hover)",
+                    border: "2px solid var(--border)",
+                    borderRadius: "var(--radius-sm)",
+                    textAlign: "left",
+                    cursor: "pointer",
+                    transition: "all 160ms ease",
+                    position: "relative",
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.background = "var(--surface-hover)";
+                    e.currentTarget.style.borderColor = "var(--primary)";
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = "var(--surface)";
+                    e.currentTarget.style.borderColor = "#e5e7eb";
+                  }}
+                >
+                  <div style={{ 
+                    position: "absolute", 
+                    top: 8, 
+                    right: 8, 
+                    background: "var(--primary)",
+                    color: "var(--text-inverse)",
+                    width: 24,
+                    height: 24,
+                    borderRadius: "50%",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    fontSize: 11,
+                    fontWeight: 700,
+                  }}>
+                    {idx + 1}
+                  </div>
+                  <div style={{ fontSize: 15, fontWeight: 600, marginBottom: 4, color: "var(--text)", paddingRight: 30 }}>
+                    {prompt.title}
+                  </div>
+                  <div style={{ fontSize: 13, color: "var(--muted)", lineHeight: 1.4 }}>
+                    {prompt.role.slice(0, 100)}{prompt.role.length > 100 ? "..." : ""}
+                  </div>
+                </button>
+              ))}
+            </div>
+            
+            <div style={{ display: "flex", gap: 12, marginBottom: 12 }}>
+              <button
+                onClick={async () => {
+                  // Copy all prompts in sequence with separators
+                  const sequenceText = followUpPrompts.map((p: any, idx: number) => {
+                    const fullText = buildFullPrompt(p);
+                    const finalText = applyReplacements(fullText, fieldValues);
+                    return `--- PROMPT ${idx + 1}: ${p.title} ---\n\n${finalText}`;
+                  }).join('\n\n==========\n\n');
+                  
+                  try {
+                    await navigator.clipboard.writeText(sequenceText);
+                    setCopied(true);
+                    setTimeout(() => setCopied(false), 2000);
+                    setShowFollowUps(false);
+                  } catch {}
+                }}
+                style={{
+                  flex: 1,
+                  padding: "12px",
+                  background: "var(--primary)",
+                  border: "none",
+                  borderRadius: "var(--radius-sm)",
+                  fontSize: 14,
+                  fontWeight: 600,
+                  color: "var(--text-inverse)",
+                  cursor: "pointer",
+                }}
+              >
+                🔗 Copy All ({followUpPrompts.length})
+              </button>
+            </div>
+            
+            <button
+              onClick={() => setShowFollowUps(false)}
+              style={{
+                width: "100%",
+                padding: "12px",
+                background: "transparent",
+                border: "2px solid var(--border)",
+                borderRadius: "var(--radius-sm)",
+                fontSize: 14,
+                fontWeight: 600,
+                color: "var(--muted)",
+                cursor: "pointer",
+              }}
+            >
+              Maybe Later
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Onboarding Modal */}
+      {showOnboarding && (
+        <div
+          style={{
+            position: "fixed",
+            inset: 0,
+            background: "rgba(0,0,0,0.75)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 2000,
+            padding: 20,
+          }}
+        >
+          <div
+            style={{
+              background: "var(--surface)",
+              borderRadius: "var(--radius-md)",
+              maxWidth: 540,
+              width: "100%",
+              padding: 40,
+              textAlign: "center",
+              animation: "slideUp 300ms ease-out",
+            }}
+          >
+            {onboardingStep === 0 && (
+              <>
+                <div style={{ fontSize: 48, marginBottom: 16 }}>🏡</div>
+                <h2 style={{ fontSize: 26, fontWeight: 800, marginBottom: 12, color: "var(--text)" }}>
+                  Welcome to AI Prompt Vault
+                </h2>
+                <p style={{ fontSize: 16, color: "var(--muted)", lineHeight: 1.6, marginBottom: 32 }}>
+                  AI prompts designed specifically for real estate agents. Get instant marketing plans, social media content, and lead generation strategies — with new prompts added daily.
+                </p>
+                <button
+                  onClick={() => setOnboardingStep(1)}
+                  style={{
+                    width: "100%",
+                    padding: "14px 24px",
+                    background: "var(--primary)",
+                    color: "var(--text-inverse)",
+                    border: "none",
+                    borderRadius: "var(--radius-sm)",
+                    fontSize: 16,
+                    fontWeight: 600,
+                    cursor: "pointer",
+                  }}
+                >
+                  Let's Go →
+                </button>
+              </>
+            )}
+
+            {onboardingStep === 1 && (
+              <>
+                <div style={{ fontSize: 48, marginBottom: 16 }}>⚡</div>
+                <h2 style={{ fontSize: 26, fontWeight: 800, marginBottom: 12, color: "var(--text)" }}>
+                  How It Works
+                </h2>
+                <div style={{ textAlign: "left", marginBottom: 32 }}>
+                  <div style={{ display: "flex", gap: 16, marginBottom: 20 }}>
+                    <div style={{ 
+                      minWidth: 32, 
+                      height: 32, 
+                      borderRadius: "50%", 
+                      background: "var(--badge-primary-bg)", 
+                      color: "var(--primary)", 
+                      display: "flex", 
+                      alignItems: "center", 
+                      justifyContent: "center",
+                      fontWeight: 700,
+                      fontSize: 14,
+                    }}>1</div>
+                    <div>
+                      <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 4, color: "var(--text)" }}>Search or browse</h3>
+                      <p style={{ fontSize: 14, color: "var(--muted)", lineHeight: 1.5 }}>
+                        Find the perfect prompt for your task
+                      </p>
+                    </div>
+                  </div>
+                  <div style={{ display: "flex", gap: 16, marginBottom: 20 }}>
+                    <div style={{ 
+                      minWidth: 32, 
+                      height: 32, 
+                      borderRadius: "50%", 
+                      background: "var(--badge-primary-bg)", 
+                      color: "var(--primary)", 
+                      display: "flex", 
+                      alignItems: "center", 
+                      justifyContent: "center",
+                      fontWeight: 700,
+                      fontSize: 14,
+                    }}>2</div>
+                    <div>
+                      <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 4, color: "var(--text)" }}>Personalize it</h3>
+                      <p style={{ fontSize: 14, color: "var(--muted)", lineHeight: 1.5 }}>
+                        Fill in your city, niche, and details (saved for next time!)
+                      </p>
+                    </div>
+                  </div>
+                  <div style={{ display: "flex", gap: 16 }}>
+                    <div style={{ 
+                      minWidth: 32, 
+                      height: 32, 
+                      borderRadius: "50%", 
+                      background: "var(--badge-primary-bg)", 
+                      color: "var(--primary)", 
+                      display: "flex", 
+                      alignItems: "center", 
+                      justifyContent: "center",
+                      fontWeight: 700,
+                      fontSize: 14,
+                    }}>3</div>
+                    <div>
+                      <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 4, color: "var(--text)" }}>Paste into AI</h3>
+                      <p style={{ fontSize: 14, color: "var(--muted)", lineHeight: 1.5 }}>
+                        Use it in ChatGPT or Claude and get results in seconds
+                      </p>
+                    </div>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setOnboardingStep(2)}
+                  style={{
+                    width: "100%",
+                    padding: "14px 24px",
+                    background: "var(--primary)",
+                    color: "var(--text-inverse)",
+                    border: "none",
+                    borderRadius: "var(--radius-sm)",
+                    fontSize: 16,
+                    fontWeight: 600,
+                    cursor: "pointer",
+                  }}
+                >
+                  Next →
+                </button>
+              </>
+            )}
+
+            {onboardingStep === 2 && (
+              <>
+                <div style={{ fontSize: 48, marginBottom: 16 }}>🚀</div>
+                <h2 style={{ fontSize: 26, fontWeight: 800, marginBottom: 12, color: "var(--text)" }}>
+                  Start with a Popular Prompt
+                </h2>
+                <p style={{ fontSize: 16, color: "var(--muted)", lineHeight: 1.6, marginBottom: 24 }}>
+                  Try one of these to get started:
+                </p>
+                <div style={{ display: "flex", flexDirection: "column", gap: 12, marginBottom: 32 }}>
+                  <button
+                    onClick={() => {
+                      const prompt = allPrompts.find(p => p.title === "90-Day Inbound Lead Blueprint");
+                      if (prompt) {
+                        setShowOnboarding(false);
+                        localStorage.setItem(KEY_ONBOARDED, "true");
+                        setSelectedPrompt(prompt);
+                      }
+                    }}
+                    style={{
+                      padding: "12px 16px",
+                      background: "var(--surface-hover)",
+                      border: "2px solid var(--border)",
+                      borderRadius: "var(--radius-sm)",
+                      fontSize: 15,
+                      fontWeight: 600,
+                      cursor: "pointer",
+                      textAlign: "left",
+                      color: "var(--text)",
+                    }}
+                  >
+                    📈 90-Day Marketing Plan
+                  </button>
+                  <button
+                    onClick={() => {
+                      const prompt = allPrompts.find(p => p.title === "Instagram Reels 30-Day Calendar");
+                      if (prompt) {
+                        setShowOnboarding(false);
+                        localStorage.setItem(KEY_ONBOARDED, "true");
+                        setSelectedPrompt(prompt);
+                      }
+                    }}
+                    style={{
+                      padding: "12px 16px",
+                      background: "var(--surface-hover)",
+                      border: "2px solid var(--border)",
+                      borderRadius: "var(--radius-sm)",
+                      fontSize: 15,
+                      fontWeight: 600,
+                      cursor: "pointer",
+                      textAlign: "left",
+                      color: "var(--text)",
+                    }}
+                  >
+                    📱 30 Days of Social Media Content
+                  </button>
+                  <button
+                    onClick={() => {
+                      const prompt = allPrompts.find(p => p.title === "Listing Description (AI-Enhanced)");
+                      if (prompt) {
+                        setShowOnboarding(false);
+                        localStorage.setItem(KEY_ONBOARDED, "true");
+                        setSelectedPrompt(prompt);
+                      }
+                    }}
+                    style={{
+                      padding: "12px 16px",
+                      background: "var(--surface-hover)",
+                      border: "2px solid var(--border)",
+                      borderRadius: "var(--radius-sm)",
+                      fontSize: 15,
+                      fontWeight: 600,
+                      cursor: "pointer",
+                      textAlign: "left",
+                      color: "var(--text)",
+                    }}
+                  >
+                    ✍️ Write a Listing Description
+                  </button>
+                </div>
+                <button
+                  onClick={() => {
+                    setShowOnboarding(false);
+                    localStorage.setItem(KEY_ONBOARDED, "true");
+                  }}
+                  style={{
+                    width: "100%",
+                    padding: "14px 24px",
+                    background: "var(--primary)",
+                    color: "var(--text-inverse)",
+                    border: "none",
+                    borderRadius: "var(--radius-sm)",
+                    fontSize: 16,
+                    fontWeight: 600,
+                    cursor: "pointer",
+                  }}
+                >
+                  Browse All Prompts
+                </button>
+              </>
+            )}
+
+            <button
+              onClick={() => {
+                setShowOnboarding(false);
+                localStorage.setItem(KEY_ONBOARDED, "true");
+              }}
+              style={{
+                marginTop: 16,
+                background: "transparent",
+                border: "none",
+                color: "var(--muted)",
+                fontSize: 13,
+                cursor: "pointer",
+              }}
+            >
+              Skip intro
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Toast Notification */}
+      {toastMessage && (
+        <div style={{
+          position: "fixed",
+          bottom: 24,
+          left: "50%",
+          transform: "translateX(-50%)",
+          background: "var(--text)",
+          color: "var(--text-inverse)",
+          padding: "12px 24px",
+          borderRadius: "var(--radius-pill)",
+          fontSize: 14,
+          fontWeight: 600,
+          boxShadow: "0 8px 24px rgba(0,0,0,0.2)",
+          zIndex: 2000,
+          animation: "slideUp 300ms ease-out",
+        }}>
+          {toastMessage}
+        </div>
+      )}
     </div>
   );
 }

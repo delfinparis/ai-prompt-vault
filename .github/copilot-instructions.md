@@ -1,149 +1,42 @@
-# AI Prompt Vault - Copilot Instructions
+## AI assistant instructions — ai-prompt-vault
 
-## Project Overview
-Real estate AI prompt library built as a single-page React app. Users browse 12 categories (modules) of structured prompts designed for realtors, select a prompt, then copy the expanded version to use in ChatGPT.
+This project is a small single-page React + TypeScript app (Create React App) that ships a curated library of "prompts" for real-estate agents. The goal of these instructions is to help an AI contributor be immediately productive: where data lives, how the UI is wired, and what to update for common tasks.
 
-## Architecture
+- Quick start
+  - Install and run locally: the project uses Create React App. Use `npm install` then `npm start` (dev server). Production build: `npm run build`. Tests: `npm test`.
 
-### Data Flow Pattern
-1. **Base prompts** (`src/prompts.ts`): 12 module arrays (M1-M12), each with ~10 prompt objects
-2. **Module attachment**: `attachModule()` adds `module` and `index` fields to create `PromptItem[]`
-3. **Remote merge**: `mergeRemote()` fetches from Google Apps Script URL, caches in localStorage with version checking
-4. **Display overrides**: `src/labelOverrides.ts` provides friendly titles/subtitles without changing underlying data
+- Big picture
+  - Entry: `src/index.tsx` mounts the main component `AIPromptVault` from `src/AIPromptVault.tsx`.
+  - Data source: the prompt content is defined statically in `src/prompts.ts` (arrays M1..M12). The UI also attempts to fetch a remote JSON (Apps Script URL in `AIPromptVault.tsx`) and merges remote modules into the base dataset.
+  - Labels: human-friendly title/subtitle overrides live in `src/labelOverrides.ts`.
+  - Storage & caching: remote payload is cached in `localStorage` under keys `rpv:remoteCache` and `rpv:remoteVersion` (see constants in `AIPromptVault.tsx`).
 
-### Key Components
-- **Single component architecture**: `AIPromptVault.tsx` is the entire UI (no routing, no separate components)
-- **Category cards**: 12 cards map to `CATEGORY_CARDS` array with emoji, label, tagline
-- **Module mapping**: `MODULE_TITLES` constant defines the 12 module names; cards reference via `moduleKey`
-- **Prompt builder**: `buildFullPrompt()` expands short prompt fields into structured long-form prompt
+- Where to make common edits
+  - Add or edit prompts: modify `src/prompts.ts`. Each module is an array (M1, M2, ...). The top-level export is `export const prompts = [M1, M2, ...]`.
+  - Change module display names: `AIPromptVault.tsx` defines `MODULE_TITLES` and internal module keys like `Module 1 — <title>`. Edit those to change module headings.
+  - Override card labels/titles: use `src/labelOverrides.ts` to map prompt `match` strings to friendly `title` and `subtitle` used elsewhere.
+  - Remote prompts: the app fetches `REMOTE_JSON_URL` in `AIPromptVault.tsx` and merges using `mergeRemote`. Remote payload structure: { version?: string, modules?: Record<string, RemotePrompt[]> }.
 
-## Critical Patterns
+- Important code patterns & examples
+  - Prompt shape (TypeScript): `PromptItem` (see `AIPromptVault.tsx`) — fields include `title, role, deliverable, inputs, constraints, tools, format, audience, module, index`.
+  - Building the long prompt: `buildFullPrompt(p: PromptItem)` (in `AIPromptVault.tsx`) concatenates fields into the long-form prompt that users copy.
+  - Merge logic: `mergeRemote(base, remote)` preserves existing prompts (case-insensitive title check) and appends new ones into matching modules (matching by the internal module key or its displayName).
+  - Tracking: `trackEvent(name, data)` dispatches a CustomEvent `rpv_event` on `window` — useful for integration tests or telemetry during debugging.
 
-### Type System
-```typescript
-type PromptItem = {
-  title: string;
-  quick?: string;      // Short description
-  role?: string;       // AI role to assume
-  deliverable?: string;
-  success?: string;    // Success metrics
-  // ... 7 more optional fields
-  module: string;      // "Module X — Name"
-  index: number;       // Position in module
-}
-```
+- Debugging tips (quick wins)
+  - Remote fetch issues: inspect Network tab for the Apps Script URL (constant `REMOTE_JSON_URL`) and check `localStorage` keys `rpv:remoteCache`/`rpv:remoteVersion`.
+  - Prompt merge problems: open console and log `mergeRemote` inputs; the merge matches module names by exact match or by `displayName(module)`.
+  - Copy to clipboard: `handleCopy` uses `navigator.clipboard` with a fallback textarea copy. To test, click a prompt in the running app.
 
-### State Management
-- No Redux/Context—local `useState` only
-- `selectedModule`: controls which category is active
-- `selectedIndex`: controls which prompt is shown
-- `data`: merged base + remote prompts (cached)
+- Conventions to follow
+  - Keep prompt data in `src/prompts.ts` as plain arrays. Use the existing M1..M12 pattern and export the array in order (module index maps to title). Indexes are zero-based within modules; `attachModule` assigns `module` and `index` at runtime.
+  - Prefer small, focused edits. The UI uses inline styles in `AIPromptVault.tsx` (no CSS-in-JS libs). Avoid large refactors unless necessary.
 
-### Remote Sync Strategy
-```typescript
-// On mount:
-1. Load base prompts immediately (instant UI)
-2. Try cached remote from localStorage
-3. Fetch fresh remote, compare versions
-4. Only update if version changed
-```
+- Tests & quality gate suggestions (discoverable now)
+  - There are no unit tests for `buildFullPrompt` or `mergeRemote`. When adding tests, target those pure functions (they're easy to unit-test) and use the existing CRA test setup (`react-scripts test`).
 
-**localStorage keys**: `rpv:remoteCache`, `rpv:remoteVersion`
+- PR notes
+  - When adding prompts, update `src/prompts.ts` and, if the displayed labels should change, add entries to `src/labelOverrides.ts`.
+  - If you change module ordering or internal module keys, ensure `CATEGORY_CARDS` and `MODULE_TITLES` in `AIPromptVault.tsx` remain aligned.
 
-### Event Tracking
-Uses custom events via `window.dispatchEvent` with `rpv_event` pattern—placeholders for GA/Facebook pixel integration.
-
-## Development Workflows
-
-### Start Dev Server
-```bash
-npm start  # Opens http://localhost:3000
-```
-
-### Build for Production
-```bash
-npm run build  # Output to /build
-```
-
-### Testing
-```bash
-npm test  # Interactive watch mode
-```
-
-## Project-Specific Conventions
-
-### Prompt Field Fallbacks
-When building full prompts, missing fields use sensible defaults:
-- No `audience`? → `"[buyer/seller/investor/agent type in [market]]"`
-- No `inputs`? → Generic KPI/tools/timeline template
-- Missing `constraints`? → "≤ 400 words; use headings; avoid guarantees; fair-housing safe"
-
-**When adding prompts**: include at minimum `title`, `quick`, `role`—the rest can default.
-
-### Module Display Names
-Strip the prefix for UI:
-```typescript
-displayName("Module 1 — Lead Generation") // → "Lead Generation"
-```
-
-### Adding New Modules
-1. Add module title to `MODULE_TITLES` array (index-based)
-2. Create prompt array (e.g., `const M13 = [...]`)
-3. Add to `prompts` export at bottom of `prompts.ts`
-4. Add category card to `CATEGORY_CARDS` in `AIPromptVault.tsx`
-5. Optionally add label overrides in `labelOverrides.ts`
-
-### Inline Styles Pattern
-This project uses **inline styles exclusively**—no CSS modules, no styled-components. All styling is in `style={{...}}` objects. When styling:
-- Use camelCase property names (`marginBottom`, not `margin-bottom`)
-- Include hover states via `onMouseEnter`/`onMouseLeave` handlers
-- Responsive design via `minmax()` in grid templates
-
-## External Dependencies
-
-### Google Apps Script Integration
-- **URL**: Hardcoded `REMOTE_JSON_URL` in `AIPromptVault.tsx`
-- **Expected payload**: `{ version?: string, modules?: Record<string, RemotePrompt[]> }`
-- **Module matching**: Uses fuzzy matching via `findModuleKey()` to map remote module names to local
-
-### No Backend Required
-Entirely client-side. Remote prompts are a nice-to-have enhancement—app works without them.
-
-## Testing Considerations
-- Uses `@testing-library/react` and Jest
-- No existing tests in repo—when adding, test prompt builder logic and remote merge function
-
-## Common Tasks
-
-### Add a new prompt to existing module
-```typescript
-// In src/prompts.ts, add to relevant array (M1-M12):
-{
-  title: "Your Prompt Title",
-  quick: "Brief summary shown in UI",
-  role: "AI persona for this prompt",
-  // Other fields optional—will use defaults
-}
-```
-
-### Change category card appearance
-Edit `CATEGORY_CARDS` array in `AIPromptVault.tsx`:
-- `label`: Button text
-- `emoji`: Icon
-- `tagline`: Subtext
-- `moduleKey`: Must match `"Module X — ${MODULE_TITLES[X-1]}"`
-
-### Update prompt expansion template
-Modify `buildFullPrompt()` function—this controls the structure of copied text. Keep "Role & Outcome" at top for consistency.
-
-## Fair Housing & Compliance
-Prompts include compliance guardrails:
-- Default constraints mention "fair-housing safe"
-- Risk check section warns about protected-class targeting
-- When creating new prompts, never suggest demographic targeting
-
-## Notes for AI Agents
-- **Duplicated structure**: There's both `/src` and `/ai-prompt-vault/src`—work in `/src` (root-level)
-- **Read before edit**: Always read `prompts.ts` structure before adding—maintain array pattern
-- **Version checking**: If modifying remote logic, preserve version-based cache invalidation
-- **Don't break the clipboard**: Test `navigator.clipboard` fallback when changing copy logic
+If any of this is unclear, tell me which area you'd like expanded (run/debug steps, examples of prompt edits, or adding a test for a specific function) and I'll update this file.
