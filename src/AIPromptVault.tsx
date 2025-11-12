@@ -197,6 +197,36 @@ export default function AIPromptVault() {
   const [deploySha, setDeploySha] = useState<string | null>(null);
   const [copyCounts, setCopyCounts] = useState<Record<string, number>>({});
   const [searchTerm, setSearchTerm] = useState<string>("");
+  // Onboarding modal state
+  const [showOnboard, setShowOnboard] = useState<boolean>(() => {
+    try {
+      return !localStorage.getItem("rpv:onboardSeen");
+    } catch {
+      return true;
+    }
+  });
+  const [onboardStep, setOnboardStep] = useState<number>(1);
+  const [onboardAnswers, setOnboardAnswers] = useState<{ intent?: string; role?: string; market?: string }>({});
+  const [topPicks, setTopPicks] = useState<PromptItem[] | null>(null);
+
+  const ONBOARD_INTENTS: { key: string; label: string; moduleKey?: string; emoji: string }[] = [
+    { key: "leads", label: "Get more leads", moduleKey: CATEGORY_CARDS[0].moduleKey, emoji: "📣" },
+    { key: "listing", label: "Create a listing", moduleKey: CATEGORY_CARDS[3].moduleKey, emoji: "🏡" },
+    { key: "open_house", label: "Run an open house", moduleKey: CATEGORY_CARDS[3].moduleKey, emoji: "🏷️" },
+    { key: "followups", label: "Improve follow-ups", moduleKey: CATEGORY_CARDS[4].moduleKey, emoji: "✨" },
+    { key: "social", label: "Create social content", moduleKey: CATEGORY_CARDS[9].moduleKey, emoji: "📈" },
+    { key: "automate", label: "Automate my leads", moduleKey: CATEGORY_CARDS[10].moduleKey, emoji: "⚙️" },
+    { key: "other", label: "Other / Browse", emoji: "🔍" },
+  ];
+
+  const ROLE_OPTIONS = [
+    "Solo agent",
+    "Team lead",
+    "Buyer specialist",
+    "Listing specialist",
+    "Investor agent",
+    "Broker / manager",
+  ];
 
   const KEY_FAVORITES = "rpv:favorites";
   const KEY_RECENT = "rpv:recentFills";
@@ -370,6 +400,30 @@ export default function AIPromptVault() {
     } catch {}
   }, []);
 
+  // compute suggestions based on onboarding answers
+  const computeTopPicks = (answers: { intent?: string; role?: string; market?: string }) => {
+    if (!answers.intent) return [] as PromptItem[];
+    const intent = ONBOARD_INTENTS.find((i) => i.key === answers.intent);
+    if (!intent || !intent.moduleKey) return [] as PromptItem[];
+    const candidates = data.filter((d) => d.module === intent.moduleKey);
+    const qMarket = (answers.market || "").toLowerCase();
+    const qRole = (answers.role || "").toLowerCase();
+    const scored = candidates
+      .map((p) => {
+        let score = 0;
+        if ((p.title || "").toLowerCase().includes(qRole) || (p.role || "").toLowerCase().includes(qRole)) score += 20;
+        const built = buildFullPrompt(p).toLowerCase();
+        if (qMarket && built.includes(qMarket)) score += 30;
+        const key = `${p.module}||${p.title}`;
+        score += (copyCounts?.[key] || 0);
+        return { p, score };
+      })
+      .sort((a, b) => b.score - a.score)
+      .slice(0, 3)
+      .map((x) => x.p);
+    return scored;
+  };
+
   useEffect(() => {
     try {
       localStorage.setItem(KEY_COUNTS, JSON.stringify(copyCounts));
@@ -492,22 +546,84 @@ export default function AIPromptVault() {
     >
       {/* Header */}
   <header style={{ marginBottom: 28 }}>
-        <div
-          style={{
-            fontSize: 26,
-            fontWeight: 900,
-            letterSpacing: "-0.03em",
-            color: "#020617",
-            marginBottom: 6,
-          }}
-        >
-          AI Prompt Vault for Real Estate Agents
-        </div>
-        <div style={{ fontSize: 14, color: "#6b7280", maxWidth: 620 }}>
-          Pick a category below and grab a ready-made prompt for your next
-          marketing, systems, or client problem.
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12 }}>
+          <div>
+            <div
+              style={{
+                fontSize: 26,
+                fontWeight: 900,
+                letterSpacing: "-0.03em",
+                color: "#020617",
+                marginBottom: 6,
+              }}
+            >
+              AI Prompt Vault for Real Estate Agents
+            </div>
+            <div style={{ fontSize: 14, color: "#6b7280", maxWidth: 620 }}>
+              Pick a category below and grab a ready-made prompt for your next
+              marketing, systems, or client problem.
+            </div>
+          </div>
+          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+            <button onClick={() => { setShowOnboard(true); setOnboardStep(1); trackEvent('onboard_opened'); }} style={{ height: 36, borderRadius: 8, padding: '0 12px' }}>Get tailored prompts</button>
+          </div>
         </div>
       </header>
+
+      {/* Onboarding modal (A - guided flow) */}
+      {showOnboard && (
+        <div className="rpv-modal-backdrop" onClick={() => { setShowOnboard(false); localStorage.setItem('rpv:onboardSeen', '1'); }}>
+          <div className="rpv-modal" onClick={(e) => e.stopPropagation()} style={{ maxWidth: 720 }}>
+            <h3 style={{ marginBottom: 6 }}>What do you want to do right now?</h3>
+            <div style={{ color: '#6b7280', marginBottom: 12 }}>Pick one — we'll surface ready-to-use prompts.</div>
+            {onboardStep === 1 && (
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(160px,1fr))', gap: 10 }}>
+                {ONBOARD_INTENTS.map((it) => (
+                  <button key={it.key} onClick={() => { setOnboardAnswers(a => ({ ...a, intent: it.key })); setOnboardStep(2); trackEvent('onboard_intent', { intent: it.key }); }} style={{ padding: 12, borderRadius: 12, textAlign: 'left', border: '1px solid #e5e7eb', background: '#fff' }}>
+                    <div style={{ fontSize: 18 }}>{it.emoji}</div>
+                    <div style={{ fontWeight: 700 }}>{it.label}</div>
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {onboardStep === 2 && (
+              <div>
+                <h4 style={{ marginTop: 6 }}>Which best describes you?</h4>
+                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 8 }}>
+                  {ROLE_OPTIONS.map((r) => (
+                    <button key={r} onClick={() => { setOnboardAnswers(a => ({ ...a, role: r })); setOnboardStep(3); trackEvent('onboard_role', { role: r }); }} style={{ padding: '8px 10px', borderRadius: 999, border: '1px solid #e5e7eb', background: '#fff' }}>{r}</button>
+                  ))}
+                </div>
+                <div style={{ marginTop: 10 }}>
+                  <button onClick={() => setOnboardStep(1)} style={{ marginRight: 8 }}>Back</button>
+                  <button onClick={() => { setOnboardStep(3); trackEvent('onboard_skip_role'); }}>Skip</button>
+                </div>
+              </div>
+            )}
+
+            {onboardStep === 3 && (
+              <div>
+                <h4 style={{ marginTop: 6 }}>Where are you focused? (optional)</h4>
+                <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
+                  <input placeholder="City or neighborhood (e.g., Denver, CO)" value={onboardAnswers.market || ''} onChange={(e) => setOnboardAnswers(a => ({ ...a, market: e.target.value }))} style={{ flex: 1, height: 40, padding: '0 12px', borderRadius: 8, border: '1px solid #e5e7eb' }} />
+                </div>
+                <div style={{ marginTop: 12, display: 'flex', gap: 8 }}>
+                  <button onClick={() => setOnboardStep(2)}>Back</button>
+                  <button onClick={() => {
+                    // finish: compute picks and close modal
+                    const picks = computeTopPicks(onboardAnswers);
+                    setTopPicks(picks.length ? picks : computeTopPicks({ ...onboardAnswers, intent: onboardAnswers.intent }));
+                    setShowOnboard(false);
+                    localStorage.setItem('rpv:onboardSeen', '1');
+                    trackEvent('onboard_completed', onboardAnswers);
+                  }} style={{ background: '#0f172a', color: '#fff', padding: '8px 12px', borderRadius: 8 }}>Show my prompts</button>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Favorites Manager */}
       {favorites.length > 0 && (
@@ -677,6 +793,29 @@ export default function AIPromptVault() {
           );
         })}
       </div>
+
+      {/* Top picks surfaced after onboarding */}
+      {topPicks && topPicks.length > 0 && (
+        <div style={{ marginBottom: 18 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div style={{ fontSize: 13, fontWeight: 700 }}>Top picks for you</div>
+            <div style={{ fontSize: 12, color: '#6b7280' }}>Tailored suggestions</div>
+          </div>
+          <div style={{ display: 'flex', gap: 10, marginTop: 8, flexWrap: 'wrap' }}>
+            {topPicks.map((p) => (
+              <div key={`${p.module}||${p.index}`} style={{ background: '#fff', border: '1px solid #e5e7eb', padding: 12, borderRadius: 12, minWidth: 260 }}>
+                <div style={{ fontSize: 13, fontWeight: 700 }}>{p.title}</div>
+                <div style={{ color: '#6b7280', fontSize: 12, marginTop: 6, minHeight: 40 }}>{(p.quick || '').slice(0,140)}</div>
+                <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
+                  <button onClick={() => { setSelectedModule(p.module); setSelectedIndex(p.index); setFieldValues(extractPlaceholders(p).reduce((acc, k) => ({ ...acc, [k]: SAMPLE_DEFAULTS[k.toLowerCase()] || '' }), {})); trackEvent('onboard_pick_apply', { title: p.title }); }} style={{ height: 36, borderRadius: 8, padding: '0 12px' }}>Use</button>
+                  <button onClick={async () => { const txt = applyReplacements(buildFullPrompt(p), fieldValues); try { await navigator.clipboard.writeText(txt); } catch {} trackEvent('onboard_pick_copy', { title: p.title }); }} style={{ height: 36, borderRadius: 8, padding: '0 12px', background: '#0f172a', color: '#fff' }}>Copy</button>
+                  <button onClick={() => { setFavorites((s) => [{ id: `${Date.now()}`, module: p.module, index: p.index, title: p.title || 'Saved', values: fieldValues, createdAt: new Date().toISOString() }, ...s].slice(0,50)); trackEvent('onboard_pick_save', { title: p.title }); }} style={{ height: 36, borderRadius: 8 }}>☆ Save</button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Helper text */}
       {!selectedModule && (
