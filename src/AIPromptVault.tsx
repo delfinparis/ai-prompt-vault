@@ -1,6 +1,7 @@
 "use client";
 import React, { useEffect, useState } from "react";
 import { prompts as fullPrompts } from "./prompts";
+import { labelOverrides, type LabelOverride } from "./labelOverrides";
 
 /* ---------- Types ---------- */
 type PromptItem = {
@@ -27,15 +28,12 @@ type RemotePayload = {
 };
 
 /* ---------- Constants ---------- */
-
-// same Apps Script URL you already use
 const REMOTE_JSON_URL =
   "https://script.google.com/macros/s/AKfycbww3SrcmhMY8IMPiSmj7OdqM3cUSVtfU0LuyVtqF9mvdbQjhdoHXASfMhEg4cam577dRw/exec";
 
 const KEY_REMOTE_CACHE = "rpv:remoteCache";
 const KEY_REMOTE_VER = "rpv:remoteVersion";
 
-// internal module titles used when attaching data
 const MODULE_TITLES = [
   "Lead Generation & Marketing",
   "Operations & Time Management",
@@ -51,163 +49,83 @@ const MODULE_TITLES = [
   "Realtor Resources & Intelligence",
 ];
 
-// strip "Module X —" for labels
 const displayName = (m: string) => m.replace(/^Module\s+\d+\s+—\s+/i, "");
 
-/* ---------- Tracking Hook ---------- */
+/* ---------- Tracking ---------- */
 const trackEvent = (name: string, data?: Record<string, any>) => {
   try {
     window.dispatchEvent(
       new CustomEvent("rpv_event", { detail: { name, ...data } })
     );
-    // window.gtag?.("event", name, data);
-    // window.fbq?.("trackCustom", name, data);
   } catch {
-    // no-op if tracking not wired
+    // no-op
   }
 };
 
-/* ---------- Category Card Meta ---------- */
-
+/* ---------- Category Cards ---------- */
 type CategoryMeta = {
   id: number;
-  moduleKey: string; // "Module X — Name"
+  moduleKey: string;
   label: string;
   emoji: string;
   tagline: string;
 };
 
 const CATEGORY_CARDS: CategoryMeta[] = [
-  {
-    id: 1,
-    moduleKey: `Module 1 — ${MODULE_TITLES[0]}`,
-    label: "Get More Leads",
-    emoji: "📣",
-    tagline: "Prompts for ads, content, funnels, and campaigns.",
-  },
-  {
-    id: 2,
-    moduleKey: `Module 2 — ${MODULE_TITLES[1]}`,
-    label: "Fix My Systems",
-    emoji: "🧩",
-    tagline: "Checklists, SOPs, and daily/weekly workflows.",
-  },
-  {
-    id: 3,
-    moduleKey: `Module 3 — ${MODULE_TITLES[2]}`,
-    label: "Hit My Goals",
-    emoji: "🎯",
-    tagline: "Scorecards, habit templates, and sprints.",
-  },
-  {
-    id: 4,
-    moduleKey: `Module 4 — ${MODULE_TITLES[3]}`,
-    label: "Win More Appointments",
-    emoji: "📅",
-    tagline: "Scripts and outlines for buyers and sellers.",
-  },
-  {
-    id: 5,
-    moduleKey: `Module 5 — ${MODULE_TITLES[4]}`,
-    label: "Wow My Clients",
-    emoji: "✨",
-    tagline: "Onboarding, updates, and surprise & delight.",
-  },
-  {
-    id: 6,
-    moduleKey: `Module 6 — ${MODULE_TITLES[5]}`,
-    label: "Boost My Profit",
-    emoji: "💰",
-    tagline: "Cashflow, budgets, and profitability audits.",
-  },
-  {
-    id: 7,
-    moduleKey: `Module 7 — ${MODULE_TITLES[6]}`,
-    label: "Win More Deals",
-    emoji: "🤝",
-    tagline: "Negotiation playbooks and deal rescues.",
-  },
-  {
-    id: 8,
-    moduleKey: `Module 8 — ${MODULE_TITLES[7]}`,
-    label: "Find Better Homes",
-    emoji: "🏡",
-    tagline: "Search strategies and buyer tools.",
-  },
-  {
-    id: 9,
-    moduleKey: `Module 9 — ${MODULE_TITLES[8]}`,
-    label: "Nurture My Sphere",
-    emoji: "🌱",
-    tagline: "Touch plans, events, and local content.",
-  },
-  {
-    id: 10,
-    moduleKey: `Module 10 — ${MODULE_TITLES[9]}`,
-    label: "Improve My Marketing",
-    emoji: "📈",
-    tagline: "Funnels, CRO, and AI-powered assets.",
-  },
-  {
-    id: 11,
-    moduleKey: `Module 11 — ${MODULE_TITLES[10]}`,
-    label: "Automate My Business",
-    emoji: "⚙️",
-    tagline: "Lead routing, drips, and bots.",
-  },
-  {
-    id: 12,
-    moduleKey: `Module 12 — ${MODULE_TITLES[11]}`,
-    label: "Level Up & Learn",
-    emoji: "📚",
-    tagline: "Curated learning and research prompts.",
-  },
+  { id: 1,  moduleKey: `Module 1 — ${MODULE_TITLES[0]}`,  label: "Get More Leads",       emoji: "📣", tagline: "Prompts for ads, content, funnels, and campaigns." },
+  { id: 2,  moduleKey: `Module 2 — ${MODULE_TITLES[1]}`,  label: "Fix My Systems",       emoji: "🧩", tagline: "Checklists, SOPs, and daily/weekly workflows." },
+  { id: 3,  moduleKey: `Module 3 — ${MODULE_TITLES[2]}`,  label: "Hit My Goals",         emoji: "🎯", tagline: "Scorecards, habit templates, and sprints." },
+  { id: 4,  moduleKey: `Module 4 — ${MODULE_TITLES[3]}`,  label: "Win More Appointments",emoji: "📅", tagline: "Scripts and outlines for buyers and sellers." },
+  { id: 5,  moduleKey: `Module 5 — ${MODULE_TITLES[4]}`,  label: "Wow My Clients",       emoji: "✨", tagline: "Onboarding, updates, and surprise & delight." },
+  { id: 6,  moduleKey: `Module 6 — ${MODULE_TITLES[5]}`,  label: "Boost My Profit",      emoji: "💰", tagline: "Cashflow, budgets, and profitability audits." },
+  { id: 7,  moduleKey: `Module 7 — ${MODULE_TITLES[6]}`,  label: "Win More Deals",       emoji: "🤝", tagline: "Negotiation playbooks and deal rescues." },
+  { id: 8,  moduleKey: `Module 8 — ${MODULE_TITLES[7]}`,  label: "Find Better Homes",    emoji: "🏡", tagline: "Search strategies and buyer tools." },
+  { id: 9,  moduleKey: `Module 9 — ${MODULE_TITLES[8]}`,  label: "Nurture My Sphere",    emoji: "🌱", tagline: "Touch plans, events, and local content." },
+  { id: 10, moduleKey: `Module 10 — ${MODULE_TITLES[9]}`, label: "Improve My Marketing", emoji: "📈", tagline: "Funnels, CRO, and AI-powered assets." },
+  { id: 11, moduleKey: `Module 11 — ${MODULE_TITLES[10]}`,label: "Automate My Business", emoji: "⚙️", tagline: "Lead routing, drips, and bots." },
+  { id: 12, moduleKey: `Module 12 — ${MODULE_TITLES[11]}`,label: "Level Up & Learn",     emoji: "📚", tagline: "Curated learning and research prompts." },
 ];
 
-/* ---------- Data: attach module labels ---------- */
-
+/* ---------- Helpers: attach module / overrides ---------- */
 const attachModule = (
   moduleIndex: number,
   items: Omit<PromptItem, "module" | "index">[]
 ): PromptItem[] => {
   const moduleName = `Module ${moduleIndex} — ${MODULE_TITLES[moduleIndex - 1]}`;
-  return items.map((p, i) => ({
-    ...p,
-    module: moduleName,
-    index: i,
-  }));
+  return items.map((p, i) => ({ ...p, module: moduleName, index: i }));
 };
 
-/* ---------- Prompt Builder ---------- */
+function getLabelOverride(moduleKey: string, originalTitle: string):
+  { title: string; subtitle?: string } {
+  const list: LabelOverride[] | undefined = labelOverrides[moduleKey];
+  if (!list) return { title: originalTitle };
+  const hit = list.find((l) => l.match === originalTitle);
+  return hit ? { title: hit.title, subtitle: hit.subtitle } : { title: originalTitle };
+}
 
+/* ---------- Build long prompt ---------- */
 const buildFullPrompt = (p: PromptItem): string => {
   const moduleName = p.module || "Category";
   const title = p.title || "Prompt";
-  const audience =
-    p.audience || "[buyer/seller/investor/agent type in [market]]";
+  const audience = p.audience || "[buyer/seller/investor/agent type in [market]]";
   const inputs =
     p.inputs ||
     "- KPIs = [list]\n- Tools = [list]\n- Timeline/Budget = [X]\n- Constraints = [plain, compliant language]";
   const deliverable =
     p.deliverable || "Bulleted steps + 1 table (fields relevant to this prompt).";
   const constraints =
-    p.constraints ||
-    "≤ 400 words; use headings; avoid guarantees; fair-housing safe.";
+    p.constraints || "≤ 400 words; use headings; avoid guarantees; fair-housing safe.";
   const quality =
     (p as any).quality ||
     "Add ‘Why this works’ and 3 clarifying questions. Propose 2 ways to improve the first draft.";
   const success =
-    p.success ||
-    "Define measurable outcomes (response rate %, time saved, appointments set).";
+    p.success || "Define measurable outcomes (response rate %, time saved, appointments set).";
   const tools =
-    p.tools ||
-    "Prefer Google Workspace, CRM, Make.com/Zapier, Notion, Canva as applicable.";
+    p.tools || "Prefer Google Workspace, CRM, Make.com/Zapier, Notion, Canva as applicable.";
   const iterate =
-    p.iterate ||
-    "End by asking 2–3 questions and offering a v2 refinement path.";
+    p.iterate || "End by asking 2–3 questions and offering a v2 refinement path.";
   const risk =
-    p.risk ||
-    "Risk Check: keep claims verifiable; avoid protected-class targeting; keep language compliant.";
+    p.risk || "Risk Check: keep claims verifiable; avoid protected-class targeting; keep language compliant.";
 
   return `Role & Outcome
 Act as a ${p.role || "top 1% real-estate coach"} and produce: “${title}” for ${audience} in ${moduleName}.
@@ -239,28 +157,19 @@ ${iterate}
 ${risk}`;
 };
 
-/* ---------- Merge Remote Prompts ---------- */
-
+/* ---------- Merge remote ---------- */
 function mergeRemote(base: PromptItem[], remote: RemotePayload): PromptItem[] {
   if (!remote?.modules) return base;
 
   const result = [...base];
-  const existing = new Set(
-    base.map((b) => (b.title || "").toLowerCase().trim())
-  );
-
+  const existing = new Set(base.map((b) => (b.title || "").toLowerCase().trim()));
   const baseModules = Array.from(new Set(base.map((b) => b.module)));
 
   const findModuleKey = (label: string): string | null => {
-    // try exact
     const exact = baseModules.find((m) => m === label);
     if (exact) return exact;
-
     const target = label.trim().toLowerCase();
-    // try by displayName
-    const match = baseModules.find(
-      (m) => displayName(m).trim().toLowerCase() === target
-    );
+    const match = baseModules.find((m) => displayName(m).trim().toLowerCase() === target);
     return match || null;
   };
 
@@ -275,11 +184,7 @@ function mergeRemote(base: PromptItem[], remote: RemotePayload): PromptItem[] {
       const t = (r.title || "").toLowerCase().trim();
       if (!t || existing.has(t)) return;
 
-      result.push({
-        ...r,
-        module: targetModule,
-        index: nextIndex++,
-      });
+      result.push({ ...r, module: targetModule, index: nextIndex++ });
       existing.add(t);
     });
   });
@@ -287,8 +192,7 @@ function mergeRemote(base: PromptItem[], remote: RemotePayload): PromptItem[] {
   return result;
 }
 
-/* ---------- Main Component ---------- */
-
+/* ---------- Main ---------- */
 export default function AIPromptVault() {
   const [data, setData] = useState<PromptItem[]>([]);
   const [selectedModule, setSelectedModule] = useState<string>("");
@@ -298,14 +202,11 @@ export default function AIPromptVault() {
 
   // preload base + remote
   useEffect(() => {
-    const baseArr: PromptItem[] = fullPrompts.flatMap((m, i) =>
-      attachModule(i + 1, m)
-    );
+    const baseArr: PromptItem[] = fullPrompts.flatMap((m, i) => attachModule(i + 1, m));
     setData(baseArr);
 
     (async () => {
       try {
-        // apply cached remote if present
         const cachedStr = localStorage.getItem(KEY_REMOTE_CACHE);
         if (cachedStr) {
           try {
@@ -313,16 +214,12 @@ export default function AIPromptVault() {
             const merged = mergeRemote(baseArr, cached);
             setData(merged);
           } catch {
-            // ignore cache parse errors
+            /* ignore cache errors */
           }
         }
 
-        // fetch fresh
         const res = await fetch(REMOTE_JSON_URL, { cache: "no-store" });
-        if (!res.ok) {
-          setLoading(false);
-          return;
-        }
+        if (!res.ok) { setLoading(false); return; }
         const remote = (await res.json()) as RemotePayload;
         const ver = remote.version || "";
         const oldVer = localStorage.getItem(KEY_REMOTE_VER);
@@ -347,9 +244,7 @@ export default function AIPromptVault() {
 
   const currentPrompt =
     selectedModule != null && selectedIndex != null
-      ? data.find(
-          (d) => d.module === selectedModule && d.index === selectedIndex
-        ) || null
+      ? data.find((d) => d.module === selectedModule && d.index === selectedIndex) || null
       : null;
 
   const handleCopy = async () => {
@@ -368,10 +263,7 @@ export default function AIPromptVault() {
     }
 
     setCopied(true);
-    trackEvent("prompt_copied", {
-      title: currentPrompt.title,
-      module: currentPrompt.module,
-    });
+    trackEvent("prompt_copied", { title: currentPrompt.title, module: currentPrompt.module });
     setTimeout(() => setCopied(false), 1200);
   };
 
@@ -420,8 +312,7 @@ export default function AIPromptVault() {
             <button
               key={cat.id}
               onClick={() => {
-                const nextModule =
-                  selectedModule === cat.moduleKey ? "" : cat.moduleKey;
+                const nextModule = selectedModule === cat.moduleKey ? "" : cat.moduleKey;
                 setSelectedModule(nextModule);
                 setSelectedIndex(null);
                 trackEvent("module_selected", {
@@ -446,29 +337,19 @@ export default function AIPromptVault() {
                   "transform 120ms ease, box-shadow 120ms ease, background 120ms ease, border-color 120ms ease",
               }}
               onMouseEnter={(e) => {
-                (e.currentTarget as HTMLButtonElement).style.transform =
-                  "translateY(-2px)";
+                (e.currentTarget as HTMLButtonElement).style.transform = "translateY(-2px)";
               }}
               onMouseLeave={(e) => {
-                (e.currentTarget as HTMLButtonElement).style.transform =
-                  "translateY(0)";
+                (e.currentTarget as HTMLButtonElement).style.transform = "translateY(0)";
               }}
             >
               <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                 <span style={{ fontSize: 18 }}>{cat.emoji}</span>
-                <span
-                  style={{
-                    fontSize: 15,
-                    fontWeight: 700,
-                    color: "#020617",
-                  }}
-                >
+                <span style={{ fontSize: 15, fontWeight: 700, color: "#020617" }}>
                   {cat.label}
                 </span>
               </div>
-              <span style={{ fontSize: 12, color: "#6b7280" }}>
-                {cat.tagline}
-              </span>
+              <span style={{ fontSize: 12, color: "#6b7280" }}>{cat.tagline}</span>
             </button>
           );
         })}
@@ -476,13 +357,7 @@ export default function AIPromptVault() {
 
       {/* Helper text */}
       {!selectedModule && (
-        <p
-          style={{
-            fontSize: 12,
-            color: "#9ca3af",
-            marginBottom: 10,
-          }}
-        >
+        <p style={{ fontSize: 12, color: "#9ca3af", marginBottom: 10 }}>
           Choose a category above to see the prompts.
         </p>
       )}
@@ -501,31 +376,21 @@ export default function AIPromptVault() {
             }}
           >
             <div>
-              <div
-                style={{
-                  fontSize: 14,
-                  fontWeight: 600,
-                  color: "#0f172a",
-                }}
-              >
+              <div style={{ fontSize: 14, fontWeight: 600, color: "#0f172a" }}>
                 Prompts in {displayName(selectedModule)}
               </div>
               <div style={{ fontSize: 12, color: "#9ca3af" }}>
-                Pick a prompt, then copy the long version into ChatGPT and
-                personalize the bracketed fields.
+                Pick a prompt and copy the long version into ChatGPT. (Fields in brackets can be personalized.)
               </div>
             </div>
 
             <select
               value={selectedIndex ?? ""}
               onChange={(e) => {
-                const idx =
-                  e.target.value === "" ? null : Number(e.target.value);
+                const idx = e.target.value === "" ? null : Number(e.target.value);
                 setSelectedIndex(idx);
                 if (idx != null) {
-                  const p = promptsForSelected.find(
-                    (d) => d.index === idx
-                  );
+                  const p = promptsForSelected.find((d) => d.index === idx);
                   trackEvent("prompt_selected", {
                     module: selectedModule,
                     title: p?.title,
@@ -534,7 +399,7 @@ export default function AIPromptVault() {
               }}
               style={{
                 height: 40,
-                minWidth: 220,
+                minWidth: 260,
                 borderRadius: 999,
                 border: "1px solid #e5e7eb",
                 padding: "0 14px",
@@ -544,15 +409,16 @@ export default function AIPromptVault() {
               }}
             >
               <option value="">
-                {promptsForSelected.length
-                  ? "Choose a prompt…"
-                  : "No prompts found"}
+                {promptsForSelected.length ? "Choose a prompt…" : "No prompts found"}
               </option>
-              {promptsForSelected.map((p) => (
-                <option key={p.index} value={p.index}>
-                  {p.title}
-                </option>
-              ))}
+              {promptsForSelected.map((p) => {
+                const { title: niceTitle } = getLabelOverride(p.module, p.title);
+                return (
+                  <option key={p.index} value={p.index}>
+                    {niceTitle}
+                  </option>
+                );
+              })}
             </select>
           </div>
 
@@ -602,16 +468,38 @@ export default function AIPromptVault() {
                 </span>
               </div>
 
-              <div
-                style={{
-                  fontWeight: 800,
-                  margin: "4px 0 8px",
-                  fontSize: 18,
-                  color: "#020617",
-                }}
-              >
-                {currentPrompt.title || "Untitled Prompt"}
-              </div>
+              {/* Overridden title + subtitle */}
+              {(() => {
+                const { title: niceTitle, subtitle } = getLabelOverride(
+                  currentPrompt.module,
+                  currentPrompt.title
+                );
+                return (
+                  <>
+                    <div
+                      style={{
+                        fontWeight: 800,
+                        margin: "4px 0 4px",
+                        fontSize: 18,
+                        color: "#020617",
+                      }}
+                    >
+                      {niceTitle}
+                    </div>
+                    {subtitle && (
+                      <div
+                        style={{
+                          marginBottom: 8,
+                          fontSize: 12,
+                          color: "#64748b",
+                        }}
+                      >
+                        {subtitle}
+                      </div>
+                    )}
+                  </>
+                );
+              })()}
 
               <div
                 style={{
@@ -649,7 +537,20 @@ export default function AIPromptVault() {
                 >
                   {copied ? "Copied!" : "Copy prompt"}
                 </button>
-               
+                {/* Removed the "Copy → paste..." helper line per your request */}
+              </div>
+
+              <div
+                style={{
+                  marginTop: 16,
+                  paddingTop: 10,
+                  borderTop: "1px dashed #e5e7eb",
+                  fontSize: 12,
+                  color: "#64748b",
+                }}
+              >
+                Fair-housing &amp; compliance: avoid protected-class targeting,
+                medical/financial inferences, and unverifiable claims.
               </div>
             </div>
           )}
