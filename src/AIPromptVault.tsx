@@ -66,6 +66,8 @@ export default function AIPromptVault() {
   const [currentFieldIndex, setCurrentFieldIndex] = useState<number>(0);
   const [showOnboarding, setShowOnboarding] = useState<boolean>(false);
   const [onboardingStep, setOnboardingStep] = useState<number>(0);
+  const [showFollowUps, setShowFollowUps] = useState<boolean>(false);
+  const [followUpPrompts, setFollowUpPrompts] = useState<PromptItem[]>([]);
   const searchInputRef = React.useRef<HTMLInputElement>(null);
   const fieldInputRef = React.useRef<HTMLInputElement>(null);
 
@@ -200,6 +202,24 @@ export default function AIPromptVault() {
       const newRecent = [id, ...recentlyCopied.filter(rid => rid !== id)].slice(0, 10);
       setRecentlyCopied(newRecent);
       localStorage.setItem(KEY_RECENT, JSON.stringify(newRecent));
+      
+      // Generate follow-up suggestions based on tags and module
+      const promptTags = (prompt as any).tags || [];
+      const promptModule = prompt.module;
+      
+      const suggestions = allPrompts
+        .filter((p: any) => {
+          if (p.id === id) return false; // Don't suggest the same prompt
+          // Match by tags or same module
+          const pTags = p.tags || [];
+          const hasCommonTag = promptTags.some((tag: string) => pTags.includes(tag));
+          const sameModule = p.module === promptModule;
+          return hasCommonTag || sameModule;
+        })
+        .slice(0, 3); // Take top 3
+      
+      setFollowUpPrompts(suggestions);
+      setShowFollowUps(true);
       
       trackEvent("prompt_copied", { title: prompt.title, module: prompt.module });
     } catch (err) {
@@ -1230,6 +1250,98 @@ export default function AIPromptVault() {
             >
               Open Claude →
             </a>
+          </div>
+        </div>
+      )}
+
+      {/* Follow-up Suggestions Modal */}
+      {showFollowUps && followUpPrompts.length > 0 && (
+        <div
+          style={{
+            position: "fixed",
+            inset: 0,
+            background: "rgba(0,0,0,0.5)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 1500,
+            padding: 20,
+          }}
+          onClick={() => setShowFollowUps(false)}
+        >
+          <div
+            style={{
+              background: "#fff",
+              borderRadius: "var(--radius-md)",
+              maxWidth: 520,
+              width: "100%",
+              padding: 32,
+              animation: "slideUp 300ms ease-out",
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div style={{ textAlign: "center", marginBottom: 24 }}>
+              <div style={{ fontSize: 32, marginBottom: 12 }}>💡</div>
+              <h3 style={{ fontSize: 20, fontWeight: 700, marginBottom: 8, color: "var(--text)" }}>
+                Try These Next
+              </h3>
+              <p style={{ fontSize: 14, color: "var(--muted)" }}>
+                Related prompts you might need
+              </p>
+            </div>
+            
+            <div style={{ display: "flex", flexDirection: "column", gap: 12, marginBottom: 20 }}>
+              {followUpPrompts.map((prompt: any) => (
+                <button
+                  key={prompt.id}
+                  onClick={() => {
+                    setShowFollowUps(false);
+                    setSelectedPrompt(prompt);
+                  }}
+                  style={{
+                    padding: "16px",
+                    background: "#f8fafc",
+                    border: "2px solid #e5e7eb",
+                    borderRadius: "var(--radius-sm)",
+                    textAlign: "left",
+                    cursor: "pointer",
+                    transition: "all 160ms ease",
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.background = "#f1f5f9";
+                    e.currentTarget.style.borderColor = "var(--primary)";
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = "#f8fafc";
+                    e.currentTarget.style.borderColor = "#e5e7eb";
+                  }}
+                >
+                  <div style={{ fontSize: 15, fontWeight: 600, marginBottom: 4, color: "var(--text)" }}>
+                    {prompt.title}
+                  </div>
+                  <div style={{ fontSize: 13, color: "var(--muted)", lineHeight: 1.4 }}>
+                    {prompt.role.slice(0, 100)}{prompt.role.length > 100 ? "..." : ""}
+                  </div>
+                </button>
+              ))}
+            </div>
+            
+            <button
+              onClick={() => setShowFollowUps(false)}
+              style={{
+                width: "100%",
+                padding: "12px",
+                background: "transparent",
+                border: "2px solid #e5e7eb",
+                borderRadius: "var(--radius-sm)",
+                fontSize: 14,
+                fontWeight: 600,
+                color: "var(--muted)",
+                cursor: "pointer",
+              }}
+            >
+              Maybe Later
+            </button>
           </div>
         </div>
       )}
