@@ -34,6 +34,8 @@ const KEY_INLINE_PREVIEW_PER_PROMPT = "rpv:inlinePreviewPerPrompt";
 const KEY_COPY_GUARDRAIL_SUPPRESS = "rpv:copyGuardrailSuppress";
 const KEY_INLINE_TIP_SEEN = "rpv:inlineTipSeen";
 const KEY_STATS = "rpv:stats";
+const KEY_LAST_VISIT = "rpv:lastVisit";
+const KEY_WIZARD_DISMISSED = "rpv:wizardDismissed";
 
 // Static follow-up mapping for conversation starters (curated for multi-turn depth)
 // Referenced in LAUNCH_NOW_GUIDE.md for GPT instructions; reserved for future web app integration
@@ -262,6 +264,23 @@ export default function AIPromptVault() {
   const [customPrompts, setCustomPrompts] = useState<PromptItem[]>([]);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   
+  // Wizard state (lightweight 3-step flow)
+  const [wizardOpen, setWizardOpen] = useState<boolean>(() => {
+    try {
+      const dismissed = localStorage.getItem(KEY_WIZARD_DISMISSED) === 'true';
+      const countsRaw = localStorage.getItem(KEY_COUNTS);
+      const counts = countsRaw ? JSON.parse(countsRaw) as Record<string, number> : {};
+      const total = Object.values(counts).reduce((s, c) => s + (c || 0), 0);
+      // Show wizard by default on true first-time (no copies) and not dismissed
+      return !dismissed && total === 0;
+    } catch { return true; }
+  });
+  const [wizardStep, setWizardStep] = useState<number>(1);
+  const [wizardChallenge, setWizardChallenge] = useState<string | null>(null);
+  const [wizardAnswers, setWizardAnswers] = useState<Record<string, string>>({});
+  const [wizardResultText, setWizardResultText] = useState<string>("");
+  const [wizardSelectedPrompt, setWizardSelectedPrompt] = useState<PromptItem | null>(null);
+  
   // Sequence tracking state
   const [sequences, setSequences] = useState<SequenceData>({ pairs: {}, totalSequences: 0 });
   const [sessionHistory, setSessionHistory] = useState<SessionCopy[]>([]);
@@ -358,6 +377,19 @@ export default function AIPromptVault() {
   
   const searchInputRef = React.useRef<HTMLInputElement>(null);
   const fieldInputRef = React.useRef<HTMLInputElement>(null);
+  
+  // Return visit tracking
+  useEffect(() => {
+    try {
+      const last = localStorage.getItem(KEY_LAST_VISIT);
+      const now = Date.now();
+      if (last) {
+        const days = Math.max(0, Math.floor((now - Number(last)) / (1000 * 60 * 60 * 24)));
+        trackEvent('rpv:return_visit', { days_since_last: days });
+      }
+      localStorage.setItem(KEY_LAST_VISIT, String(now));
+    } catch {}
+  }, []);
   
   // Detect OS for paste-hint
   const isMac = useMemo(() => {
@@ -546,6 +578,11 @@ export default function AIPromptVault() {
       return () => darkModeMediaQuery.removeEventListener('change', handleSystemThemeChange);
     } catch {}
   }, [isKaleBranded, isEmbedMode, isProfileComplete]);
+
+  // Track home view variant (wizard vs library)
+  useEffect(() => {
+    trackEvent('rpv:view_home', { variant: wizardOpen ? 'wizard' : 'library' });
+  }, [wizardOpen]);
 
   // Search/filter prompts (using debounced search for performance)
   const filteredPrompts = useMemo(() => {
@@ -1207,6 +1244,240 @@ export default function AIPromptVault() {
     </svg>
   );
 
+  // ------- Wizard Config -------
+  type WizardChallenge = {
+    key: string;
+    label: string;
+    description: string;
+    defaultPromptTitle: string;
+    questions: { id: string; label: string; placeholder?: string; help?: string }[];
+    followups: string[];
+  };
+
+  const CHALLENGES: WizardChallenge[] = [
+    {
+      key: 'lead-gen',
+      label: 'Lead Generation',
+      description: 'Pick a channel and goal to start booking appointments',
+      defaultPromptTitle: '90-Day Inbound Lead Blueprint',
+      questions: [
+        { id: 'market', label: 'Your market/city', placeholder: 'e.g., Austin, TX' },
+        { id: 'niche', label: 'Your niche (optional)', placeholder: 'first-time buyers, luxury, investors' },
+        { id: 'channel', label: 'Primary channel', placeholder: 'Instagram, Email, Cold outreach' },
+      ],
+      followups: ['Landing Page CRO Audit', '7-Day Follow-Up Sequence']
+    },
+    {
+      key: 'listing',
+      label: 'Listing Launch',
+      description: 'Create high-converting property copy and launch assets',
+      defaultPromptTitle: 'Listing Description That Converts',
+      questions: [
+        { id: 'propertyType', label: 'Property type', placeholder: '3-bed single family, condo, townhome' },
+        { id: 'area', label: 'Area (address or neighborhood)', placeholder: 'e.g., Bouldin Creek, Austin' },
+        { id: 'features', label: '3–5 standout features', placeholder: 'chef kitchen, rooftop deck, EV charger' },
+        { id: 'tier', label: 'Positioning tier', placeholder: 'entry-level, mid-range, luxury' },
+      ],
+      followups: ['Open House Promo Pack', 'Pricing Strategy Script']
+    },
+    {
+      key: 'followup',
+      label: 'Follow-Up',
+      description: 'Turn more leads into conversations with timely messages',
+      defaultPromptTitle: '7-Day Follow-Up Sequence',
+      questions: [
+        { id: 'leadSource', label: 'Lead source', placeholder: 'Zillow, open house, IG DM, referral' },
+        { id: 'tone', label: 'Tone', placeholder: 'helpful, direct, friendly' },
+        { id: 'cadence', label: 'Cadence', placeholder: '7 days, 14 days' },
+      ],
+      followups: ['Review-to-Referral Bridge', 'Home-Anniversary Automation']
+    },
+    {
+      key: 'social',
+      label: 'Social Content',
+      description: 'Publish a month of content without the overwhelm',
+      defaultPromptTitle: 'Instagram Reels Calendar (30 Days)',
+      questions: [
+        { id: 'niche', label: 'Audience/niche', placeholder: 'relocators, luxury, first-time buyers' },
+        { id: 'goal', label: 'Primary goal', placeholder: 'reach, replies, appointments' },
+      ],
+      followups: ['90-Day Inbound Lead Blueprint']
+    },
+    {
+      key: 'buyer-prep',
+      label: 'Buyer Prep',
+      description: 'Set clear expectations and win in competitive markets',
+      defaultPromptTitle: 'Buyer Onboarding Journey',
+      questions: [
+        { id: 'market', label: 'Your market/city', placeholder: 'e.g., Denver, CO' },
+        { id: 'price', label: 'Price range (optional)', placeholder: '$400k–$700k' },
+        { id: 'urgency', label: 'Urgency', placeholder: 'moving in 60 days, just browsing' },
+      ],
+      followups: ['Multiple-Offer Strategy', 'Needs-Match Matrix']
+    },
+    {
+      key: 'systems',
+      label: 'Time & Systems',
+      description: 'Get your week under control and free up time',
+      defaultPromptTitle: 'Weekly Productivity Audit',
+      questions: [
+        { id: 'topGoal', label: 'Top outcome this week', placeholder: 'book 5 appts, prep new listing' },
+        { id: 'timePerDay', label: 'Time available per day', placeholder: 'e.g., 90 minutes' },
+      ],
+      followups: ['90-Day Inbound Lead Blueprint']
+    },
+  ];
+
+  const startWizard = () => {
+    setWizardOpen(true);
+    setWizardStep(1);
+    setWizardChallenge(null);
+    setWizardAnswers({});
+    setWizardResultText("");
+    setWizardSelectedPrompt(null);
+    trackEvent('rpv:wizard_start');
+  };
+
+  const dismissWizard = () => {
+    setWizardOpen(false);
+    try { localStorage.setItem(KEY_WIZARD_DISMISSED, 'true'); } catch {}
+  };
+
+  const selectChallenge = (key: string) => {
+    setWizardChallenge(key);
+    setWizardStep(2);
+    trackEvent('rpv:wizard_challenge_selected', { challenge: key });
+  };
+
+  const findPromptByTitle = (title: string): PromptItem | null => {
+    const p = allPrompts.find((pp: any) => (pp.title || '').toLowerCase() === title.toLowerCase());
+    return p || null;
+  };
+
+  const completeDrilldown = () => {
+    if (!wizardChallenge) return;
+    const config = CHALLENGES.find(c => c.key === wizardChallenge);
+    if (!config) return;
+    const prompt = findPromptByTitle(config.defaultPromptTitle);
+    setWizardSelectedPrompt(prompt);
+    // Build a context block from answers
+    const contextLines = Object.entries(wizardAnswers)
+      .filter(([, v]) => String(v || '').trim().length > 0)
+      .map(([k, v]) => `- ${k.replace(/([A-Z])/g, ' $1')}: ${v}`);
+    const context = contextLines.length > 0 ? `\n\nContext (use these to tailor the output):\n${contextLines.join('\n')}` : '';
+    const base = prompt ? buildFullPrompt(prompt) : 'You are an expert real estate marketing assistant. Create a high-quality output based on the details below.';
+    const finalText = `${base}${context}\n\nDeliver a complete, copy-ready result. Avoid demographic descriptors; keep lifestyle framing neutral.`;
+    setWizardResultText(finalText);
+    setWizardStep(3);
+    trackEvent('rpv:wizard_drilldown_complete', { challenge: wizardChallenge, q_count: Object.keys(wizardAnswers).length });
+  };
+
+  const copyAndOpenGPT = async () => {
+    try {
+      await navigator.clipboard.writeText(wizardResultText);
+      trackEvent('rpv:prompt_copy', { source: 'wizard', challenge: wizardChallenge });
+      if (GPT_STORE_URL) {
+        trackEvent('rpv:cta_gpt_click', { label: 'wizard_result' });
+        window.open(GPT_STORE_URL as string, '_blank');
+      }
+    } catch {}
+  };
+
+  const WizardModal: React.FC = () => {
+    if (!wizardOpen) return null;
+    return (
+      <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 4000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
+        <div style={{ background: 'var(--surface)', color: 'var(--text)', width: 'min(720px, 96vw)', borderRadius: 16, border: '1px solid var(--border)', boxShadow: 'var(--shadow-lg)', padding: 24 }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+            <h2 style={{ margin: 0, fontSize: 20, fontWeight: 800 }}>From blank page to ready-to-use in 60 seconds</h2>
+            <button onClick={dismissWizard} style={{ background: 'transparent', border: 'none', fontSize: 22, cursor: 'pointer' }} aria-label="Close wizard">×</button>
+          </div>
+          <p style={{ marginTop: 0, color: 'var(--muted)', fontSize: 14 }}>Tell us your challenge, we’ll drill down, and hand you the perfect prompt to paste into ChatGPT.</p>
+
+          {wizardStep === 1 && (
+            <div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 12, marginTop: 12 }}>
+                {CHALLENGES.map(c => (
+                  <button key={c.key} onClick={() => selectChallenge(c.key)} style={{ textAlign: 'left', padding: 16, background: 'var(--surface-hover)', border: '1px solid var(--border)', borderRadius: 12, cursor: 'pointer', transition: 'all 160ms ease' }}
+                    onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'var(--primary)'; e.currentTarget.style.transform = 'translateY(-2px)'; }}
+                    onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.transform = 'translateY(0)'; }}
+                  >
+                    <div style={{ fontWeight: 800, marginBottom: 6 }}>{c.label}</div>
+                    <div style={{ fontSize: 13, color: 'var(--muted)' }}>{c.description}</div>
+                  </button>
+                ))}
+              </div>
+              <div style={{ marginTop: 12, textAlign: 'right' }}>
+                <button onClick={dismissWizard} style={{ background: 'transparent', border: 'none', color: 'var(--muted)', textDecoration: 'underline', cursor: 'pointer', fontSize: 13 }}>Skip and browse the library →</button>
+              </div>
+            </div>
+          )}
+
+          {wizardStep === 2 && wizardChallenge && (
+            <div>
+              {(() => {
+                const c = CHALLENGES.find(x => x.key === wizardChallenge)!;
+                return (
+                  <div>
+                    <h3 style={{ marginTop: 0, fontSize: 16, fontWeight: 800 }}>{c.label}</h3>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                      {c.questions.map(q => (
+                        <div key={q.id}>
+                          <label style={{ display: 'block', fontSize: 13, fontWeight: 700, marginBottom: 6 }}>{q.label}</label>
+                          <input
+                            type="text"
+                            placeholder={q.placeholder}
+                            value={wizardAnswers[q.id] || ''}
+                            onChange={(e) => setWizardAnswers(prev => ({ ...prev, [q.id]: e.target.value }))}
+                            style={{ width: '100%', padding: '10px 12px', borderRadius: 10, border: '1px solid var(--border)', background: 'var(--surface)' }}
+                          />
+                          {q.help && <div style={{ fontSize: 12, color: 'var(--muted)', marginTop: 4 }}>{q.help}</div>}
+                        </div>
+                      ))}
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 16 }}>
+                      <button onClick={() => setWizardStep(1)} style={{ background: 'var(--surface-hover)', border: '1px solid var(--border)', borderRadius: 8, padding: '10px 14px', cursor: 'pointer' }}>← Back</button>
+                      <button onClick={completeDrilldown} style={{ background: 'var(--primary)', color: 'var(--text-inverse)', border: 'none', borderRadius: 8, padding: '10px 14px', cursor: 'pointer', fontWeight: 800 }}>See my tailored prompt →</button>
+                    </div>
+                  </div>
+                );
+              })()}
+            </div>
+          )}
+
+          {wizardStep === 3 && (
+            <div>
+              <h3 style={{ marginTop: 0, fontSize: 16, fontWeight: 800 }}>Your tailored prompt</h3>
+              <div style={{ background: 'var(--surface-hover)', border: '1px solid var(--border)', borderRadius: 12, padding: 12, maxHeight: 260, overflow: 'auto', whiteSpace: 'pre-wrap', fontFamily: 'var(--font-mono)', fontSize: 13 }}>
+                {wizardResultText}
+              </div>
+              <div style={{ display: 'flex', gap: 8, marginTop: 12, flexWrap: 'wrap' }}>
+                <button onClick={copyAndOpenGPT} style={{ background: 'linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%)', color: 'var(--text-inverse)', border: 'none', borderRadius: 10, padding: '10px 14px', fontWeight: 800, cursor: 'pointer' }}>Copy + Open ChatGPT →</button>
+                {wizardSelectedPrompt && (
+                  <button onClick={() => { setSelectedPrompt(wizardSelectedPrompt!); setWizardOpen(false); }} style={{ background: 'var(--surface-hover)', border: '1px solid var(--border)', borderRadius: 10, padding: '10px 14px', cursor: 'pointer' }}>Edit in app</button>
+                )}
+                <button onClick={dismissWizard} style={{ background: 'transparent', border: 'none', color: 'var(--muted)', textDecoration: 'underline', cursor: 'pointer' }}>Close</button>
+              </div>
+              {wizardChallenge && (
+                <div style={{ marginTop: 16 }}>
+                  <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 8 }}>Next best actions</div>
+                  <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                    {CHALLENGES.find(c => c.key === wizardChallenge)!.followups.map(f => (
+                      <button key={f} onClick={() => { trackEvent('rpv:followup_prompt_click', { label: f, source: 'wizard' }); const p = allPrompts.find((pp: any) => (pp.title || '').toLowerCase() === f.toLowerCase()); if (p) { setSelectedPrompt(p); setWizardOpen(false); } }}
+                        style={{ padding: '8px 12px', background: 'var(--badge-bg)', border: '1px solid var(--border)', borderRadius: 999, cursor: 'pointer', fontSize: 12 }}>
+                        {f}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  };
+
   // Loading overlay component
   const LoadingOverlay = () => (
     <div style={{
@@ -1256,6 +1527,7 @@ export default function AIPromptVault() {
 
   return (
     <>
+      <WizardModal />
       {isGenerating && <LoadingOverlay />}
       <div className="rpv-app rpv-container">
       {/* Header - hidden in embed mode */}
@@ -1300,6 +1572,37 @@ export default function AIPromptVault() {
               🧠 Use in ChatGPT →
             </button>
           )}
+          {/* Start Wizard CTA */}
+          <button
+            onClick={startWizard}
+            style={{
+              padding: "10px 14px",
+              background: "var(--surface-hover)",
+              border: "2px solid var(--border)",
+              borderRadius: "var(--radius-md)",
+              cursor: "pointer",
+              fontSize: 14,
+              fontWeight: 700,
+              color: "var(--text)",
+              transition: "all 200ms cubic-bezier(0.4, 0, 0.2, 1)",
+              display: "flex",
+              alignItems: "center",
+              gap: 8,
+              minHeight: 44,
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.transform = "translateY(-2px)";
+              e.currentTarget.style.borderColor = "var(--primary)";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.transform = "translateY(0)";
+              e.currentTarget.style.borderColor = "var(--border)";
+            }}
+            title="Start with your top challenge"
+            aria-label="Start wizard"
+          >
+            🧭 Start Wizard
+          </button>
           {/* Edit Profile button - only show if profile exists */}
           {isProfileComplete && (
             <button

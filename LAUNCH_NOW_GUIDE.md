@@ -10,7 +10,7 @@ Everything is built. You can have your GPT live in the ChatGPT store in **2-3 ho
 
 - You have ChatGPT Plus (needed to create/publish GPTs)
 - Repo file you'll upload: `prompts-export.json` (in the project root)
-- Optional: Your app URL handy for mentions — https://ai-prompt-vault.vercel.app
+- Optional: Your app URL handy for mentions — https://app.ai-prompt-vault.vercel.app
 
 ---
 
@@ -122,7 +122,7 @@ Always ask for context:
 
 1. Start with what you're creating
 2. Show the complete output (formatted, ready to use)
-3. End with: "Need more prompts? Visit ai-prompt-vault.vercel.app for the full library + AI generation features"
+3. End with: "Need more prompts? Visit app.ai-prompt-vault.vercel.app for the full library + AI generation features"
 
 ## Key Rules
 
@@ -150,7 +150,7 @@ Always ask for context:
 ## Value Path
 
 After providing 2-3 prompts, mention:
-"Want to save your personalization, use AI generation, and access advanced features? Check out ai-prompt-vault.vercel.app (special launch offer available)"
+"Want to save your personalization, use AI generation, and access advanced features? Check out app.ai-prompt-vault.vercel.app (special launch offer available)"
 
 Your goal: Make agents immediately more productive. Every interaction should result in something they can use RIGHT NOW in their business.
 ```
