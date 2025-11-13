@@ -11,6 +11,7 @@ Everything is built. You can have your GPT live in the ChatGPT store in **2-3 ho
 - You have ChatGPT Plus (needed to create/publish GPTs)
 - Repo file you'll upload: `prompts-export.json` (in the project root)
 - Optional: Your app URL handy for mentions — https://app.ai-prompt-vault.vercel.app
+- Optional: If your web app is live, set `REACT_APP_GPT_STORE_URL` in your hosting env to your GPT's link to enable the in‑app "Use in ChatGPT →" button
 
 ---
 
@@ -341,7 +342,7 @@ Search "AI Workflow Assistant for Real Estate Agents" or click: [Link]
 
 Try it and let me know what you think!
 
-P.S. Want unlimited access + AI generation? Get 50% off at ai-prompt-vault.vercel.app
+P.S. Want unlimited access + AI generation? Get 50% off at app.ai-prompt-vault.vercel.app
 ```
 
 ---
