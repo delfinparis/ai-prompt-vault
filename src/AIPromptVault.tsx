@@ -2635,11 +2635,11 @@ export default function AIPromptVault() {
                 <div style={{ display: "flex", flexDirection: "column", gap: 12, marginBottom: 32 }}>
                   <button
                     onClick={() => {
-                      const prompt = allPrompts.find(p => p.title === "90-Day Inbound Lead Blueprint");
+                      const prompt = allPrompts.find((p: any) => p.title === "90-Day Inbound Lead Blueprint");
                       if (prompt) {
                         setShowOnboarding(false);
                         localStorage.setItem(KEY_ONBOARDED, "true");
-                        setSelectedPrompt(prompt);
+                        selectPrompt(prompt);
                       }
                     }}
                     style={{
@@ -2658,11 +2658,11 @@ export default function AIPromptVault() {
                   </button>
                   <button
                     onClick={() => {
-                      const prompt = allPrompts.find(p => p.title === "Instagram Reels 30-Day Calendar");
+                      const prompt = allPrompts.find((p: any) => p.title === "Instagram Reels Calendar (30 Days)");
                       if (prompt) {
                         setShowOnboarding(false);
                         localStorage.setItem(KEY_ONBOARDED, "true");
-                        setSelectedPrompt(prompt);
+                        selectPrompt(prompt);
                       }
                     }}
                     style={{
@@ -2681,11 +2681,11 @@ export default function AIPromptVault() {
                   </button>
                   <button
                     onClick={() => {
-                      const prompt = allPrompts.find(p => p.title === "Listing Description (AI-Enhanced)");
+                      const prompt = allPrompts.find((p: any) => p.title === "Listing Lead Magnet Funnel");
                       if (prompt) {
                         setShowOnboarding(false);
                         localStorage.setItem(KEY_ONBOARDED, "true");
-                        setSelectedPrompt(prompt);
+                        selectPrompt(prompt);
                       }
                     }}
                     style={{
@@ -2700,7 +2700,7 @@ export default function AIPromptVault() {
                       color: "var(--text)",
                     }}
                   >
-                    ✍️ Write a Listing Description
+                    ✍️ Create a Lead Magnet Funnel
                   </button>
                 </div>
                 <button
