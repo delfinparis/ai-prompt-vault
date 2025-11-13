@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useMemo, useEffect } from "react";
+import React, { useState, useMemo, useEffect, useCallback } from "react";
 import confetti from "canvas-confetti";
 import "./AIPromptVault.css";
 import { prompts as fullPrompts } from "./prompts";
@@ -155,6 +155,7 @@ export default function AIPromptVault() {
   const [generatedOutput, setGeneratedOutput] = useState<string | null>(null);
   const [savedOutputs, setSavedOutputs] = useState<GeneratedOutput[]>([]);
   const [showUpgradeModal, setShowUpgradeModal] = useState<boolean>(false);
+  const [showKeyboardShortcuts, setShowKeyboardShortcuts] = useState<boolean>(false);
   
   // Detect Kale branding from URL parameter
   const isKaleBranded = useMemo(() => {
@@ -321,62 +322,6 @@ export default function AIPromptVault() {
     } catch {}
   }, [isKaleBranded, isEmbedMode]);
 
-  // Keyboard shortcuts
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      // Cmd/Ctrl+K to focus search
-      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
-        e.preventDefault();
-        searchInputRef.current?.focus();
-        return;
-      }
-      
-      // Escape to close modals or clear search
-      if (e.key === 'Escape') {
-        if (selectedPrompt) {
-          setSelectedPrompt(null);
-        } else if (showOnboarding) {
-          setShowOnboarding(false);
-          localStorage.setItem(KEY_ONBOARDED, 'true');
-        } else if (showFollowUps) {
-          setShowFollowUps(false);
-        } else if (search) {
-          setSearch('');
-          searchInputRef.current?.blur();
-        }
-        return;
-      }
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [selectedPrompt, showOnboarding, showFollowUps, search]);
-
-    // Keyboard shortcuts
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      // "/" to focus search
-      if (e.key === "/" && !selectedPrompt) {
-        e.preventDefault();
-        searchInputRef.current?.focus();
-      }
-      // ESC to close modal or clear search
-      if (e.key === "Escape") {
-        if (selectedPrompt) {
-          setSelectedPrompt(null);
-        } else if (search || activeTag) {
-          setSearch("");
-          setActiveTag(null);
-        }
-      }
-      // Enter to copy in modal (removed to avoid dependency issue)
-    };
-
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedPrompt, search, activeTag]);
-
   // Search/filter prompts
   const filteredPrompts = useMemo(() => {
     let filtered = allPrompts;
@@ -540,7 +485,7 @@ export default function AIPromptVault() {
   };
 
   // Copy handler
-  const handleCopy = async (prompt: PromptItem) => {
+  const handleCopy = useCallback(async (prompt: PromptItem) => {
     const fullText = buildFullPrompt(prompt);
     const finalText = applyReplacements(fullText, fieldValues);
     
@@ -616,7 +561,60 @@ export default function AIPromptVault() {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     }
-  };
+  }, [fieldValues, copyCounts, recentlyCopied, sessionHistory, getEnhancedSuggestions, recordSequence]);
+
+  // Keyboard shortcuts (consolidated)
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
+      const modifier = isMac ? e.metaKey : e.ctrlKey;
+      const isInputFocused = document.activeElement?.tagName === 'INPUT' || document.activeElement?.tagName === 'TEXTAREA';
+      
+      // ⌘K or Ctrl+K to focus search
+      if (modifier && e.key === 'k') {
+        e.preventDefault();
+        searchInputRef.current?.focus();
+        return;
+      }
+      
+      // ? to show keyboard shortcuts help
+      if (e.key === '?' && !isInputFocused) {
+        e.preventDefault();
+        setShowKeyboardShortcuts(true);
+        return;
+      }
+      
+      // Escape to close modals or clear search (priority order)
+      if (e.key === 'Escape') {
+        if (showKeyboardShortcuts) {
+          setShowKeyboardShortcuts(false);
+        } else if (showUpgradeModal) {
+          setShowUpgradeModal(false);
+        } else if (selectedPrompt) {
+          setSelectedPrompt(null);
+        } else if (showOnboarding) {
+          setShowOnboarding(false);
+          localStorage.setItem(KEY_ONBOARDED, 'true');
+        } else if (showFollowUps) {
+          setShowFollowUps(false);
+        } else if (search) {
+          setSearch('');
+          searchInputRef.current?.blur();
+        }
+        return;
+      }
+      
+      // ⌘Enter or Ctrl+Enter to copy when modal is open
+      if (modifier && e.key === 'Enter' && selectedPrompt && !isInputFocused) {
+        e.preventDefault();
+        handleCopy(selectedPrompt);
+        return;
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [selectedPrompt, showOnboarding, showFollowUps, showUpgradeModal, showKeyboardShortcuts, search, handleCopy]);
 
   // Export prompt as .txt file
   const handleExport = (prompt: PromptItem) => {
@@ -869,13 +867,28 @@ export default function AIPromptVault() {
             position: "absolute",
             top: 0,
             right: 0,
-            padding: "8px 12px",
-            background: "transparent",
+            padding: "10px 14px",
+            background: "var(--surface-hover)",
             border: "2px solid var(--border)",
-            borderRadius: "var(--radius-sm)",
+            borderRadius: "var(--radius-md)",
             cursor: "pointer",
-            fontSize: 18,
-            transition: "all 180ms ease",
+            fontSize: 20,
+            transition: "all 200ms cubic-bezier(0.4, 0, 0.2, 1)",
+            display: "flex",
+            alignItems: "center",
+            gap: 6,
+            minHeight: 44,
+            minWidth: 44,
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.background = "var(--surface-elevated)";
+            e.currentTarget.style.transform = "scale(1.05)";
+            e.currentTarget.style.borderColor = "var(--border-hover)";
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.background = "var(--surface-hover)";
+            e.currentTarget.style.transform = "scale(1)";
+            e.currentTarget.style.borderColor = "var(--border)";
           }}
           title={
             getDarkModeState() === 'auto' 
@@ -884,6 +897,7 @@ export default function AIPromptVault() {
               ? 'Dark mode. Click for light mode.'
               : 'Light mode. Click for auto mode.'
           }
+          aria-label={`Toggle dark mode. Current: ${getDarkModeState()}`}
         >
           {darkMode ? "☀️" : "🌙"}
         </button>
@@ -2858,6 +2872,125 @@ export default function AIPromptVault() {
               onMouseLeave={(e) => e.currentTarget.style.color = "#64748b"}
             >
               Maybe Later
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Keyboard Shortcuts Help Modal */}
+      {showKeyboardShortcuts && (
+        <div
+          onClick={() => setShowKeyboardShortcuts(false)}
+          style={{
+            position: "fixed",
+            inset: 0,
+            background: "rgba(0, 0, 0, 0.6)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 3000,
+            backdropFilter: "blur(4px)",
+            padding: 20,
+          }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              background: "var(--surface)",
+              borderRadius: 16,
+              maxWidth: 480,
+              width: "100%",
+              padding: 32,
+              boxShadow: "0 24px 48px rgba(0,0,0,0.2)",
+            }}
+          >
+            <div style={{ display: "flex", alignItems: "center", marginBottom: 24 }}>
+              <div style={{ fontSize: 32, marginRight: 12 }}>⌨️</div>
+              <h2 style={{ fontSize: 24, fontWeight: 700, color: "var(--text)", margin: 0 }}>
+                Keyboard Shortcuts
+              </h2>
+            </div>
+
+            <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+              {[
+                { keys: ["⌘", "K"], or: "Ctrl+K", action: "Focus search" },
+                { keys: ["⌘", "↵"], or: "Ctrl+Enter", action: "Copy prompt" },
+                { keys: ["Esc"], action: "Close modal / Clear search" },
+                { keys: ["?"], action: "Show this help" },
+              ].map((shortcut, i) => (
+                <div
+                  key={i}
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                  }}
+                >
+                  <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+                    {shortcut.keys.map((key, j) => (
+                      <div
+                        key={j}
+                        style={{
+                          padding: "4px 10px",
+                          background: "var(--surface-hover)",
+                          border: "1.5px solid var(--border)",
+                          borderRadius: 6,
+                          fontSize: 13,
+                          fontWeight: 600,
+                          color: "var(--text)",
+                          minWidth: 28,
+                          textAlign: "center",
+                          fontFamily: "ui-monospace, monospace",
+                        }}
+                      >
+                        {key}
+                      </div>
+                    ))}
+                    {shortcut.or && (
+                      <>
+                        <span style={{ fontSize: 12, color: "var(--muted)", marginLeft: 4 }}>
+                          or
+                        </span>
+                        <div
+                          style={{
+                            padding: "4px 10px",
+                            background: "var(--surface-hover)",
+                            border: "1.5px solid var(--border)",
+                            borderRadius: 6,
+                            fontSize: 13,
+                            fontWeight: 600,
+                            color: "var(--text)",
+                            fontFamily: "ui-monospace, monospace",
+                          }}
+                        >
+                          {shortcut.or}
+                        </div>
+                      </>
+                    )}
+                  </div>
+                  <div style={{ fontSize: 14, color: "var(--text-secondary)" }}>
+                    {shortcut.action}
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <button
+              onClick={() => setShowKeyboardShortcuts(false)}
+              style={{
+                marginTop: 24,
+                width: "100%",
+                padding: "12px 24px",
+                background: "var(--primary)",
+                color: "var(--text-inverse)",
+                border: "none",
+                borderRadius: 8,
+                fontSize: 15,
+                fontWeight: 600,
+                cursor: "pointer",
+              }}
+            >
+              Got it!
             </button>
           </div>
         </div>
