@@ -42,6 +42,7 @@ export const labelOverrides: Record<string, LabelOverride[]> = {
   ],
 
   "Module 4 — Listing & Buyer Presentations": [
+    { match: "Listing Description That Converts", title: "Listing Description Writer", subtitle: "High-converting, compliant property copy + CTAs." },
     { match: "Pricing Strategy Script", title: "Win the Pricing Talk", subtitle: "Analogy → data → position → clear CTA." },
     { match: "Commission Value Conversation", title: "Defend Your Fee", subtitle: "Acknowledge, reframe value, choice-close scripts." },
     { match: "FSBO Conversion Sequence", title: "Convert FSBOs", subtitle: "3 calls + 3 texts with compliance-safe language." },

@@ -1,7 +1,7 @@
 {
   "version": "1.0",
   "exported": "2025-11-13T13:09:08.741Z",
-  "totalPrompts": 83,
+  "totalPrompts": 84,
   "categories": [
     "Marketing & Lead Generation",
     "Daily Systems & Productivity",
@@ -590,6 +590,20 @@
       "deliverable": "How to respond when sellers ask you to lower your fee",
       "quick": "Handle ‘lower your commission’: acknowledge→value reframe→choice close.",
       "success": "≥70% full fee retention."
+    },
+    {
+      "id": "listings-buyer-presentations-2",
+      "title": "Listing Description That Converts",
+      "category": "Listings & Buyer Presentations",
+      "tags": [
+        "listing",
+        "description",
+        "marketing"
+      ],
+      "role": "listing copy specialist",
+      "deliverable": "Headline + 180–300 word description + 3 CTA variations + 8–12 hashtag suggestions",
+      "quick": "Write a compelling listing description for [property type - example: 3-bedroom single-family home, 2-bed downtown condo, new-build townhome] at [full address - example: 1234 Oak Ridge Drive] in [city/state - example: Austin, TX]. Highlight [3 standout features - example: chef kitchen, rooftop deck, energy-efficient windows], include lifestyle hooks, fair housing–compliant language, and a strong call-to-action.",
+      "success": "≥3 qualified inquiries in first 7 days."
     },
     {
       "id": "client-service-follow-up-0",

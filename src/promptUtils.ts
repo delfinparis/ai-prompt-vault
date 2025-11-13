@@ -121,8 +121,9 @@ export function extractPlaceholders(prompt: PromptItem): string[] {
 }
 
 // Get helpful description and example for a placeholder
-export function getPlaceholderHelp(placeholder: string): { description: string; example: string } {
+export function getPlaceholderHelp(placeholder: string, promptTitle?: string): { description: string; example: string } {
   const lower = placeholder.toLowerCase();
+  const titleLower = promptTitle?.toLowerCase() || '';
   
   // KPIs and Goals - super specific
   if (lower.includes('kpi') || lower === 'list' || lower.includes('your specific goals')) {
@@ -171,8 +172,15 @@ export function getPlaceholderHelp(placeholder: string): { description: string; 
     };
   }
   
-  // X - Context-specific number (most common in prompts)
+  // X - Context-specific number (most common in prompts) with prompt-specific override
   if (lower === 'x') {
+    // Special case: 90-Day Inbound Lead Blueprint – we want timeline clarity
+    if (titleLower.includes('90-day inbound lead blueprint')) {
+      return {
+        description: "Number of days until first milestone or review (common = 30)",
+        example: "30"
+      };
+    }
     return {
       description: "Enter a specific number (days, agents, properties, transactions, etc. - depends on context)",
       example: "30"
@@ -194,11 +202,11 @@ export function getPlaceholderHelp(placeholder: string): { description: string; 
     };
   }
   
-  // Budget/Money - clear format
+  // Budget/Money - clear format (lower CPL example for marketing context)
   if (lower.includes('$') || lower.includes('budget') || lower.includes('price') || lower.includes('cost')) {
     return {
       description: "Dollar amount (you can skip the $ symbol)",
-      example: "5000"
+      example: "200"
     };
   }
   
@@ -320,6 +328,14 @@ export function getPlaceholderHelp(placeholder: string): { description: string; 
     return {
       description: "The price range for properties (use format: $XXX,XXX - $XXX,XXX)",
       example: "$300,000 - $500,000"
+    };
+  }
+  
+  // FSBO situation refinement
+  if (cleanPlaceholder.includes('describe their situation')) {
+    return {
+      description: "Describe the seller's situation in plain language (motivation, timing, constraint)",
+      example: "Inherited property; wants quick sale before probate finishes"
     };
   }
   

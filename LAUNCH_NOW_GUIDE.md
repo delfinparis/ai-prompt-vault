@@ -6,6 +6,14 @@ Everything is built. You can have your GPT live in the ChatGPT store in **2-3 ho
 
 ---
 
+## Quick prep checklist (2 minutes)
+
+- You have ChatGPT Plus (needed to create/publish GPTs)
+- Repo file you'll upload: `prompts-export.json` (in the project root)
+- Optional: Your app URL handy for mentions — https://ai-prompt-vault.vercel.app
+
+---
+
 ## Step 1: Go to GPT Builder (5 minutes)
 
 1. Open: https://chat.openai.com/gpts/editor
@@ -59,6 +67,41 @@ When users ask for help:
 4. **Execute** - Generate the complete, ready-to-use output
 5. **Offer next steps** - Suggest related prompts or workflows
 
+### Multi-turn follow-up guidance
+After delivering a response to one of the conversation starters, suggest 2-3 related prompts that form a natural workflow:
+
+**After "Listing Description That Converts":**
+- "Pricing Strategy Script" (set the right price after you write compelling copy)
+- "Open House Promo Pack" (drive traffic to your new listing)
+- "Listing Refresh Plan" (know how to pivot if it sits too long)
+
+**After "Create a FSBO conversion script for my market":**
+- "Commission Value Conversation" (handle fee objections with confidence)
+- "Listing Launch Timeline (T-14→T+14)" (show them what they're missing without you)
+- "Pricing Strategy Script" (win the pricing conversation upfront)
+
+**After "Build my 90-day marketing plan":**
+- "Instagram Reels Calendar (30 Days)" (execute content for first 30 days)
+- "Local SEO Starter Kit" (build organic visibility alongside ads)
+- "Weekly Productivity Audit" (free up time to execute the plan)
+
+**After "Write a sphere nurture email campaign":**
+- "Review-to-Referral Bridge" (turn happy clients into referral sources)
+- "Home-Anniversary Automation" (stay top-of-mind with past clients)
+- "Client-Appreciation Event" (deepen relationships beyond email)
+
+**After "Generate a buyer presentation outline":**
+- "Multiple-Offer Strategy" (prepare buyers for competitive markets)
+- "Buyer Onboarding Journey" (set clear expectations from day one)
+- "Needs-Match Matrix" (help buyers prioritize what matters)
+
+**After "Show me prompts for lead generation":**
+- "90-Day Inbound Lead Blueprint" (build a complete lead gen system)
+- "Landing Page CRO Audit" (optimize your lead capture pages)
+- "7-Day Follow-Up Sequence" (convert more leads with better follow-up)
+
+Example delivery: "Great start! To complete this workflow, I recommend [Prompt Title] next — it'll [reason]. Want me to generate that?"
+
 ## Personalization is Key
 
 Always ask for context:
@@ -66,6 +109,14 @@ Always ask for context:
 - Niche (e.g., "first-time buyers", "luxury condos")
 - Tools they use (CRM, marketing platforms)
 - Current goals or challenges
+\
+### Listing Description Inputs (always gather these before writing one)
+- Property type (e.g., 3-bedroom single-family, downtown condo, new-build townhome)
+- Full address OR general area if privacy needed
+- 3–5 standout features (chef kitchen, rooftop deck, energy-efficient windows)
+- Target buyer profile (young professionals, move-up families, investors)
+- Price range or positioning tier (entry-level, mid-range, luxury)
+- Compliance reminders: avoid demographic descriptors; no references to protected classes; keep lifestyle framing neutral.
 
 ## Response Format
 
@@ -110,7 +161,7 @@ Your goal: Make agents immediately more productive. Every interaction should res
 
 Add these 6 conversation starters:
 
-1. **"Help me write a listing description that converts"**
+1. **"Listing Description That Converts"**
 2. **"Create a FSBO conversion script for my market"**
 3. **"Build my 90-day marketing plan"**
 4. **"Write a sphere nurture email campaign"**
@@ -126,7 +177,9 @@ Add these 6 conversation starters:
 3. Upload the file: `prompts-export.json` (located in your project root)
 4. Wait for it to process
 
-This gives the GPT access to all 83 prompts without needing an API!
+This gives the GPT access to all 84 prompts without needing an API!
+
+Note on counts: The web app ships with 120+ prompts, while the current knowledge file includes 84 (see the `totalPrompts` field inside `prompts-export.json`). That’s normal for MVP launch. If you expand the library later, just upload a fresh `prompts-export.json` to update your GPT’s knowledge.
 
 ---
 
@@ -346,7 +399,7 @@ Track these numbers:
 
 Everything you need is in your repo:
 
-- `prompts-export.json` - Upload this as knowledge
+- `prompts-export.json` - Upload this as knowledge (currently 84 prompts; upload a refreshed export later if you add more)
 - `GPT_CONFIG.md` - Full configuration reference
 - `GPT_STORE_STRATEGY.md` - Marketing strategy
 - `GPT_LAUNCH_WORKAROUND.md` - Why we're not using API (yet)

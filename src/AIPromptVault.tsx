@@ -22,6 +22,42 @@ const KEY_SESSION_HISTORY = "rpv:sessionHistory";
 const KEY_GENERATION_COUNT = "rpv:generationCount";
 const KEY_SAVED_OUTPUTS = "rpv:savedOutputs";
 
+// Static follow-up mapping for conversation starters (curated for multi-turn depth)
+// Referenced in LAUNCH_NOW_GUIDE.md for GPT instructions; reserved for future web app integration
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+const STARTER_FOLLOW_UPS: Record<string, { title: string; reason: string }[]> = {
+  "Listing Description That Converts": [
+    { title: "Pricing Strategy Script", reason: "Set the right price after you write compelling copy" },
+    { title: "Open House Promo Pack", reason: "Drive traffic to your new listing" },
+    { title: "Listing Refresh Plan", reason: "Know how to pivot if it sits too long" }
+  ],
+  "Create a FSBO conversion script for my market": [
+    { title: "Commission Value Conversation", reason: "Handle fee objections with confidence" },
+    { title: "Listing Launch Timeline (T-14→T+14)", reason: "Show them what they're missing without you" },
+    { title: "Pricing Strategy Script", reason: "Win the pricing conversation upfront" }
+  ],
+  "Build my 90-day marketing plan": [
+    { title: "Instagram Reels Calendar (30 Days)", reason: "Execute content for first 30 days" },
+    { title: "Local SEO Starter Kit", reason: "Build organic visibility alongside ads" },
+    { title: "Weekly Productivity Audit", reason: "Free up time to execute the plan" }
+  ],
+  "Write a sphere nurture email campaign": [
+    { title: "Review-to-Referral Bridge", reason: "Turn happy clients into referral sources" },
+    { title: "Home-Anniversary Automation", reason: "Stay top-of-mind with past clients" },
+    { title: "Client-Appreciation Event", reason: "Deepen relationships beyond email" }
+  ],
+  "Generate a buyer presentation outline": [
+    { title: "Multiple-Offer Strategy", reason: "Prepare buyers for competitive markets" },
+    { title: "Buyer Onboarding Journey", reason: "Set clear expectations from day one" },
+    { title: "Needs-Match Matrix", reason: "Help buyers prioritize what matters" }
+  ],
+  "Show me prompts for lead generation": [
+    { title: "90-Day Inbound Lead Blueprint", reason: "Build a complete lead gen system" },
+    { title: "Landing Page CRO Audit", reason: "Optimize your lead capture pages" },
+    { title: "7-Day Follow-Up Sequence", reason: "Convert more leads with better follow-up" }
+  ]
+};
+
 // Free tier limits
 // const FREE_PROMPTS_PER_MONTH = 10; // Reserved for future paywall
 const FREE_GENERATIONS_PER_MONTH = 3;
@@ -47,7 +83,7 @@ const MODULE_TAGS: Record<number, string[]> = {
   1: ["leads", "marketing", "content"],
   2: ["systems", "productivity", "workflow"],
   3: ["goals", "planning", "accountability"],
-  4: ["listing", "buyer", "presentation"],
+   4: ["listing", "buyer", "presentation", "listing-toolkit"],
   5: ["client", "service", "followup"],
   6: ["finance", "profit", "budget"],
   7: ["negotiation", "deals", "strategy"],
@@ -117,6 +153,74 @@ const trackEvent = (name: string, data?: Record<string, any>) => {
   } catch {}
 };
 
+/* ---------- Placeholder Refinement & Overrides ---------- */
+// Removes non-user-input placeholders and fixes nested bracket artifacts.
+export function refinePlaceholders(list: string[], promptTitle: string): string[] {
+  return list
+    .map(ph => ph.trim())
+    // Drop directive / non-input placeholders
+    .filter(ph => !/plain, compliant language/i.test(ph))
+    // Remove broken nested bracket artifacts (outer chunks that still contain '[')
+    .filter(ph => !ph.includes('['))
+    // Deduplicate
+    .filter((ph, i, arr) => arr.indexOf(ph) === i);
+}
+
+// Apply contextual overrides for description/example while reusing existing help logic.
+export function getEffectiveHelp(placeholder: string, promptTitle: string): { description: string; example: string } {
+  const lower = placeholder.toLowerCase();
+
+  // FSBO situation override
+  if (lower.includes('describe their situation')) {
+    return {
+      description: "Describe the seller's specific situation (motivation, timing pressure, condition)",
+      example: "Inherited property; wants fast sale before probate closes"
+    };
+  }
+
+  // Target cost per lead override
+  if (lower.includes('target cost per lead')) {
+    return {
+      description: "Target cost per lead (number only, no $)",
+      example: "200"
+    };
+  }
+
+  // Context-aware override for the generic placeholder "X"
+  if (lower.trim() === 'x') {
+    // Special-case: 90-Day plan prefers a days-focused frame
+    if (/90-Day Inbound Lead Blueprint/i.test(promptTitle)) {
+      return {
+        description: "Number of days for the first execution milestone (focus period before optimization)",
+        example: "30"
+      };
+    }
+
+    const looksLikeDays = /(timeline|day|days|schedule|calendar|plan|sprint|countdown|launch)/i.test(promptTitle);
+    const looksLikeBudget = /(budget|ad\b|ads\b|facebook|instagram|youtube|ppc|cpl|cost|spend|marketing)/i.test(promptTitle);
+
+    if (looksLikeDays && !looksLikeBudget) {
+      return {
+        description: "Number of days (just the number)",
+        example: "30"
+      };
+    }
+    if (looksLikeBudget && !looksLikeDays) {
+      return {
+        description: "Budget number (just the number, no $)",
+        example: "200"
+      };
+    }
+    return {
+      description: "Timeline or budget number (just the number)",
+      example: "30"
+    };
+  }
+
+  // Fall back to existing helper
+  return getPlaceholderHelp(placeholder);
+}
+
 /* ---------- Main Component ---------- */
 export default function AIPromptVault() {
   const [search, setSearch] = useState("");
@@ -156,6 +260,8 @@ export default function AIPromptVault() {
   const [savedOutputs, setSavedOutputs] = useState<GeneratedOutput[]>([]);
   const [showUpgradeModal, setShowUpgradeModal] = useState<boolean>(false);
   const [showKeyboardShortcuts, setShowKeyboardShortcuts] = useState<boolean>(false);
+  const [useDefaults, setUseDefaults] = useState<boolean>(false);
+  const [defaultsAppliedCount, setDefaultsAppliedCount] = useState<number>(0);
   
   // Detect Kale branding from URL parameter
   const isKaleBranded = useMemo(() => {
@@ -179,6 +285,32 @@ export default function AIPromptVault() {
   
   const searchInputRef = React.useRef<HTMLInputElement>(null);
   const fieldInputRef = React.useRef<HTMLInputElement>(null);
+  
+  // Detect OS for paste-hint
+  const isMac = useMemo(() => {
+    try {
+      return /Mac|iPhone|iPad|iPod/i.test(navigator.userAgent);
+    } catch {
+      return false;
+    }
+  }, []);
+
+  // Apply saved defaults into current placeholder fields (fill only empty ones)
+  const applyDefaultsForPlaceholders = useCallback((placeholders: string[]): number => {
+    if (!placeholders || placeholders.length === 0) return 0;
+    let applied = 0;
+    const next = { ...fieldValues };
+    placeholders.forEach((ph) => {
+      if (!next[ph] && savedFieldValues[ph]) {
+        next[ph] = savedFieldValues[ph];
+        applied++;
+      }
+    });
+    if (applied > 0) {
+      setFieldValues(next);
+    }
+    return applied;
+  }, [fieldValues, savedFieldValues]);
 
   // Load all prompts with tags
   const allPrompts = useMemo(() => {
@@ -489,6 +621,8 @@ export default function AIPromptVault() {
     const fullText = buildFullPrompt(prompt);
     const finalText = applyReplacements(fullText, fieldValues);
     
+    // Add UTM tracking to GPT deep-link when opening ChatGPT (if used later)
+    const utmParams = 'utm_source=app&utm_medium=copy&utm_campaign=gpt-link';
     try {
       await navigator.clipboard.writeText(finalText);
       setCopied(true);
@@ -549,7 +683,7 @@ export default function AIPromptVault() {
         localStorage.setItem(KEY_FIRST_COPY, 'true');
       }
       
-      trackEvent("prompt_copied", { title: prompt.title, module: prompt.module });
+  trackEvent("prompt_copied", { title: prompt.title, module: prompt.module, utm: utmParams });
     } catch (err) {
       // Fallback
       const textarea = document.createElement("textarea");
@@ -640,12 +774,12 @@ export default function AIPromptVault() {
 
   // Generate AI output
   const handleGenerate = async (prompt: PromptItem) => {
-    // Check usage limits (free tier)
-    if (generationCount >= FREE_GENERATIONS_PER_MONTH) {
-      setShowUpgradeModal(true);
-      trackEvent("generation_limit_hit", { count: generationCount });
-      return;
-    }
+    // Check usage limits (free tier) - DISABLED FOR NOW
+    // if (generationCount >= FREE_GENERATIONS_PER_MONTH) {
+    //   setShowUpgradeModal(true);
+    //   trackEvent("generation_limit_hit", { count: generationCount });
+    //   return;
+    // }
 
     setIsGenerating(true);
     setGeneratedOutput(null);
@@ -1578,14 +1712,34 @@ export default function AIPromptVault() {
                 </p>
               </div>
             )}
+            {selectedPrompt.title === "Listing Description That Converts" && (
+              <div style={{
+                background: "var(--warning-bg)",
+                border: "1px solid var(--warning)",
+                borderRadius: "var(--radius-sm)",
+                padding: "10px 14px",
+                marginBottom: 16,
+              }}>
+                <p style={{
+                  fontSize: 12,
+                  margin: 0,
+                  lineHeight: 1.5,
+                  color: "var(--warning-text)",
+                  fontWeight: 500
+                }}>
+                  ⚖️ Fair Housing Reminder: Avoid demographic descriptors (age, family status, ethnicity, religion, disability). Use neutral lifestyle phrasing ("near parks" vs. "great for families"). Don’t imply exclusivity or preference. Double-check for anything that could reference protected classes before publishing.
+                </p>
+              </div>
+            )}
 
             {/* Editable Fields - DocuSign Style Progressive Flow */}
             {(() => {
-              const placeholders = extractPlaceholders(selectedPrompt);
+              const rawPlaceholders = extractPlaceholders(selectedPrompt);
+              const placeholders = refinePlaceholders(rawPlaceholders, selectedPrompt.title);
               if (placeholders.length > 0) {
                 const currentField = placeholders[currentFieldIndex];
                 const isLastField = currentFieldIndex === placeholders.length - 1;
-                const helpInfo = getPlaceholderHelp(currentField);
+                const helpInfo = getEffectiveHelp(currentField, selectedPrompt.title);
 
                 return (
                   <div style={{ marginBottom: 20 }}>
@@ -1593,13 +1747,39 @@ export default function AIPromptVault() {
                     <div style={{ marginBottom: 20 }}>
                       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
                         <h3 style={{ fontSize: 15, fontWeight: 600, color: "var(--text)" }}>
-                          Quick Setup
+                          Quick Setup (1–2 min)
                         </h3>
                         <span style={{ fontSize: 13, color: "var(--muted)", fontWeight: 500 }}>
                           Step {currentFieldIndex + 1} of {placeholders.length}
                         </span>
                       </div>
                       
+                      {/* Use My Defaults toggle */}
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
+                        <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13, color: "var(--text)" }}>
+                          <input
+                            type="checkbox"
+                            checked={useDefaults}
+                            onChange={(e) => {
+                              const checked = e.target.checked;
+                              setUseDefaults(checked);
+                              if (checked) {
+                                const count = applyDefaultsForPlaceholders(placeholders);
+                                setDefaultsAppliedCount(count);
+                              } else {
+                                setDefaultsAppliedCount(0);
+                              }
+                            }}
+                          />
+                          Use my defaults
+                        </label>
+                        {useDefaults && (
+                          <span style={{ fontSize: 12, color: "var(--muted)" }}>
+                            {defaultsAppliedCount > 0 ? `Filled ${defaultsAppliedCount} of ${placeholders.length}` : `No saved values found`}
+                          </span>
+                        )}
+                      </div>
+
                       {/* Progress bar */}
                       <div style={{ 
                         height: 4, 
@@ -1731,7 +1911,28 @@ export default function AIPromptVault() {
                         ← Back
                       </button>
 
-                      <div style={{ display: "flex", gap: 8 }}>
+                      <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                        {/* Skip for now: show base prompt immediately */}
+                        <button
+                          onClick={() => {
+                            const fullText = buildFullPrompt(selectedPrompt);
+                            const finalText = applyReplacements(fullText, fieldValues);
+                            setGeneratedOutput(finalText);
+                            trackEvent("personalize_skip", { promptTitle: selectedPrompt.title });
+                          }}
+                          style={{
+                            padding: "8px 10px",
+                            fontSize: 13,
+                            color: "var(--muted)",
+                            background: "transparent",
+                            border: "none",
+                            cursor: "pointer",
+                            textDecoration: "underline",
+                          }}
+                        >
+                          Skip for now
+                        </button>
+
                         {!isLastField ? (
                           <button
                             onClick={() => setCurrentFieldIndex(currentFieldIndex + 1)}
@@ -1749,44 +1950,27 @@ export default function AIPromptVault() {
                             Next →
                           </button>
                         ) : (
-                          <>
-                            <button
-                              onClick={() => handleCopy(selectedPrompt)}
-                              style={{
-                                padding: "12px 24px",
-                                fontSize: 15,
-                                fontWeight: 600,
-                                color: "var(--text-inverse)",
-                                background: "var(--primary)",
-                                border: "none",
-                                borderRadius: "var(--radius-sm)",
-                                cursor: "pointer",
-                              }}
-                            >
-                              📋 Copy Prompt
-                            </button>
-                            <button
-                              onClick={() => handleGenerate(selectedPrompt)}
-                              disabled={isGenerating}
-                              style={{
-                                padding: "12px 24px",
-                                fontSize: 15,
-                                fontWeight: 600,
-                                color: "#fff",
-                                background: isGenerating 
-                                  ? "#94a3b8" 
-                                  : "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-                                border: "none",
-                                borderRadius: "var(--radius-sm)",
-                                cursor: isGenerating ? "not-allowed" : "pointer",
-                                transition: "all 160ms ease",
-                                opacity: isGenerating ? 0.7 : 1,
-                                whiteSpace: "nowrap",
-                              }}
-                            >
-                              {isGenerating ? "⏳..." : `✨ Generate (${FREE_GENERATIONS_PER_MONTH - generationCount} left)`}
-                            </button>
-                          </>
+                          <button
+                            onClick={() => handleGenerate(selectedPrompt)}
+                            disabled={isGenerating}
+                            style={{
+                              padding: "12px 24px",
+                              fontSize: 15,
+                              fontWeight: 600,
+                              color: "#fff",
+                              background: isGenerating 
+                                ? "#94a3b8" 
+                                : "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+                              border: "none",
+                              borderRadius: "var(--radius-sm)",
+                              cursor: isGenerating ? "not-allowed" : "pointer",
+                              transition: "all 160ms ease",
+                              opacity: isGenerating ? 0.7 : 1,
+                              whiteSpace: "nowrap",
+                            }}
+                          >
+                            {isGenerating ? "⏳ Personalizing..." : "✨ Personalize Prompt"}
+                          </button>
                         )}
                       </div>
                     </div>
@@ -1817,7 +2001,7 @@ export default function AIPromptVault() {
 
             {/* Action Buttons - Only show if no fields OR all fields viewed */}
             {(() => {
-              const placeholders = extractPlaceholders(selectedPrompt);
+              const placeholders = refinePlaceholders(extractPlaceholders(selectedPrompt), selectedPrompt.title);
               const hasFields = placeholders.length > 0;
               
               // Only show action buttons if no fields, or if we're on the last field
@@ -1841,38 +2025,6 @@ export default function AIPromptVault() {
                       }}
                     >
                       {copied ? "✓ Copied!" : "📋 Copy Prompt"}
-                    </button>
-                    
-                    <button
-                      onClick={() => handleGenerate(selectedPrompt)}
-                      disabled={isGenerating}
-                      style={{
-                        flex: 1,
-                        padding: "12px 24px",
-                        fontSize: 15,
-                        fontWeight: 600,
-                        color: "#fff",
-                        background: isGenerating 
-                          ? "#94a3b8" 
-                          : "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-                        border: "none",
-                        borderRadius: "var(--radius-sm)",
-                        cursor: isGenerating ? "not-allowed" : "pointer",
-                        transition: "all 160ms ease",
-                        opacity: isGenerating ? 0.7 : 1,
-                      }}
-                      onMouseEnter={(e) => {
-                        if (!isGenerating) {
-                          e.currentTarget.style.transform = "translateY(-1px)";
-                          e.currentTarget.style.boxShadow = "0 4px 12px rgba(102, 126, 234, 0.4)";
-                        }
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.transform = "translateY(0)";
-                        e.currentTarget.style.boxShadow = "none";
-                      }}
-                    >
-                      {isGenerating ? "⏳ Generating..." : `✨ Generate with AI (${FREE_GENERATIONS_PER_MONTH - generationCount} left)`}
                     </button>
                     
                     <button
@@ -1963,29 +2115,32 @@ export default function AIPromptVault() {
                     fontWeight: 700, 
                     color: "var(--text)" 
                   }}>
-                    ✨ AI Generated Output
+                    ✨ Your Personalized Prompt
                   </div>
                   <button
                     onClick={() => {
-                      navigator.clipboard.writeText(generatedOutput);
-                      setCopied(true);
-                      setTimeout(() => setCopied(false), 2000);
+                      setGeneratedOutput(null);
+                      setFieldValues({});
                     }}
                     style={{
+                      marginLeft: "auto",
                       padding: "6px 12px",
                       fontSize: 13,
                       fontWeight: 600,
-                      color: "var(--text)",
-                      background: "var(--surface-hover)",
+                      color: "var(--muted)",
+                      background: "transparent",
                       border: "1px solid var(--border)",
                       borderRadius: "var(--radius-sm)",
                       cursor: "pointer",
                     }}
                   >
-                    📋 Copy Output
+                    ← Back
                   </button>
                   <button
-                    onClick={() => setGeneratedOutput(null)}
+                    onClick={() => {
+                      setGeneratedOutput(null);
+                      setFieldValues({});
+                    }}
                     style={{
                       padding: "6px 12px",
                       fontSize: 13,
@@ -2013,12 +2168,57 @@ export default function AIPromptVault() {
                   {generatedOutput}
                 </div>
                 <div style={{ 
-                  fontSize: 12, 
-                  color: "var(--muted)", 
-                  marginTop: 8,
-                  textAlign: "center"
+                  marginTop: 16,
+                  display: "flex",
+                  justifyContent: "center"
                 }}>
-                  {generationCount} / {FREE_GENERATIONS_PER_MONTH} free generations used this month
+                  <button
+                    onClick={() => {
+                      navigator.clipboard.writeText(generatedOutput);
+                      window.open('https://chatgpt.com/g/g-6915d91d08e08191a802f75e4d926d7b-ai-workflow-assistant-for-real-estate-agents', '_blank');
+                      setCopied(true);
+                      setTimeout(() => setCopied(false), 2000);
+                    }}
+                    style={{
+                      padding: "14px 32px",
+                      fontSize: 16,
+                      fontWeight: 600,
+                      color: "#fff",
+                      background: "linear-gradient(135deg, #10b981 0%, #059669 100%)",
+                      border: "none",
+                      borderRadius: "var(--radius-sm)",
+                      cursor: "pointer",
+                      transition: "all 160ms ease",
+                      boxShadow: "0 4px 12px rgba(16, 185, 129, 0.3)",
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.transform = "translateY(-2px)";
+                      e.currentTarget.style.boxShadow = "0 6px 16px rgba(16, 185, 129, 0.4)";
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.transform = "translateY(0)";
+                      e.currentTarget.style.boxShadow = "0 4px 12px rgba(16, 185, 129, 0.3)";
+                    }}
+                  >
+                    {copied ? "✓ Copied! Opening ChatGPT..." : "📋 Copy Prompt & Open ChatGPT"}
+                  </button>
+                </div>
+                <div style={{ 
+                  fontSize: 13, 
+                  color: "var(--muted)", 
+                  marginTop: 12,
+                  textAlign: "center",
+                  lineHeight: 1.5
+                }}>
+                  {isMac ? (
+                    <>
+                      When ChatGPT opens, paste your prompt with <kbd style={{ padding: "2px 6px", background: "var(--badge-bg)", borderRadius: 4, fontWeight: 600 }}>⌘+V</kbd>
+                    </>
+                  ) : (
+                    <>
+                      When ChatGPT opens, paste your prompt with <kbd style={{ padding: "2px 6px", background: "var(--badge-bg)", borderRadius: 4, fontWeight: 600 }}>Ctrl+V</kbd>
+                    </>
+                  )}
                 </div>
               </div>
             )}
