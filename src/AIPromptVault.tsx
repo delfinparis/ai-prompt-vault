@@ -11,6 +11,8 @@ import { EditablePromptText } from "./components/EditablePromptText";
 import { computeMissingPlaceholders } from "./guardrailUtils";
 
 /* ---------- Constants ---------- */
+// Optional: GPT store URL for cross-traffic CTA
+const GPT_STORE_URL = process.env.REACT_APP_GPT_STORE_URL;
 const KEY_FAVORITES = "rpv:favorites";
 const KEY_COUNTS = "rpv:copyCounts";
 const KEY_RECENT = "rpv:recentCopied";
@@ -1261,6 +1263,43 @@ export default function AIPromptVault() {
       <header className="rpv-header" style={{ marginBottom: 32, position: "relative" }}>
         {/* Header buttons (top-right) */}
         <div style={{ position: "absolute", top: 0, right: 0, display: "flex", gap: 8 }}>
+          {/* GPT Store CTA - only show if configured */}
+          {GPT_STORE_URL && (
+            <button
+              onClick={() => {
+                trackEvent("cta_gpt_clicked");
+                window.open(GPT_STORE_URL as string, "_blank");
+              }}
+              style={{
+                padding: "10px 14px",
+                background: "linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%)",
+                border: "2px solid var(--primary)",
+                borderRadius: "var(--radius-md)",
+                cursor: "pointer",
+                fontSize: 14,
+                fontWeight: 700,
+                color: "var(--text-inverse)",
+                boxShadow: "var(--shadow-sm)",
+                transition: "all 200ms cubic-bezier(0.4, 0, 0.2, 1)",
+                display: "flex",
+                alignItems: "center",
+                gap: 8,
+                minHeight: 44,
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.transform = "translateY(-2px)";
+                e.currentTarget.style.boxShadow = "var(--shadow-lg)";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = "translateY(0)";
+                e.currentTarget.style.boxShadow = "var(--shadow-sm)";
+              }}
+              title="Open AI Workflow Assistant in ChatGPT"
+              aria-label="Open ChatGPT assistant"
+            >
+              🧠 Use in ChatGPT →
+            </button>
+          )}
           {/* Edit Profile button - only show if profile exists */}
           {isProfileComplete && (
             <button
@@ -1341,6 +1380,19 @@ export default function AIPromptVault() {
           <h1 className="title" style={{ margin: 0 }}>
             🏡 AI Prompt Vault
           </h1>
+          {GPT_STORE_URL && (
+            <span style={{
+              background: "var(--badge-bg)",
+              color: "var(--primary)",
+              padding: "4px 12px",
+              borderRadius: "var(--radius-pill)",
+              fontSize: 12,
+              fontWeight: 700,
+              boxShadow: "var(--shadow-sm)",
+            }}>
+              Now on ChatGPT
+            </span>
+          )}
           <span style={{
             background: "linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%)",
             color: "var(--text-inverse)",
