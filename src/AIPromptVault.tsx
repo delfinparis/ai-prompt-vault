@@ -1735,21 +1735,44 @@ export default function AIPromptVault() {
                             Next →
                           </button>
                         ) : (
-                          <button
-                            onClick={() => handleCopy(selectedPrompt)}
-                            style={{
-                              padding: "12px 28px",
-                              fontSize: 15,
-                              fontWeight: 700,
-                              color: "var(--text-inverse)",
-                              background: "var(--primary)",
-                              border: "none",
-                              borderRadius: "var(--radius-sm)",
-                              cursor: "pointer",
-                            }}
-                          >
-                            📋 Copy Prompt
-                          </button>
+                          <>
+                            <button
+                              onClick={() => handleCopy(selectedPrompt)}
+                              style={{
+                                padding: "12px 24px",
+                                fontSize: 15,
+                                fontWeight: 600,
+                                color: "var(--text-inverse)",
+                                background: "var(--primary)",
+                                border: "none",
+                                borderRadius: "var(--radius-sm)",
+                                cursor: "pointer",
+                              }}
+                            >
+                              📋 Copy Prompt
+                            </button>
+                            <button
+                              onClick={() => handleGenerate(selectedPrompt)}
+                              disabled={isGenerating}
+                              style={{
+                                padding: "12px 24px",
+                                fontSize: 15,
+                                fontWeight: 600,
+                                color: "#fff",
+                                background: isGenerating 
+                                  ? "#94a3b8" 
+                                  : "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+                                border: "none",
+                                borderRadius: "var(--radius-sm)",
+                                cursor: isGenerating ? "not-allowed" : "pointer",
+                                transition: "all 160ms ease",
+                                opacity: isGenerating ? 0.7 : 1,
+                                whiteSpace: "nowrap",
+                              }}
+                            >
+                              {isGenerating ? "⏳..." : `✨ Generate (${FREE_GENERATIONS_PER_MONTH - generationCount} left)`}
+                            </button>
+                          </>
                         )}
                       </div>
                     </div>
