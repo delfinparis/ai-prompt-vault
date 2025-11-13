@@ -163,17 +163,26 @@ export function getPlaceholderHelp(placeholder: string): { description: string; 
     };
   }
   
+  // Y - Usually dollar amounts or percentages in real estate context
   if (lower === 'y') {
     return {
-      description: "Your maximum cost per lead (just the dollar amount, no $ sign needed)",
-      example: "50"
+      description: "Your target number (cost per lead, commission split, budget, etc. - just the number)",
+      example: "200"
     };
   }
   
+  // X - Context-specific number (most common in prompts)
   if (lower === 'x') {
     return {
-      description: "Enter the specific number or amount",
-      example: "10"
+      description: "Enter a specific number (days, agents, properties, transactions, etc. - depends on context)",
+      example: "30"
+    };
+  }
+  
+  if (lower === 'x–y' || lower === 'x-y') {
+    return {
+      description: "Enter a range with two numbers (like: 10-15 or 20-30)",
+      example: "10-15"
     };
   }
   
@@ -296,20 +305,98 @@ export function getPlaceholderHelp(placeholder: string): { description: string; 
     };
   }
   
-  // General fallback - much improved with context
+  // General fallback - much improved with context and realtor intelligence
   const cleanPlaceholder = placeholder.replace(/[[\]]/g, '').trim();
+  
+  // Smart context detection for realtors
+  if (cleanPlaceholder.includes('commission') || cleanPlaceholder.includes('split')) {
+    return {
+      description: "Your commission structure (like: 3%, 2.5%, 80/20 split, etc.)",
+      example: "3%"
+    };
+  }
+  
+  if (cleanPlaceholder.includes('price range') || cleanPlaceholder.includes('budget range')) {
+    return {
+      description: "The price range for properties (use format: $XXX,XXX - $XXX,XXX)",
+      example: "$300,000 - $500,000"
+    };
+  }
+  
+  if (cleanPlaceholder.includes('agent') || cleanPlaceholder.includes('team member')) {
+    return {
+      description: "How many agents or team members? (just the number)",
+      example: "5"
+    };
+  }
+  
+  if (cleanPlaceholder.includes('client name') || cleanPlaceholder.includes('prospect')) {
+    return {
+      description: "First name only (or 'the client' if you prefer to stay generic)",
+      example: "Sarah"
+    };
+  }
+  
+  if (cleanPlaceholder.includes('brokerage') || cleanPlaceholder.includes('company')) {
+    return {
+      description: "Your brokerage name (like: RE/MAX, Keller Williams, Compass, etc.)",
+      example: "Keller Williams"
+    };
+  }
+  
+  if (cleanPlaceholder.includes('zip') || cleanPlaceholder.includes('zipcode')) {
+    return {
+      description: "5-digit ZIP code for your target area",
+      example: "78704"
+    };
+  }
+  
+  if (cleanPlaceholder.includes('square feet') || cleanPlaceholder.includes('sqft')) {
+    return {
+      description: "Property size in square feet (just the number)",
+      example: "1800"
+    };
+  }
+  
+  if (cleanPlaceholder.includes('bedroom') || cleanPlaceholder.includes('bath')) {
+    return {
+      description: "Number of bedrooms/baths (format like: 3/2 or 4/3)",
+      example: "3/2"
+    };
+  }
+  
+  if (cleanPlaceholder.includes('years') || cleanPlaceholder.includes('experience')) {
+    return {
+      description: "Number of years (just the number)",
+      example: "7"
+    };
+  }
+  
+  if (cleanPlaceholder.includes('radius') || cleanPlaceholder.includes('mile')) {
+    return {
+      description: "Distance in miles (just the number)",
+      example: "5"
+    };
+  }
+  
+  if (cleanPlaceholder.includes('contact') || cleanPlaceholder.includes('lead')) {
+    return {
+      description: "Number of contacts/leads (just the number)",
+      example: "150"
+    };
+  }
   
   // Smart fallback based on common patterns
   if (cleanPlaceholder.length < 15) {
     return {
-      description: `Describe your ${cleanPlaceholder} - be specific with real examples from your business`,
-      example: cleanPlaceholder.includes('/') ? cleanPlaceholder.split('/')[0].trim() : `your ${cleanPlaceholder}`
+      description: `Your ${cleanPlaceholder} - be specific with real details from your business`,
+      example: cleanPlaceholder.includes('/') ? cleanPlaceholder.split('/')[0].trim() : `specific ${cleanPlaceholder}`
     };
   }
   
   return {
-    description: `${cleanPlaceholder} - use specific details from your actual business`,
-    example: "Example: your specific situation or details"
+    description: `${cleanPlaceholder} - use specific details from your actual real estate business`,
+    example: "Example: your specific details here"
   };
 }
 
