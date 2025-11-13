@@ -2,6 +2,7 @@
 
 // Module definitions with 10 prompts each. These replicate the initial 12 modules.
 const M1 = [
+  {title:"Instagram Ad Copy Generator",quick:"Write 3 Instagram ad copy variations for [describe your listing, event, or agent brand]. Include a strong hook, value proposition, and call-to-action. Suggest 5 hashtags.", role:"ad copywriter",deliverable:"3 Instagram ad copy options + 5 hashtags",success:"CTR ≥2.5%; CPM <$[target]."},
     {title:"90-Day Inbound Lead Blueprint",quick:"Act as a marketing strategist for [type your city and state where you work - example: Austin, TX or Miami, FL]. Build a 90-day plan to get [tell me which type: buyer leads, seller leads, or investor leads] using [which platform will you focus on - example: Facebook Ads, Instagram Reels, or YouTube]. Include weekly calendar, KPIs, 5 hooks, UTMs.", role:"marketing strategist",deliverable:"A 12-week marketing calendar + 5 ready-to-use post ideas + tracking setup",success:"≥15 leads/week by week 6; CPL <$[your target cost per lead]."},
   {title:"YouTube Channel Plan (12 Episodes)",quick:"Design a 12-episode YouTube plan for [who are you trying to reach - example: first-time home buyers, people selling luxury homes, or real estate investors] in [type your city and state - example: Austin, TX or Seattle, WA]: titles, hooks, CTAs, b-roll, keywords. Include upload cadence + thumbnail angles.", role:"content strategist",deliverable:"12 video titles + scripts + thumbnail ideas + keywords for each episode",success:"≥5% CTR; Avg view duration ≥40%."},
   {title:"Local SEO Starter Kit",quick:"Create a local SEO checklist for [type your city and state - example: Austin, TX or Portland, OR]: GMB, citations, review cadence, FAQ schema, location pages. Output priorities + timelines.", role:"SEO consultant",deliverable:"Step-by-step checklist to get your Google ranking up",success:"Rank top-3 for [service + city] within 90 days (leading indicators)."},
@@ -24,6 +25,7 @@ const M1 = [
 ];
 
 const M2 = [
+  {title:"Weekly Time Blocking Planner",quick:"Create a weekly time-blocking plan for [how many agents - example: just yourself, 3 agents, or 10 agents] in [your city/state]. Include prospecting, admin, client service, learning, and personal time. Output as a table.",role:"productivity planner",deliverable:"Weekly time-blocking table for agents",success:"≥80% time spent on high-ROI activities."},
   {title:"Weekly Productivity Audit",quick:"Audit calendar/tasks for a team of [how many agents are on your team - example: just yourself, 3 agents, 5 agents, or 10 agents] in [type your city and state - example: Austin, TX or Miami, FL]. Table: Task | Time | ROI | Automate/Delegate/Delete | Tool.",role:"productivity coach",deliverable:"A breakdown of what to stop doing, automate, or delegate",success:"Reclaim ≥5 hours/agent/week."},
   {title:"Daily Checklist Builder",quick:"Create a 12-task daily checklist balancing pipeline/admin/prospecting/learning. Export-friendly.",role:"workflow architect",deliverable:"Your daily to-do list (morning, afternoon, evening)",success:"≥80% daily completion."},
   {title:"Pipeline SOP (Lead→Close)",quick:"Define CRM stages, entry/exit criteria, tasks, SLAs, and 2 automations/stage.",role:"contact database consultant",deliverable:"Step-by-step process from lead to closed deal",success:"response time compliance ≥95%."},
@@ -37,6 +39,7 @@ const M2 = [
 ];
 
 const M3 = [
+  {title:"Quarterly Business Review Framework",quick:"Design a quarterly business review template for agents. Include sections for goals, metrics, wins, challenges, and next steps. Output as a fillable worksheet.",role:"business strategist",deliverable:"Quarterly review worksheet for agents",success:"≥2 new strategies implemented per quarter."},
   {title:"GCI Reverse-Engineering",quick:"Calculate how to hit your income goal: [what's your annual income goal - example: $150,000, $250,000, or $500,000] with an average commission per deal of [what do you typically make per transaction - example: $5,000, $8,000, or $12,000]. Get weekly activity targets using conversion rates.",role:"performance coach",deliverable:"Exact number of calls and appointments you need each week",success:"Exact # calls/appts to hit target."},
   {title:"Weekly Scorecard",quick:"Scorecard for leading/lagging: calls, contacts, appts, contracts, posts.",role:"ops analyst",deliverable:"One-page scorecard to track your weekly numbers",success:"Update in <5 min weekly."},
   {title:"Prospecting Habit Protocol",quick:"Build a 20-minute daily prospecting ritual for [how do you find new clients - example: knocking on doors, calling expired listings, sending DMs on social media, or sending emails]: trigger→routine→reward.",role:"behavioral coach",deliverable:"Simple daily routine to build a prospecting habit",success:"≥5 new contacts/day × 21 days."},
@@ -50,6 +53,7 @@ const M3 = [
 ];
 
 const M4 = [
+  {title:"Luxury Listing Checklist",quick:"Create a step-by-step checklist for preparing, marketing, and selling a luxury property in [your city/state]. Include staging, photography, marketing channels, compliance, and client communication.",role:"luxury listing specialist",deliverable:"Luxury listing prep and marketing checklist",success:"Sold at/above list price in ≤45 days."},
   {title:"Listing Description That Converts",quick:"Write a compelling listing description for [what type of property is this - example: 3-bedroom single-family home, 2-bed downtown condo, or new-build townhome] located at [what is the full property address - example: 1234 Oak Ridge Drive] in [type your city and state - example: Austin, TX or Denver, CO]. Highlight [name 3 standout features - example: chef kitchen, rooftop deck, energy-efficient windows], include lifestyle hooks, fair housing–compliant language, and a strong call-to-action.",role:"listing copy specialist",deliverable:"Headline + 180–300 word description + 3 CTA variations + 8–12 hashtag suggestions",success:"≥3 qualified inquiries in first 7 days."},
   {title:"Pricing Strategy Script",quick:"Price talk track with comps, DOM, trends; analogy→data→position→CTA.",role:"listing-presentation coach",deliverable:"Script to explain pricing to sellers (with market data)",success:"Seller accepts within 5%."},
   {title:"Commission Value Conversation",quick:"Handle ‘lower your commission’: acknowledge→value reframe→choice close.",role:"negotiation coach",deliverable:"How to respond when sellers ask you to lower your fee",success:"≥70% full fee retention."},
@@ -64,6 +68,7 @@ const M4 = [
 ];
 
 const M5 = [
+  {title:"Client Onboarding Welcome Kit",quick:"Create a welcome kit for new clients (buyers or sellers) including a personalized welcome email, checklist, FAQ, and intro video script. Output as a ready-to-send package.",role:"client onboarding specialist",deliverable:"Welcome kit: email, checklist, FAQ, video script",success:"Client satisfaction ≥9/10 in first week."},
   {title:"White-Glove Onboarding",quick:"3 touches in 72h: welcome, next-7-days checklist, FAQ video.",role:"CX designer",deliverable:"Welcome email + 7-day checklist + FAQ video for new clients",success:"Week-1 CSAT ≥9/10."},
   {title:"Weekly Update Cadence",quick:"Email + text summary + CRM log: progress, next steps, key dates.",role:"communications strategist",deliverable:"Weekly update template (progress, next steps, key dates)",success:"0 status-check inquiries."},
   {title:"Bad-News Playbook",quick:"Scripts for appraisal shortfall/inspection issues: acknowledge→facts→options→next step.",role:"crisis comms coach",deliverable:"Scripts for delivering bad news (appraisal low, inspection issues)",success:"≥90% stay engaged."},
@@ -77,6 +82,7 @@ const M5 = [
 ];
 
 const M6 = [
+  {title:"Marketing ROI Calculator",quick:"Calculate the ROI for your marketing campaigns. Input: budget, leads generated, deals closed, average commission. Output: ROI %, cost per lead, cost per deal.",role:"ROI analyst",deliverable:"Marketing ROI calculator for agents",success:"ROI ≥20% per campaign."},
   {title:"12-Month Cashflow Model",quick:"Forecast income/expenses with tax, reserves, profit targets; monthly table.",role:"finance coach",deliverable:"Monthly income and expense tracker",success:"Know runway & savings by month 12."},
   {title:"Marketing Budget Allocator",quick:"Split your monthly marketing budget of [how much per month - example: $1,000, $2,500, or $5,000] across [which platforms do you advertise on - example: Facebook Ads, Google Ads, Zillow leads, or direct mail]. Include cost-per-lead targets and rules for scaling winners or cutting losers.",role:"marketing CFO",deliverable:"How to split your marketing budget across channels",success:"≤$[Y] CPL; ≥20% ROI/channel."},
   {title:"Profitability Review Audit",quick:"Analyze expenses by ROI; keep/cut/renegotiate + 90-day savings plan.",role:"business consultant",deliverable:"Which expenses to cut + 90-day savings plan",success:"Reduce expenses ≥15%."},
@@ -90,6 +96,7 @@ const M6 = [
 ];
 
 const M7 = [
+  {title:"Appraisal Gap Negotiation Script",quick:"Create a negotiation script for handling appraisal gaps (when the appraisal comes in below contract price). Include talking points for buyers and sellers, options for bridging the gap, and compliance reminders.",role:"negotiation strategist",deliverable:"Appraisal gap negotiation script for agents",success:"≥80% gap resolved without contract cancellation."},
   {title:"BATNA Power Map",quick:"Build your backup plan (BATNA) for this negotiation: [describe the situation - example: appraisal came in $15k low, buyer wants $10k in seller credits, or you're dealing with multiple offers]. Include risk assessment.",role:"negotiation coach",deliverable:"Backup options if this deal falls through",success:"≥2 creative options + thresholds."},
   {title:"Concession Strategy Ladder",quick:"Rank tradeables by cost to client vs value to other party.",role:"deal architect",deliverable:"What to give up and what to ask for in return",success:"≥50% concessions offset."},
   {title:"Anchoring Language Framework",quick:"3 anchors: data-first, emotional story, bracketed range; phrases to avoid.",role:"persuasive linguist",deliverable:"How to set price expectations with words",success:"Offers land within 3% target."},
@@ -103,6 +110,7 @@ const M7 = [
 ];
 
 const M8 = [
+  {title:"Relocation Brief",quick:"Create a relocation brief for buyers moving to [your city/state]. Include schools, commute, rent vs buy, neighborhoods, and local tips. Output as a welcome pack.",role:"relocation advisor",deliverable:"Relocation welcome pack for buyers",success:"Client shortlists 3 areas within 48h."},
   {title:"Needs-Match Matrix",quick:"Create a must-have versus nice-to-have matrix for [describe your client - example: first-time buyers with a $300K budget, move-up buyers needing more space, or downsizers going from house to condo] in [type your city and state - example: Austin, TX or Portland, OR]. Include commute preferences.",role:"profiling strategist",deliverable:"Weighted table with fit scores.",success:"≥3 neighborhoods fit ≥80%."},
   {title:"Smart Search Strings",quick:"Create MLS and portal search strings with alerts for [what is your buyer looking for - example: 3 bedroom 2 bath under $400K with a pool in the 78704 zip code, new construction 4 bedroom homes in top-rated school districts, or waterfront condos under $600K]. Set up across MLS, Zillow, and Redfin.",role:"portal power-user",deliverable:"Search filters to find exactly what buyers want",success:"≤3 irrelevant listings/week."},
   {title:"Off-Market Outreach",quick:"Write letters, emails, and text messages to find off-market properties in [describe your target - example: single-family homes in the Westlake neighborhood, luxury condos in downtown, or investment properties in East Austin]. Include legally compliant language and opt-out instructions.",role:"listing acquisition specialist",deliverable:"Letters and emails to find off-market properties",success:"≥5% response / 100 sends."},
@@ -116,6 +124,7 @@ const M8 = [
 ];
 
 const M9 = [
+  {title:"Referral Request Script",quick:"Write a script for requesting referrals from past clients after a successful closing. Include email, text, and phone call variations. Make it friendly, professional, and easy to personalize.",role:"referral specialist",deliverable:"Referral request scripts (email, text, call)",success:"≥20% response rate within 30 days."},
   {title:"12-Touch Sphere Plan",quick:"Create a monthly outreach plan for your sphere of influence (past clients, friends, family, and vendors). Include the right channel, theme, and call-to-action for each touchpoint.",role:"retention strategist",deliverable:"Monthly outreach plan for past clients and sphere",success:"≥30% engagement/touch."},
   {title:"Home-Anniversary Automation",quick:"CRM workflow: reminder→gift tier [$25/$50/$100]→message→social post.",role:"automation expert",deliverable:"Automated anniversary messages + gift tiers",success:"≥95% anniversaries auto-celebrated."},
   {title:"Community Spotlight Series",quick:"Plan 12 social media posts featuring local businesses, nonprofits, and community events in [which neighborhood are you focusing on - example: Tarrytown in Austin, Hyde Park in Austin, or Westlake Hills].",role:"local content creator",deliverable:"12 posts featuring local businesses",success:"+25% local followers; 3 collabs."},
@@ -129,6 +138,7 @@ const M9 = [
 ];
 
 const M10 = [
+  {title:"CRM Automation Workflow Builder",quick:"Design a CRM automation workflow for agents. Include lead capture, assignment, follow-up, reminders, and reporting. Output as a flowchart and checklist.",role:"CRM automation architect",deliverable:"CRM automation workflow + checklist for agents",success:"100% leads assigned and followed up within 5 min."},
   {title:"Landing Page CRO Audit",quick:"Audit this landing page: [paste your full website URL - example: https://yourdomain.com/home-valuation or https://yoursite.com/seller-guide]. Review headline, social proof, call-to-action, friction points, loading speed, and mobile experience. Give specific fixes with examples.",role:"CRO expert",deliverable:"What's wrong with your landing page + how to fix it",success:"Conv ↑ ≥30% in 14 days."},
   {title:"7-Day Follow-Up Sequence",quick:"Create a 7-day email and text message sequence for new leads from [where did this lead come from - example: a Facebook ad, a Zillow inquiry, a referral from a past client, or someone who visited your open house]. Day-by-day copy with decision branches.",role:"sales automation copywriter",deliverable:"Day-by-day email and text templates for new leads",success:"≥25% reply in 7 days."},
   {title:"No-Show Prevention Flow",quick:"Booking → 24h → 1h reminders + ‘what to expect’ checklist.",role:"workflow optimizer",deliverable:"Automated reminders to reduce no-shows",success:"No-shows <10%."},

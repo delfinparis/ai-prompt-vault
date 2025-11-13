@@ -4,6 +4,11 @@ import confetti from "canvas-confetti";
 import "./AIPromptVault.css";
 import { prompts as fullPrompts } from "./prompts";
 import { PromptItem, buildFullPrompt, extractPlaceholders, applyReplacements, getPlaceholderHelp, simplifyJargon } from "./promptUtils";
+import { useDebounce } from "./hooks/useDebounce";
+import { useAgentProfile, AgentProfile } from "./hooks/useAgentProfile";
+import { AgentProfileSetup } from "./components/AgentProfileSetup";
+import { EditablePromptText } from "./components/EditablePromptText";
+import { computeMissingPlaceholders } from "./guardrailUtils";
 
 /* ---------- Constants ---------- */
 const KEY_FAVORITES = "rpv:favorites";
@@ -21,6 +26,12 @@ const KEY_SESSION_HISTORY = "rpv:sessionHistory";
 // const KEY_GENERATIONS = "rpv:generations"; // Reserved for future use
 const KEY_GENERATION_COUNT = "rpv:generationCount";
 const KEY_SAVED_OUTPUTS = "rpv:savedOutputs";
+const KEY_INLINE_PREVIEW = "rpv:inlinePreview";
+const KEY_USE_DEFAULTS = "rpv:useDefaults";
+const KEY_INLINE_PREVIEW_PER_PROMPT = "rpv:inlinePreviewPerPrompt";
+const KEY_COPY_GUARDRAIL_SUPPRESS = "rpv:copyGuardrailSuppress";
+const KEY_INLINE_TIP_SEEN = "rpv:inlineTipSeen";
+const KEY_STATS = "rpv:stats";
 
 // Static follow-up mapping for conversation starters (curated for multi-turn depth)
 // Referenced in LAUNCH_NOW_GUIDE.md for GPT instructions; reserved for future web app integration
@@ -260,8 +271,68 @@ export default function AIPromptVault() {
   const [savedOutputs, setSavedOutputs] = useState<GeneratedOutput[]>([]);
   const [showUpgradeModal, setShowUpgradeModal] = useState<boolean>(false);
   const [showKeyboardShortcuts, setShowKeyboardShortcuts] = useState<boolean>(false);
-  const [useDefaults, setUseDefaults] = useState<boolean>(false);
+  const [useDefaults, setUseDefaults] = useState<boolean>(() => {
+    try {
+      const saved = localStorage.getItem(KEY_USE_DEFAULTS);
+      return saved ? JSON.parse(saved) === true : false;
+    } catch {
+      return false;
+    }
+  });
   const [defaultsAppliedCount, setDefaultsAppliedCount] = useState<number>(0);
+  
+  // Typewriter effect for loading animation
+  const [typewriterText, setTypewriterText] = useState<string>("");
+  
+  // Agent profile integration
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const { profile, isProfileComplete, saveProfile, getAutoFillValue } = useAgentProfile();
+  const [showProfileSetup, setShowProfileSetup] = useState<boolean>(false);
+  // Optional inline editing preview (non-disruptive to current field flow)
+  const [showInlinePreview, setShowInlinePreview] = useState<boolean>(() => {
+    try {
+      const saved = localStorage.getItem(KEY_INLINE_PREVIEW);
+      return saved ? JSON.parse(saved) === true : false;
+    } catch {
+      return false;
+    }
+  });
+  const [inlinePreviewPrefs, setInlinePreviewPrefs] = useState<Record<string, boolean>>(() => {
+    try {
+      const saved = localStorage.getItem(KEY_INLINE_PREVIEW_PER_PROMPT);
+      return saved ? JSON.parse(saved) : {};
+    } catch {
+      return {};
+    }
+  });
+  // One-time keyboard tip for Inline/Form
+  const [inlineTipSeen, setInlineTipSeen] = useState<boolean>(() => {
+    try { return localStorage.getItem(KEY_INLINE_TIP_SEEN) === 'true'; } catch { return false; }
+  });
+  // Basic analytics counters
+  type Stats = { inlineEnabled: number; formEnabled: number; guardrailTriggered: number; autoFillApplied: number };
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const [stats, setStats] = useState<Stats>(() => {
+    try { const saved = localStorage.getItem(KEY_STATS); return saved ? JSON.parse(saved) as Stats : { inlineEnabled: 0, formEnabled: 0, guardrailTriggered: 0, autoFillApplied: 0 }; } catch { return { inlineEnabled: 0, formEnabled: 0, guardrailTriggered: 0, autoFillApplied: 0 }; }
+  });
+  const updateStats = useCallback((delta: Partial<Stats>) => {
+    setStats(prev => { const next: Stats = { inlineEnabled: prev.inlineEnabled + (delta.inlineEnabled || 0), formEnabled: prev.formEnabled + (delta.formEnabled || 0), guardrailTriggered: prev.guardrailTriggered + (delta.guardrailTriggered || 0), autoFillApplied: prev.autoFillApplied + (delta.autoFillApplied || 0) }; try { localStorage.setItem(KEY_STATS, JSON.stringify(next)); } catch {} return next; });
+  }, []);
+  // Copy guardrail state
+  const [showMissingFieldsPrompt, setShowMissingFieldsPrompt] = useState<boolean>(false);
+  const [missingFields, setMissingFields] = useState<string[]>([]);
+  const [guardrailDontAskAgain, setGuardrailDontAskAgain] = useState<boolean>(false);
+  const [guardrailSuppressPrefs, setGuardrailSuppressPrefs] = useState<Record<string, boolean>>(() => {
+    try {
+      const saved = localStorage.getItem(KEY_COPY_GUARDRAIL_SUPPRESS);
+      return saved ? JSON.parse(saved) : {};
+    } catch {
+      return {};
+    }
+  });
+  
+  // Debounced search for performance
+  const debouncedSearch = useDebounce(search, 200);
   
   // Detect Kale branding from URL parameter
   const isKaleBranded = useMemo(() => {
@@ -299,18 +370,34 @@ export default function AIPromptVault() {
   const applyDefaultsForPlaceholders = useCallback((placeholders: string[]): number => {
     if (!placeholders || placeholders.length === 0) return 0;
     let applied = 0;
+    let autoApplied = 0;
     const next = { ...fieldValues };
     placeholders.forEach((ph) => {
-      if (!next[ph] && savedFieldValues[ph]) {
-        next[ph] = savedFieldValues[ph];
-        applied++;
+      if (!next[ph]) {
+        // First try saved field values (user's previous inputs)
+        if (savedFieldValues[ph]) {
+          next[ph] = savedFieldValues[ph];
+          applied++;
+        } 
+        // Then try auto-fill from agent profile
+        else {
+          const autoFillValue = getAutoFillValue(ph);
+          if (autoFillValue) {
+            next[ph] = autoFillValue;
+            applied++;
+            autoApplied++;
+          }
+        }
       }
     });
     if (applied > 0) {
       setFieldValues(next);
     }
+    if (autoApplied > 0) {
+      updateStats({ autoFillApplied: autoApplied });
+    }
     return applied;
-  }, [fieldValues, savedFieldValues]);
+  }, [fieldValues, savedFieldValues, getAutoFillValue, updateStats]);
 
   // Load all prompts with tags
   const allPrompts = useMemo(() => {
@@ -403,6 +490,13 @@ export default function AIPromptVault() {
         setShowOnboarding(true);
       }
       
+      // Check if user has completed profile setup (show after main onboarding)
+      // Only show if they've onboarded but haven't completed profile
+      if (hasOnboarded && !isProfileComplete) {
+        // Delay to show after onboarding completes
+        setTimeout(() => setShowProfileSetup(true), 500);
+      }
+      
       // Set last updated timestamp
       const now = new Date();
       const timeStr = now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
@@ -452,9 +546,9 @@ export default function AIPromptVault() {
       // Cleanup
       return () => darkModeMediaQuery.removeEventListener('change', handleSystemThemeChange);
     } catch {}
-  }, [isKaleBranded, isEmbedMode]);
+  }, [isKaleBranded, isEmbedMode, isProfileComplete]);
 
-  // Search/filter prompts
+  // Search/filter prompts (using debounced search for performance)
   const filteredPrompts = useMemo(() => {
     let filtered = allPrompts;
     
@@ -469,9 +563,9 @@ export default function AIPromptVault() {
       filtered = filtered.filter((p: any) => p.tags?.includes(activeTag));
     }
     
-    // Filter by search term
-    if (search.trim()) {
-      const term = search.toLowerCase();
+    // Filter by search term (debounced)
+    if (debouncedSearch.trim()) {
+      const term = debouncedSearch.toLowerCase();
       filtered = filtered.filter((p: any) => 
         p.title.toLowerCase().includes(term) ||
         p.quick?.toLowerCase().includes(term) ||
@@ -480,7 +574,7 @@ export default function AIPromptVault() {
     }
     
     return filtered;
-  }, [search, activeTag, activeCollection, collections, allPrompts]);
+  }, [debouncedSearch, activeTag, activeCollection, collections, allPrompts]);
 
   // Hot prompts: top 5 by copy count
   const hotPrompts = useMemo(() => {
@@ -616,8 +710,13 @@ export default function AIPromptVault() {
     return suggestions.slice(0, limit);
   }, [sequences, allPrompts]);
 
-  // Copy handler
-  const handleCopy = useCallback(async (prompt: PromptItem) => {
+  // Compute missing fields for a prompt
+  const getMissingFields = useCallback((prompt: PromptItem): string[] => {
+    return computeMissingPlaceholders(prompt, fieldValues);
+  }, [fieldValues]);
+
+  // Actual copy logic (shared by normal flow and guardrail "Copy anyway")
+  const proceedCopy = useCallback(async (prompt: PromptItem) => {
     const fullText = buildFullPrompt(prompt);
     const finalText = applyReplacements(fullText, fieldValues);
     
@@ -697,6 +796,23 @@ export default function AIPromptVault() {
     }
   }, [fieldValues, copyCounts, recentlyCopied, sessionHistory, getEnhancedSuggestions, recordSequence]);
 
+  // Copy handler with guardrail for missing fields
+  const handleCopy = useCallback(async (prompt: PromptItem) => {
+    const missing = getMissingFields(prompt);
+    const pid = (prompt as any).id;
+    const suppressed = pid ? Boolean(guardrailSuppressPrefs[pid]) : false;
+    // Only guard when 2 or more missing fields and not suppressed for this prompt
+    if (!suppressed && missing.length >= 2) {
+      setMissingFields(missing);
+      setGuardrailDontAskAgain(false);
+      setShowMissingFieldsPrompt(true);
+      trackEvent("copy_guardrail_triggered", { title: prompt.title, missingCount: missing.length });
+      updateStats({ guardrailTriggered: 1 });
+      return;
+    }
+    await proceedCopy(prompt);
+  }, [getMissingFields, proceedCopy, guardrailSuppressPrefs, updateStats]);
+
   // Keyboard shortcuts (consolidated)
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -716,6 +832,43 @@ export default function AIPromptVault() {
         e.preventDefault();
         setShowKeyboardShortcuts(true);
         return;
+      }
+      
+      // i = Inline mode, f = Form mode (only in detail modal and when not typing)
+      if (selectedPrompt && !isInputFocused) {
+        const pid = (selectedPrompt as any).id;
+        if (e.key === 'i') {
+          e.preventDefault();
+          if (!showInlinePreview) {
+            setShowInlinePreview(true);
+            try { localStorage.setItem(KEY_INLINE_PREVIEW, JSON.stringify(true)); } catch {}
+            if (pid) {
+              const next = { ...inlinePreviewPrefs, [pid]: true };
+              setInlinePreviewPrefs(next);
+              try { localStorage.setItem(KEY_INLINE_PREVIEW_PER_PROMPT, JSON.stringify(next)); } catch {}
+            }
+            trackEvent('inline_preview_toggled', { enabled: true, title: selectedPrompt.title, source: 'kbd' });
+            updateStats({ inlineEnabled: 1 });
+            if (!inlineTipSeen) { setInlineTipSeen(true); try { localStorage.setItem(KEY_INLINE_TIP_SEEN, 'true'); } catch {} }
+          }
+          return;
+        }
+        if (e.key === 'f') {
+          e.preventDefault();
+          if (showInlinePreview) {
+            setShowInlinePreview(false);
+            try { localStorage.setItem(KEY_INLINE_PREVIEW, JSON.stringify(false)); } catch {}
+            if (pid) {
+              const next = { ...inlinePreviewPrefs, [pid]: false };
+              setInlinePreviewPrefs(next);
+              try { localStorage.setItem(KEY_INLINE_PREVIEW_PER_PROMPT, JSON.stringify(next)); } catch {}
+            }
+            trackEvent('inline_preview_toggled', { enabled: false, title: selectedPrompt.title, source: 'kbd' });
+            updateStats({ formEnabled: 1 });
+            if (!inlineTipSeen) { setInlineTipSeen(true); try { localStorage.setItem(KEY_INLINE_TIP_SEEN, 'true'); } catch {} }
+          }
+          return;
+        }
       }
       
       // Escape to close modals or clear search (priority order)
@@ -748,7 +901,7 @@ export default function AIPromptVault() {
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [selectedPrompt, showOnboarding, showFollowUps, showUpgradeModal, showKeyboardShortcuts, search, handleCopy]);
+  }, [selectedPrompt, showOnboarding, showFollowUps, showUpgradeModal, showKeyboardShortcuts, search, handleCopy, showInlinePreview, inlinePreviewPrefs, inlineTipSeen, updateStats]);
 
   // Export prompt as .txt file
   const handleExport = (prompt: PromptItem) => {
@@ -959,6 +1112,13 @@ export default function AIPromptVault() {
     
     setFieldValues(prefilledValues);
     setCurrentFieldIndex(0);
+    // Initialize inline preview from per-prompt prefs (fallback to current global)
+    try {
+      const pid = (prompt as any).id;
+      if (pid && inlinePreviewPrefs && Object.prototype.hasOwnProperty.call(inlinePreviewPrefs, pid)) {
+        setShowInlinePreview(Boolean(inlinePreviewPrefs[pid]));
+      }
+    } catch {}
     trackEvent("prompt_selected", { title: prompt.title });
   };
   
@@ -989,52 +1149,191 @@ export default function AIPromptVault() {
     }
   }, [currentFieldIndex, selectedPrompt]);
 
+  // Typewriter effect for loading animation
+  useEffect(() => {
+    const message = "Creating your prompt...";
+    if (isGenerating) {
+      setTypewriterText("");
+      let currentIndex = 0;
+      const interval = setInterval(() => {
+        if (currentIndex <= message.length) {
+          setTypewriterText(message.slice(0, currentIndex));
+          currentIndex++;
+        } else {
+          clearInterval(interval);
+        }
+      }, 80);
+      return () => clearInterval(interval);
+    }
+  }, [isGenerating]);
+
+  // Animated house + lightning bolt icon
+  const AnimatedIcon = () => (
+    <svg width="80" height="80" viewBox="0 0 100 100" style={{ display: 'block', margin: '0 auto' }}>
+      {/* House */}
+      <path
+        d="M20 50 L50 20 L80 50 L80 85 L20 85 Z"
+        fill="var(--primary)"
+        opacity="0.2"
+        style={{
+          animation: 'fadeIn 600ms ease-out',
+        }}
+      />
+      <path
+        d="M20 50 L50 20 L80 50 L80 85 L20 85 Z"
+        stroke="var(--primary)"
+        strokeWidth="3"
+        fill="none"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        style={{
+          strokeDasharray: 300,
+          strokeDashoffset: 300,
+          animation: 'drawLine 1.5s ease-out forwards',
+        }}
+      />
+      {/* Lightning bolt */}
+      <path
+        d="M55 35 L45 50 L52 50 L48 65 L58 50 L51 50 Z"
+        fill="var(--warning)"
+        style={{
+          animation: 'flash 2s ease-in-out infinite',
+        }}
+      />
+    </svg>
+  );
+
+  // Loading overlay component
+  const LoadingOverlay = () => (
+    <div style={{
+      position: 'fixed',
+      inset: 0,
+      background: 'rgba(0, 0, 0, 0.6)',
+      backdropFilter: 'blur(4px)',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      zIndex: 3000,
+      flexDirection: 'column',
+      gap: 24,
+      animation: 'fadeIn 200ms ease-out',
+    }}>
+      <div style={{ 
+        background: 'var(--surface)', 
+        borderRadius: 16, 
+        padding: 32, 
+        boxShadow: '0 8px 32px rgba(37,99,235,0.12)', 
+        textAlign: 'center', 
+        minWidth: 280,
+        maxWidth: 400,
+      }}>
+        <AnimatedIcon />
+        <div style={{ 
+          fontSize: 20, 
+          fontWeight: 700, 
+          color: 'var(--primary)', 
+          marginTop: 18, 
+          minHeight: 32, 
+          letterSpacing: '0.01em', 
+          fontFamily: 'var(--font-family)',
+        }}>
+          {typewriterText}
+          <span style={{ 
+            opacity: typewriterText.length === 0 ? 0 : 1,
+            animation: 'blink 1s step-end infinite',
+          }}>|</span>
+        </div>
+        <div style={{ fontSize: 13, color: 'var(--muted)', marginTop: 10 }}>
+          Personalizing your workflow for maximum impact
+        </div>
+      </div>
+    </div>
+  );
+
   return (
-    <div className="rpv-app rpv-container">
+    <>
+      {isGenerating && <LoadingOverlay />}
+      <div className="rpv-app rpv-container">
       {/* Header - hidden in embed mode */}
       {!isEmbedMode && (
       <header className="rpv-header" style={{ marginBottom: 32, position: "relative" }}>
-        {/* Dark mode toggle */}
-        <button
-          onClick={toggleDarkMode}
-          style={{
-            position: "absolute",
-            top: 0,
-            right: 0,
-            padding: "10px 14px",
-            background: "var(--surface-hover)",
-            border: "2px solid var(--border)",
-            borderRadius: "var(--radius-md)",
-            cursor: "pointer",
-            fontSize: 20,
-            transition: "all 200ms cubic-bezier(0.4, 0, 0.2, 1)",
-            display: "flex",
-            alignItems: "center",
-            gap: 6,
-            minHeight: 44,
-            minWidth: 44,
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.background = "var(--surface-elevated)";
-            e.currentTarget.style.transform = "scale(1.05)";
-            e.currentTarget.style.borderColor = "var(--border-hover)";
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.background = "var(--surface-hover)";
-            e.currentTarget.style.transform = "scale(1)";
-            e.currentTarget.style.borderColor = "var(--border)";
-          }}
-          title={
-            getDarkModeState() === 'auto' 
-              ? `Auto mode (currently ${darkMode ? 'dark' : 'light'}). Click for ${darkMode ? 'light' : 'dark'} mode.`
-              : getDarkModeState() === 'dark'
-              ? 'Dark mode. Click for light mode.'
-              : 'Light mode. Click for auto mode.'
-          }
-          aria-label={`Toggle dark mode. Current: ${getDarkModeState()}`}
-        >
-          {darkMode ? "☀️" : "🌙"}
-        </button>
+        {/* Header buttons (top-right) */}
+        <div style={{ position: "absolute", top: 0, right: 0, display: "flex", gap: 8 }}>
+          {/* Edit Profile button - only show if profile exists */}
+          {isProfileComplete && (
+            <button
+              onClick={() => setShowProfileSetup(true)}
+              style={{
+                padding: "10px 14px",
+                background: "var(--surface-hover)",
+                border: "2px solid var(--border)",
+                borderRadius: "var(--radius-md)",
+                cursor: "pointer",
+                fontSize: 14,
+                fontWeight: 600,
+                color: "var(--text)",
+                transition: "all 200ms cubic-bezier(0.4, 0, 0.2, 1)",
+                display: "flex",
+                alignItems: "center",
+                gap: 6,
+                minHeight: 44,
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = "var(--surface-elevated)";
+                e.currentTarget.style.transform = "scale(1.05)";
+                e.currentTarget.style.borderColor = "var(--border-hover)";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = "var(--surface-hover)";
+                e.currentTarget.style.transform = "scale(1)";
+                e.currentTarget.style.borderColor = "var(--border)";
+              }}
+              title="Edit your agent profile"
+              aria-label="Edit agent profile"
+            >
+              👤 Profile
+            </button>
+          )}
+          
+          {/* Dark mode toggle */}
+          <button
+            onClick={toggleDarkMode}
+            style={{
+              padding: "10px 14px",
+              background: "var(--surface-hover)",
+              border: "2px solid var(--border)",
+              borderRadius: "var(--radius-md)",
+              cursor: "pointer",
+              fontSize: 20,
+              transition: "all 200ms cubic-bezier(0.4, 0, 0.2, 1)",
+              display: "flex",
+              alignItems: "center",
+              gap: 6,
+              minHeight: 44,
+              minWidth: 44,
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = "var(--surface-elevated)";
+              e.currentTarget.style.transform = "scale(1.05)";
+              e.currentTarget.style.borderColor = "var(--border-hover)";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = "var(--surface-hover)";
+              e.currentTarget.style.transform = "scale(1)";
+              e.currentTarget.style.borderColor = "var(--border)";
+            }}
+            title={
+              getDarkModeState() === 'auto' 
+                ? `Auto mode (currently ${darkMode ? 'dark' : 'light'}). Click for ${darkMode ? 'light' : 'dark'} mode.`
+                : getDarkModeState() === 'dark'
+                ? 'Dark mode. Click for light mode.'
+                : 'Light mode. Click for auto mode.'
+            }
+            aria-label={`Toggle dark mode. Current: ${getDarkModeState()}`}
+          >
+            {darkMode ? "☀️" : "🌙"}
+          </button>
+        </div>
         
         <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 8, justifyContent: "center", flexWrap: "wrap" }}>
           <h1 className="title" style={{ margin: 0 }}>
@@ -1743,16 +2042,98 @@ export default function AIPromptVault() {
 
                 return (
                   <div style={{ marginBottom: 20 }}>
-                    {/* Progress Header */}
-                    <div style={{ marginBottom: 20 }}>
-                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
-                        <h3 style={{ fontSize: 15, fontWeight: 600, color: "var(--text)" }}>
+                    {/* Inline editing preview toggle */}
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                        <h3 style={{ fontSize: 15, fontWeight: 600, color: "var(--text)", margin: 0 }}>
                           Quick Setup (1–2 min)
                         </h3>
                         <span style={{ fontSize: 13, color: "var(--muted)", fontWeight: 500 }}>
                           Step {currentFieldIndex + 1} of {placeholders.length}
                         </span>
                       </div>
+                      {/* Segmented control: Form | Inline */}
+                      <div
+                        role="tablist"
+                        aria-label="Editing mode"
+                        style={{
+                          display: "inline-flex",
+                          background: "var(--surface-hover)",
+                          border: "1px solid var(--border)",
+                          borderRadius: 9999,
+                          padding: 2,
+                          gap: 2,
+                        }}
+                      >
+                        <button
+                          role="tab"
+                          aria-selected={!showInlinePreview}
+                          onClick={() => {
+                            if (!selectedPrompt) return;
+                            const pid = (selectedPrompt as any).id;
+                            if (showInlinePreview) {
+                              setShowInlinePreview(false);
+                              try { localStorage.setItem(KEY_INLINE_PREVIEW, JSON.stringify(false)); } catch {}
+                              if (pid) {
+                                const next = { ...inlinePreviewPrefs, [pid]: false };
+                                setInlinePreviewPrefs(next);
+                                try { localStorage.setItem(KEY_INLINE_PREVIEW_PER_PROMPT, JSON.stringify(next)); } catch {}
+                              }
+                              trackEvent("inline_preview_toggled", { enabled: false, title: selectedPrompt.title });
+                              updateStats({ formEnabled: 1 });
+                              if (!inlineTipSeen) { setInlineTipSeen(true); try { localStorage.setItem(KEY_INLINE_TIP_SEEN, 'true'); } catch {} }
+                            }
+                          }}
+                          style={{
+                            padding: "6px 10px",
+                            borderRadius: 9999,
+                            border: "none",
+                            cursor: "pointer",
+                            fontSize: 12,
+                            fontWeight: 600,
+                            color: !showInlinePreview ? "var(--text-inverse)" : "var(--text)",
+                            background: !showInlinePreview ? "var(--primary)" : "transparent",
+                          }}
+                          title="Fill fields using the quick form"
+                        >
+                          Form
+                        </button>
+                        <button
+                          role="tab"
+                          aria-selected={showInlinePreview}
+                          onClick={() => {
+                            if (!selectedPrompt) return;
+                            const pid = (selectedPrompt as any).id;
+                            if (!showInlinePreview) {
+                              setShowInlinePreview(true);
+                              try { localStorage.setItem(KEY_INLINE_PREVIEW, JSON.stringify(true)); } catch {}
+                              if (pid) {
+                                const next = { ...inlinePreviewPrefs, [pid]: true };
+                                setInlinePreviewPrefs(next);
+                                try { localStorage.setItem(KEY_INLINE_PREVIEW_PER_PROMPT, JSON.stringify(next)); } catch {}
+                              }
+                              trackEvent("inline_preview_toggled", { enabled: true, title: selectedPrompt.title });
+                              updateStats({ inlineEnabled: 1 });
+                              if (!inlineTipSeen) { setInlineTipSeen(true); try { localStorage.setItem(KEY_INLINE_TIP_SEEN, 'true'); } catch {} }
+                            }
+                          }}
+                          style={{
+                            padding: "6px 10px",
+                            borderRadius: 9999,
+                            border: "none",
+                            cursor: "pointer",
+                            fontSize: 12,
+                            fontWeight: 600,
+                            color: showInlinePreview ? "var(--text-inverse)" : "var(--text)",
+                            background: showInlinePreview ? "var(--primary)" : "transparent",
+                          }}
+                          title="Inline: edit fields directly inside the prompt. Changes update the same values used for Copy/Export."
+                        >
+                          Inline
+                        </button>
+                      </div>
+                    </div>
+                    <div style={{ marginBottom: 20 }}>
                       
                       {/* Use My Defaults toggle */}
                       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
@@ -1763,6 +2144,7 @@ export default function AIPromptVault() {
                             onChange={(e) => {
                               const checked = e.target.checked;
                               setUseDefaults(checked);
+                              try { localStorage.setItem(KEY_USE_DEFAULTS, JSON.stringify(checked)); } catch {}
                               if (checked) {
                                 const count = applyDefaultsForPlaceholders(placeholders);
                                 setDefaultsAppliedCount(count);
@@ -1779,6 +2161,25 @@ export default function AIPromptVault() {
                           </span>
                         )}
                       </div>
+
+                      {/* Inline mode helper */}
+                      {showInlinePreview && (
+                        <p style={{ fontSize: 12, color: 'var(--muted)', margin: '8px 0 12px' }}>
+                          Edits in Inline mode update the same fields used for Copy and Export.
+                        </p>
+                      )}
+                      {!inlineTipSeen && (
+                        <div style={{ fontSize: 12, color: 'var(--muted)', margin: '0 0 12px', display: 'flex', gap: 8, alignItems: 'center' }}>
+                          <span>Tip: Press <kbd style={{padding:'2px 6px',border:'1px solid var(--border)',borderRadius:4, background:'var(--surface-hover)'}}>i</kbd> for Inline, <kbd style={{padding:'2px 6px',border:'1px solid var(--border)',borderRadius:4, background:'var(--surface-hover)'}}>f</kbd> for Form.</span>
+                          <button
+                            onClick={() => { setInlineTipSeen(true); try { localStorage.setItem(KEY_INLINE_TIP_SEEN, 'true'); } catch {} }}
+                            style={{ fontSize: 12, border: 'none', background: 'transparent', color: 'var(--text)', cursor: 'pointer', textDecoration: 'underline' }}
+                            aria-label="Dismiss tip"
+                          >
+                            Got it
+                          </button>
+                        </div>
+                      )}
 
                       {/* Progress bar */}
                       <div style={{ 
@@ -1830,6 +2231,38 @@ export default function AIPromptVault() {
                           ✓ Pre-filled from last time
                         </p>
                       )}
+                      {(() => {
+                        const autoVal = getAutoFillValue(currentField);
+                        const isAutoFilled = autoVal && fieldValues[currentField] === autoVal && !savedFieldValues[currentField];
+                        if (!isAutoFilled) return null;
+                        return (
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+                            <p style={{
+                              fontSize: 11,
+                              color: 'var(--success)',
+                              margin: 0,
+                              fontWeight: 500,
+                            }}>
+                              ✓ Auto-filled from profile
+                            </p>
+                            <button
+                              onClick={() => updateFieldValue(currentField, '')}
+                              style={{
+                                fontSize: 11,
+                                padding: '4px 8px',
+                                borderRadius: 9999,
+                                border: '1px solid var(--border)',
+                                background: 'var(--surface-hover)',
+                                cursor: 'pointer',
+                                color: 'var(--text)'
+                              }}
+                              title="Clear this auto-filled value"
+                            >
+                              Revert
+                            </button>
+                          </div>
+                        );
+                      })()}
                       
                       {/* Quick-select chips for field history */}
                       {fieldHistory[currentField] && fieldHistory[currentField].length > 0 && (
@@ -1995,6 +2428,34 @@ export default function AIPromptVault() {
                   }}
                 >
                   {buildFullPrompt(selectedPrompt)}
+                </div>
+              );
+            })()}
+
+            {/* Optional Inline Editing Preview (shows below the field flow; low-risk addition) */}
+            {(() => {
+              const ph = refinePlaceholders(extractPlaceholders(selectedPrompt), selectedPrompt.title);
+              if (!showInlinePreview || ph.length === 0) return null;
+              return (
+                <div
+                  style={{
+                    background: "var(--surface-hover)",
+                    padding: 16,
+                    borderRadius: "var(--radius-sm)",
+                    marginBottom: 20,
+                    border: "1px dashed var(--border)",
+                  }}
+                >
+                  <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
+                    <span style={{ fontSize: 13, color: "var(--muted)" }}>Inline editing preview</span>
+                    <span style={{ fontSize: 12, color: "var(--muted)" }}>Edit bracketed fields directly below</span>
+                  </div>
+                  <EditablePromptText
+                    text={buildFullPrompt(selectedPrompt)}
+                    fieldValues={fieldValues}
+                    onFieldChange={(field, value) => updateFieldValue(field, value)}
+                    savedFieldHistory={fieldHistory}
+                  />
                 </div>
               );
             })()}
@@ -2232,6 +2693,113 @@ export default function AIPromptVault() {
             }}>
               <kbd style={{ padding: "2px 6px", background: "var(--badge-bg)", borderRadius: 4, fontWeight: 600 }}>⌘</kbd> + <kbd style={{ padding: "2px 6px", background: "var(--badge-bg)", borderRadius: 4, fontWeight: 600 }}>Enter</kbd> to copy · <kbd style={{ padding: "2px 6px", background: "var(--badge-bg)", borderRadius: 4, fontWeight: 600 }}>ESC</kbd> to close
             </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Copy Guardrail Modal: missing fields confirmation */}
+      {showMissingFieldsPrompt && selectedPrompt && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(0,0,0,0.6)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 2000,
+            padding: 20,
+          }}
+          onClick={() => setShowMissingFieldsPrompt(false)}
+        >
+          <div
+            style={{
+              background: 'var(--surface)',
+              borderRadius: 'var(--radius-md)',
+              width: '100%',
+              maxWidth: 520,
+              padding: 24,
+              boxShadow: 'var(--shadow-lg)'
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 style={{ marginTop: 0, marginBottom: 8, color: 'var(--text)' }}>Some fields are empty</h3>
+            <p style={{ marginTop: 0, color: 'var(--muted)', fontSize: 14 }}>
+              You have {missingFields.length} empty field{missingFields.length > 1 ? 's' : ''}. You can fill them now or copy anyway.
+            </p>
+            <div style={{
+              background: 'var(--surface-hover)',
+              border: '1px solid var(--border)',
+              borderRadius: 'var(--radius-sm)',
+              padding: 12,
+              marginBottom: 16,
+              maxHeight: 140,
+              overflow: 'auto',
+              fontSize: 13,
+              color: 'var(--text)'
+            }}>
+              {missingFields.slice(0, 8).map((f, i) => (
+                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+                  <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--warning)' }} />
+                  <code style={{ background: 'transparent' }}>[{f}]</code>
+                </div>
+              ))}
+              {missingFields.length > 8 && (
+                <div style={{ fontSize: 12, color: 'var(--muted)' }}>+ {missingFields.length - 8} more…</div>
+              )}
+            </div>
+            <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: 'var(--text)', marginBottom: 12 }}>
+              <input type="checkbox" checked={guardrailDontAskAgain} onChange={(e) => setGuardrailDontAskAgain(e.target.checked)} />
+              Don’t ask again for this prompt
+            </label>
+            <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+              <button
+                onClick={() => {
+                  // Focus first missing field in the progressive flow
+                  const ph = refinePlaceholders(extractPlaceholders(selectedPrompt), selectedPrompt.title);
+                  const firstMissing = missingFields[0];
+                  const idx = ph.indexOf(firstMissing);
+                  if (idx >= 0) setCurrentFieldIndex(idx);
+                  setShowMissingFieldsPrompt(false);
+                }}
+                style={{
+                  padding: '10px 14px',
+                  background: 'var(--surface-hover)',
+                  border: '1px solid var(--border)',
+                  borderRadius: 'var(--radius-sm)',
+                  cursor: 'pointer',
+                  fontWeight: 600,
+                  color: 'var(--text)'
+                }}
+              >
+                Fill fields
+              </button>
+              <button
+                onClick={async () => {
+                  setShowMissingFieldsPrompt(false);
+                  if (guardrailDontAskAgain) {
+                    const pid = (selectedPrompt as any).id;
+                    if (pid) {
+                      const next = { ...guardrailSuppressPrefs, [pid]: true };
+                      setGuardrailSuppressPrefs(next);
+                      try { localStorage.setItem(KEY_COPY_GUARDRAIL_SUPPRESS, JSON.stringify(next)); } catch {}
+                    }
+                  }
+                  await proceedCopy(selectedPrompt);
+                }}
+                style={{
+                  padding: '10px 14px',
+                  background: 'var(--primary)',
+                  color: 'var(--text-inverse)',
+                  border: 'none',
+                  borderRadius: 'var(--radius-sm)',
+                  cursor: 'pointer',
+                  fontWeight: 700,
+                }}
+              >
+                Copy anyway
+              </button>
             </div>
           </div>
         </div>
@@ -2945,6 +3513,17 @@ export default function AIPromptVault() {
         </div>
       )}
 
+      {/* Agent Profile Setup Modal */}
+      {showProfileSetup && (
+        <AgentProfileSetup
+          onComplete={(updatedProfile: Partial<AgentProfile>) => {
+            saveProfile(updatedProfile);
+            setShowProfileSetup(false);
+          }}
+          onSkip={() => setShowProfileSetup(false)}
+        />
+      )}
+
       {/* Upgrade Modal */}
       {showUpgradeModal && (
         <div style={{
@@ -3217,5 +3796,6 @@ export default function AIPromptVault() {
         </div>
       )}
     </div>
+    </>
   );
 }

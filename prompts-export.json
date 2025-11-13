@@ -1,7 +1,7 @@
 {
-  "version": "1.0",
-  "exported": "2025-11-13T13:09:08.741Z",
-  "totalPrompts": 84,
+  "version": "auto",
+  "exported": "2025-11-13T21:25:39.808Z",
+  "totalPrompts": 140,
   "categories": [
     "Marketing & Lead Generation",
     "Daily Systems & Productivity",
@@ -19,265 +19,179 @@
   "prompts": [
     {
       "id": "marketing-lead-generation-0",
-      "title": "90-Day Inbound Lead Blueprint",
+      "title": "Instagram Ad Copy Generator",
       "category": "Marketing & Lead Generation",
-      "tags": [
-        "leads",
-        "marketing",
-        "content"
-      ],
-      "role": "marketing strategist",
-      "deliverable": "A 12-week marketing calendar + 5 ready-to-use post ideas + tracking setup",
-      "quick": "Act as a marketing strategist for [your market - example: Austin, TX]. Build a 90-day plan for [buyer/seller/investor] leads via [your channel - example: Facebook Ads, Instagram Reels, YouTube]. Include weekly calendar, KPIs, 5 hooks, UTMs.",
-      "success": "≥15 leads/week by week 6; CPL <$[your target cost per lead]."
+      "role": "ad copywriter",
+      "deliverable": "3 Instagram ad copy options + 5 hashtags",
+      "quick": "Write 3 Instagram ad copy variations for [describe your listing, event, or agent brand]. Include a strong hook, value proposition, and call-to-action. Suggest 5 hashtags.",
+      "success": "CTR ≥2.5%; CPM <$[target]."
     },
     {
       "id": "marketing-lead-generation-1",
-      "title": "YouTube Channel Plan (12 Episodes)",
+      "title": "90-Day Inbound Lead Blueprint",
       "category": "Marketing & Lead Generation",
-      "tags": [
-        "leads",
-        "marketing",
-        "content"
-      ],
-      "role": "content strategist",
-      "deliverable": "12 video titles + scripts + thumbnail ideas + keywords for each episode",
-      "quick": "Design a 12-episode YouTube plan for [your niche - example: first-time buyers, luxury homes, investors] in [your market - example: Austin, TX]: titles, hooks, CTAs, b-roll, keywords. Include upload cadence + thumbnail angles.",
-      "success": "≥5% CTR; Avg view duration ≥40%."
+      "role": "marketing strategist",
+      "deliverable": "A 12-week marketing calendar + 5 ready-to-use post ideas + tracking setup",
+      "quick": "Act as a marketing strategist for [type your city and state where you work - example: Austin, TX or Miami, FL]. Build a 90-day plan to get [tell me which type: buyer leads, seller leads, or investor leads] using [which platform will you focus on - example: Facebook Ads, Instagram Reels, or YouTube]. Include weekly calendar, KPIs, 5 hooks, UTMs.",
+      "success": "≥15 leads/week by week 6; CPL <$[your target cost per lead]."
     },
     {
       "id": "marketing-lead-generation-2",
-      "title": "Local SEO Starter Kit",
+      "title": "YouTube Channel Plan (12 Episodes)",
       "category": "Marketing & Lead Generation",
-      "tags": [
-        "leads",
-        "marketing",
-        "content"
-      ],
-      "role": "SEO consultant",
-      "deliverable": "Step-by-step checklist to get your Google ranking up",
-      "quick": "Create a local SEO checklist for [your city - example: Austin, TX]: GMB, citations, review cadence, FAQ schema, location pages. Output priorities + timelines.",
-      "success": "Rank top-3 for [service + city] within 90 days (leading indicators)."
+      "role": "content strategist",
+      "deliverable": "12 video titles + scripts + thumbnail ideas + keywords for each episode",
+      "quick": "Design a 12-episode YouTube plan for [who are you trying to reach - example: first-time home buyers, people selling luxury homes, or real estate investors] in [type your city and state - example: Austin, TX or Seattle, WA]: titles, hooks, CTAs, b-roll, keywords. Include upload cadence + thumbnail angles.",
+      "success": "≥5% CTR; Avg view duration ≥40%."
     },
     {
       "id": "marketing-lead-generation-3",
+      "title": "Local SEO Starter Kit",
+      "category": "Marketing & Lead Generation",
+      "role": "SEO consultant",
+      "deliverable": "Step-by-step checklist to get your Google ranking up",
+      "quick": "Create a local SEO checklist for [type your city and state - example: Austin, TX or Portland, OR]: GMB, citations, review cadence, FAQ schema, location pages. Output priorities + timelines.",
+      "success": "Rank top-3 for [service + city] within 90 days (leading indicators)."
+    },
+    {
+      "id": "marketing-lead-generation-4",
       "title": "Listing Lead Magnet Funnel",
       "category": "Marketing & Lead Generation",
-      "tags": [
-        "leads",
-        "marketing",
-        "content"
-      ],
       "role": "funnel architect",
       "deliverable": "Landing page copy + 3 follow-up emails + 2 text messages",
       "quick": "Draft a 'Home Valuation + Market Update' funnel with landing copy, 3-email nurture, SMS, and retargeting angles.",
       "success": "Opt-in ≥25%; reply ≥15% by Day 7."
     },
     {
-      "id": "marketing-lead-generation-4",
+      "id": "marketing-lead-generation-5",
       "title": "Neighborhood Guide Generator",
       "category": "Marketing & Lead Generation",
-      "tags": [
-        "leads",
-        "marketing",
-        "content"
-      ],
       "role": "local content creator",
       "deliverable": "A complete neighborhood guide you can brand and share",
-      "quick": "Produce a neighborhood guide template for [your area - example: South Austin, Tarrytown, Mueller]: lifestyle, schools, commute, pricing, 5 hotspots, map idea.",
+      "quick": "Produce a neighborhood guide template for [which neighborhood do you specialize in - example: South Austin, Tarrytown, or Mueller]: lifestyle, schools, commute, pricing, 5 hotspots, map idea.",
       "success": "Guide downloads ≥50/month."
     },
     {
-      "id": "marketing-lead-generation-5",
+      "id": "marketing-lead-generation-6",
       "title": "Open House Promo Pack",
       "category": "Marketing & Lead Generation",
-      "tags": [
-        "leads",
-        "marketing",
-        "content"
-      ],
       "role": "event marketer",
       "deliverable": "Social post scripts + flyer copy + follow-up messages",
       "quick": "Create pre/during/post open house assets: IG reel script, flyer copy, sign-in CTA, follow-up text/email.",
       "success": "CRM capture rate ≥30% of visitors."
     },
     {
-      "id": "marketing-lead-generation-6",
+      "id": "marketing-lead-generation-7",
       "title": "Referral Engine Email Series",
       "category": "Marketing & Lead Generation",
-      "tags": [
-        "leads",
-        "marketing",
-        "content"
-      ],
       "role": "copywriter",
       "deliverable": "4 emails asking for referrals (the right way)",
-      "quick": "Write a 4-email referral/introductions series for SOI: value first, social proof, soft ask, reminder.",
+      "quick": "Write a 4-email series asking your sphere of influence (past clients, friends, family) for referrals and introductions: value first, social proof, soft ask, reminder.",
       "success": "Reply rate ≥12%; referrals per 100 ≥5."
     },
     {
-      "id": "marketing-lead-generation-7",
+      "id": "marketing-lead-generation-8",
       "title": "Instagram Reels Calendar (30 Days)",
       "category": "Marketing & Lead Generation",
-      "tags": [
-        "leads",
-        "marketing",
-        "content"
-      ],
       "role": "short-form coach",
       "deliverable": "30 days of Instagram Reel ideas with captions",
       "quick": "Build a 30-day Reels plan: hooks, captions, on-screen beats, CTAs. Balance education/story/listings.",
       "success": "3 posts/week; avg reach ↑ 50% in 30 days."
     },
     {
-      "id": "marketing-lead-generation-8",
+      "id": "marketing-lead-generation-9",
       "title": "Brand Positioning Statement",
       "category": "Marketing & Lead Generation",
-      "tags": [
-        "leads",
-        "marketing",
-        "content"
-      ],
       "role": "brand strategist",
       "deliverable": "Your unique tagline + 3 reasons why clients should choose you",
-      "quick": "Craft a unique positioning + tagline for [your niche - example: first-time buyers, luxury condos, investors] in [your market - example: Austin, TX] with proof points and voice guide.",
+      "quick": "Craft a unique positioning statement and tagline for [who do you mainly work with - example: first-time home buyers, people selling luxury condos, or real estate investors] in [type your city and state - example: Austin, TX or Denver, CO] with proof points and voice guide.",
       "success": "Message used consistently across site/social."
     },
     {
-      "id": "marketing-lead-generation-9",
+      "id": "marketing-lead-generation-10",
       "title": "Review & Social Proof System",
       "category": "Marketing & Lead Generation",
-      "tags": [
-        "leads",
-        "marketing",
-        "content"
-      ],
       "role": "reputation manager",
       "deliverable": "Scripts + reminders + plan to get more 5-star reviews",
       "quick": "Design a post-closing review capture flow: ask script, links, reminder cadence, showcase placements.",
       "success": "≥70% of closed clients leave a review."
     },
     {
-      "id": "marketing-lead-generation-10",
+      "id": "marketing-lead-generation-11",
       "title": "YouTube Channel Plan (12 Episodes)",
       "category": "Marketing & Lead Generation",
-      "tags": [
-        "leads",
-        "marketing",
-        "content"
-      ],
       "role": "content strategist",
       "deliverable": "Table: Ep | Title | Hook | CTA | Keyword | B-roll | Thumbnail idea.",
-      "quick": "Design a 12-episode YouTube plan for [your niche - example: first-time buyers, luxury homes, investors] in [your market - example: Austin, TX]: titles, hooks, CTAs, b-roll, keywords. Include upload cadence + thumbnail angles.",
+      "quick": "Design a 12-episode YouTube plan for [who are you trying to reach - example: first-time home buyers, people selling luxury homes, or real estate investors] in [type your city and state - example: Austin, TX or Seattle, WA]: titles, hooks, CTAs, b-roll, keywords. Include upload cadence + thumbnail angles.",
       "success": "≥5% CTR; Avg view duration ≥40%."
     },
     {
-      "id": "marketing-lead-generation-11",
+      "id": "marketing-lead-generation-12",
       "title": "Local SEO Starter Kit",
       "category": "Marketing & Lead Generation",
-      "tags": [
-        "leads",
-        "marketing",
-        "content"
-      ],
       "role": "SEO consultant",
       "deliverable": "Checklist with High/Med/Low impact + owner + deadline.",
-      "quick": "Create a local SEO checklist for [your city - example: Austin, TX]: GMB, citations, review cadence, FAQ schema, location pages. Output priorities + timelines.",
+      "quick": "Create a local SEO checklist for [type your city and state - example: Austin, TX or Portland, OR]: GMB, citations, review cadence, FAQ schema, location pages. Output priorities + timelines.",
       "success": "Rank top-3 for [service + city] within 90 days (leading indicators)."
     },
     {
-      "id": "marketing-lead-generation-12",
+      "id": "marketing-lead-generation-13",
       "title": "Listing Lead Magnet Funnel",
       "category": "Marketing & Lead Generation",
-      "tags": [
-        "leads",
-        "marketing",
-        "content"
-      ],
       "role": "funnel architect",
       "deliverable": "Page wireframe + copy + 3 emails + 2 SMS + 3 retargeting hooks.",
       "quick": "Draft a ‘Home Valuation + Market Update’ funnel with landing copy, 3-email nurture, SMS, and retargeting angles.",
       "success": "Opt-in ≥25%; reply ≥15% by Day 7."
     },
     {
-      "id": "marketing-lead-generation-13",
+      "id": "marketing-lead-generation-14",
       "title": "Neighborhood Guide Generator",
       "category": "Marketing & Lead Generation",
-      "tags": [
-        "leads",
-        "marketing",
-        "content"
-      ],
       "role": "local content creator",
       "deliverable": "PDF outline + blog outline + social carousel notes.",
-      "quick": "Produce a neighborhood guide template for [your area - example: South Austin, Tarrytown, Mueller]: lifestyle, schools, commute, pricing, 5 hotspots, map idea.",
+      "quick": "Produce a neighborhood guide template for [which neighborhood do you specialize in - example: South Austin, Tarrytown, or Mueller]: lifestyle, schools, commute, pricing, 5 hotspots, map idea.",
       "success": "Guide downloads ≥50/month."
     },
     {
-      "id": "marketing-lead-generation-14",
+      "id": "marketing-lead-generation-15",
       "title": "Open House Promo Pack",
       "category": "Marketing & Lead Generation",
-      "tags": [
-        "leads",
-        "marketing",
-        "content"
-      ],
       "role": "event marketer",
       "deliverable": "Run-of-show + assets + follow-up sequence.",
       "quick": "Create pre/during/post open house assets: IG reel script, flyer copy, sign-in CTA, follow-up text/email.",
       "success": "CRM capture rate ≥30% of visitors."
     },
     {
-      "id": "marketing-lead-generation-15",
+      "id": "marketing-lead-generation-16",
       "title": "Referral Engine Email Series",
       "category": "Marketing & Lead Generation",
-      "tags": [
-        "leads",
-        "marketing",
-        "content"
-      ],
       "role": "copywriter",
       "deliverable": "4 emails + subject lines + cadence.",
-      "quick": "Write a 4-email referral/introductions series for SOI: value first, social proof, soft ask, reminder.",
+      "quick": "Write a 4-email series asking your sphere of influence (past clients, friends, family) for referrals and introductions: value first, social proof, soft ask, reminder.",
       "success": "Reply rate ≥12%; referrals per 100 ≥5."
     },
     {
-      "id": "marketing-lead-generation-16",
+      "id": "marketing-lead-generation-17",
       "title": "Instagram Reels Calendar (30 Days)",
       "category": "Marketing & Lead Generation",
-      "tags": [
-        "leads",
-        "marketing",
-        "content"
-      ],
       "role": "short-form coach",
       "deliverable": "Table: Day | Idea | Hook | Caption | CTA.",
       "quick": "Build a 30-day Reels plan: hooks, captions, on-screen beats, CTAs. Balance education/story/listings.",
       "success": "3 posts/week; avg reach ↑ 50% in 30 days."
     },
     {
-      "id": "marketing-lead-generation-17",
+      "id": "marketing-lead-generation-18",
       "title": "Brand Positioning Statement",
       "category": "Marketing & Lead Generation",
-      "tags": [
-        "leads",
-        "marketing",
-        "content"
-      ],
       "role": "brand strategist",
       "deliverable": "1-liner + 3 proof bullets + tone/style notes.",
-      "quick": "Craft a unique positioning + tagline for [your niche - example: first-time buyers, luxury homes, investors] in [your market - example: Austin, TX] with proof points and voice guide.",
+      "quick": "Craft a unique positioning + tagline for [please enter your target client type - example: first-time buyers, luxury condo sellers, real estate investors] in [please enter your city and state - example: Austin, TX] with proof points and voice guide.",
       "success": "Message used consistently across site/social."
     },
     {
-      "id": "marketing-lead-generation-18",
+      "id": "marketing-lead-generation-19",
       "title": "Review & Social Proof System",
       "category": "Marketing & Lead Generation",
-      "tags": [
-        "leads",
-        "marketing",
-        "content"
-      ],
       "role": "reputation manager",
       "deliverable": "Templates + reminder SOP + showcase widgets.",
       "quick": "Design a post-closing review capture flow: ask script, links, reminder cadence, showcase placements.",
@@ -285,139 +199,98 @@
     },
     {
       "id": "daily-systems-productivity-0",
-      "title": "Weekly Productivity Audit",
+      "title": "Weekly Time Blocking Planner",
       "category": "Daily Systems & Productivity",
-      "tags": [
-        "systems",
-        "productivity",
-        "workflow"
-      ],
-      "role": "productivity coach",
-      "deliverable": "A breakdown of what to stop doing, automate, or delegate",
-      "quick": "Audit calendar/tasks for a team of [number of agents on your team - example: 3, 5, 10] in [your market - example: Austin, TX]. Table: Task | Time | ROI | Automate/Delegate/Delete | Tool.",
-      "success": "Reclaim ≥5 hours/agent/week."
+      "role": "productivity planner",
+      "deliverable": "Weekly time-blocking table for agents",
+      "quick": "Create a weekly time-blocking plan for [how many agents - example: just yourself, 3 agents, or 10 agents] in [your city/state]. Include prospecting, admin, client service, learning, and personal time. Output as a table.",
+      "success": "≥80% time spent on high-ROI activities."
     },
     {
       "id": "daily-systems-productivity-1",
+      "title": "Weekly Productivity Audit",
+      "category": "Daily Systems & Productivity",
+      "role": "productivity coach",
+      "deliverable": "A breakdown of what to stop doing, automate, or delegate",
+      "quick": "Audit calendar/tasks for a team of [how many agents are on your team - example: just yourself, 3 agents, 5 agents, or 10 agents] in [type your city and state - example: Austin, TX or Miami, FL]. Table: Task | Time | ROI | Automate/Delegate/Delete | Tool.",
+      "success": "Reclaim ≥5 hours/agent/week."
+    },
+    {
+      "id": "daily-systems-productivity-2",
       "title": "Daily Checklist Builder",
       "category": "Daily Systems & Productivity",
-      "tags": [
-        "systems",
-        "productivity",
-        "workflow"
-      ],
       "role": "workflow architect",
       "deliverable": "Your daily to-do list (morning, afternoon, evening)",
       "quick": "Create a 12-task daily checklist balancing pipeline/admin/prospecting/learning. Export-friendly.",
       "success": "≥80% daily completion."
     },
     {
-      "id": "daily-systems-productivity-2",
+      "id": "daily-systems-productivity-3",
       "title": "Pipeline SOP (Lead→Close)",
       "category": "Daily Systems & Productivity",
-      "tags": [
-        "systems",
-        "productivity",
-        "workflow"
-      ],
       "role": "contact database consultant",
       "deliverable": "Step-by-step process from lead to closed deal",
       "quick": "Define CRM stages, entry/exit criteria, tasks, SLAs, and 2 automations/stage.",
       "success": "response time compliance ≥95%."
     },
     {
-      "id": "daily-systems-productivity-3",
+      "id": "daily-systems-productivity-4",
       "title": "Listing Launch Timeline (T-14→T+14)",
       "category": "Daily Systems & Productivity",
-      "tags": [
-        "systems",
-        "productivity",
-        "workflow"
-      ],
       "role": "project manager",
       "deliverable": "28-day timeline showing what to do and when",
       "quick": "Create a listing launch Gantt with owners, assets, dependencies, compliance checks.",
       "success": "0 missed disclosures; on-time go-live."
     },
     {
-      "id": "daily-systems-productivity-4",
+      "id": "daily-systems-productivity-5",
       "title": "Buyer Onboarding Journey",
       "category": "Daily Systems & Productivity",
-      "tags": [
-        "systems",
-        "productivity",
-        "workflow"
-      ],
       "role": "CX designer",
       "deliverable": "Welcome email + what to send buyers on day 1, 7, 14",
-      "quick": "Map onboarding for [your buyer type - example: first-time buyers under 35, downsizers, investors]: welcome pack, expectations, template updates.",
+      "quick": "Map onboarding for [describe the buyers you typically work with - example: first-time buyers under 35, people downsizing from big homes, or real estate investors]: welcome pack, expectations, template updates.",
       "success": "Buyer satisfaction score ≥9/10."
     },
     {
-      "id": "daily-systems-productivity-5",
+      "id": "daily-systems-productivity-6",
       "title": "Vendor Directory Framework",
       "category": "Daily Systems & Productivity",
-      "tags": [
-        "systems",
-        "productivity",
-        "workflow"
-      ],
       "role": "ops manager",
       "deliverable": "Spreadsheet template to organize your vendors",
       "quick": "Sheet structure for lenders/inspectors/trades with verification cadence and disclaimers.",
       "success": "Quarterly verification 100%."
     },
     {
-      "id": "daily-systems-productivity-6",
+      "id": "daily-systems-productivity-7",
       "title": "File Naming & Docs Policy",
       "category": "Daily Systems & Productivity",
-      "tags": [
-        "systems",
-        "productivity",
-        "workflow"
-      ],
       "role": "compliance officer",
       "deliverable": "Simple system to name and organize your files",
-      "quick": "Create naming convention + folder tree + retention schedule for [your cloud storage - example: Google Drive, Dropbox, OneDrive].",
+      "quick": "Create naming convention + folder tree + retention schedule for [which cloud storage do you use - example: Google Drive, Dropbox, OneDrive, or iCloud].",
       "success": "Doc retrieval <2 minutes."
     },
     {
-      "id": "daily-systems-productivity-7",
+      "id": "daily-systems-productivity-8",
       "title": "Inbox & DM Triage SOP",
       "category": "Daily Systems & Productivity",
-      "tags": [
-        "systems",
-        "productivity",
-        "workflow"
-      ],
       "role": "communication lead",
       "deliverable": "Rules for responding to emails and DMs fast",
       "quick": "Multi-channel response time + templates + escalation path; rules for auto-labels/tasks.",
       "success": "Avg response <15 min; 0 missed leads."
     },
     {
-      "id": "daily-systems-productivity-8",
+      "id": "daily-systems-productivity-9",
       "title": "Post-Closing Handoff Process",
       "category": "Daily Systems & Productivity",
-      "tags": [
-        "systems",
-        "productivity",
-        "workflow"
-      ],
       "role": "transaction coordinator",
       "deliverable": "Post-close checklist (survey, gift, review request)",
       "quick": "Checklist to TC: survey, review ask, gift, anniversary automation.",
       "success": "100% clients enter nurture."
     },
     {
-      "id": "daily-systems-productivity-9",
+      "id": "daily-systems-productivity-10",
       "title": "One-Page Operating System",
       "category": "Daily Systems & Productivity",
-      "tags": [
-        "systems",
-        "productivity",
-        "workflow"
-      ],
       "role": "business coach",
       "deliverable": "Your business on one page (goals, metrics, meetings)",
       "quick": "Create a 1-pager: Vision, 90-day goals, goal metrics, meeting rhythm, org chart.",
@@ -425,139 +298,98 @@
     },
     {
       "id": "goals-accountability-0",
-      "title": "GCI Reverse-Engineering",
+      "title": "Quarterly Business Review Framework",
       "category": "Goals & Accountability",
-      "tags": [
-        "goals",
-        "planning",
-        "accountability"
-      ],
-      "role": "performance coach",
-      "deliverable": "Exact number of calls and appointments you need each week",
-      "quick": "Turn GCI [your budget in dollars - example: $3000, $5000] and avg side [your target amount in dollars] into weekly activity targets using conversion rates.",
-      "success": "Exact # calls/appts to hit target."
+      "role": "business strategist",
+      "deliverable": "Quarterly review worksheet for agents",
+      "quick": "Design a quarterly business review template for agents. Include sections for goals, metrics, wins, challenges, and next steps. Output as a fillable worksheet.",
+      "success": "≥2 new strategies implemented per quarter."
     },
     {
       "id": "goals-accountability-1",
+      "title": "GCI Reverse-Engineering",
+      "category": "Goals & Accountability",
+      "role": "performance coach",
+      "deliverable": "Exact number of calls and appointments you need each week",
+      "quick": "Calculate how to hit your income goal: [what's your annual income goal - example: $150,000, $250,000, or $500,000] with an average commission per deal of [what do you typically make per transaction - example: $5,000, $8,000, or $12,000]. Get weekly activity targets using conversion rates.",
+      "success": "Exact # calls/appts to hit target."
+    },
+    {
+      "id": "goals-accountability-2",
       "title": "Weekly Scorecard",
       "category": "Goals & Accountability",
-      "tags": [
-        "goals",
-        "planning",
-        "accountability"
-      ],
       "role": "ops analyst",
       "deliverable": "One-page scorecard to track your weekly numbers",
       "quick": "Scorecard for leading/lagging: calls, contacts, appts, contracts, posts.",
       "success": "Update in <5 min weekly."
     },
     {
-      "id": "goals-accountability-2",
+      "id": "goals-accountability-3",
       "title": "Prospecting Habit Protocol",
       "category": "Goals & Accountability",
-      "tags": [
-        "goals",
-        "planning",
-        "accountability"
-      ],
       "role": "behavioral coach",
       "deliverable": "Simple daily routine to build a prospecting habit",
-      "quick": "Build a 20-min daily ritual for [your prospecting method - example: door knocking, cold calling, social media DMs]: trigger→routine→reward.",
+      "quick": "Build a 20-minute daily prospecting ritual for [how do you find new clients - example: knocking on doors, calling expired listings, sending DMs on social media, or sending emails]: trigger→routine→reward.",
       "success": "≥5 new contacts/day × 21 days."
     },
     {
-      "id": "goals-accountability-3",
+      "id": "goals-accountability-4",
       "title": "Weekly Reflection Template",
       "category": "Goals & Accountability",
-      "tags": [
-        "goals",
-        "planning",
-        "accountability"
-      ],
       "role": "growth mentor",
       "deliverable": "Weekly check-in template (wins, numbers, what to fix)",
       "quick": "One-page review: wins, numbers, blockers, experiments, focus.",
       "success": "Consistent self-reporting trends."
     },
     {
-      "id": "goals-accountability-4",
+      "id": "goals-accountability-5",
       "title": "30-Day Skill Sprint",
       "category": "Goals & Accountability",
-      "tags": [
-        "goals",
-        "planning",
-        "accountability"
-      ],
       "role": "training manager",
       "deliverable": "30-day plan to master one skill (with daily practice)",
-      "quick": "Design a 30-day sprint for [the skill you want to master - example: cold calling, social media, negotiations]: daily drills + checkpoints.",
+      "quick": "Design a 30-day sprint to master [which skill do you want to improve - example: making cold calls, creating social media content, giving listing presentations, or negotiating deals]: daily drills + checkpoints.",
       "success": "≥20% competence gain."
     },
     {
-      "id": "goals-accountability-5",
+      "id": "goals-accountability-6",
       "title": "Goal Red-Team Exercise",
       "category": "Goals & Accountability",
-      "tags": [
-        "goals",
-        "planning",
-        "accountability"
-      ],
       "role": "strategic coach",
       "deliverable": "What could go wrong with your goal + how to prevent it",
-      "quick": "List reasons you might miss [your specific goal - example: 50 transactions, $250K GCI, 100 new clients] + mitigation plan.",
+      "quick": "List all the reasons you might miss [what's your big goal this year - example: closing 50 transactions, earning $250K in commissions, or signing 100 new clients] and create a plan to prevent each one.",
       "success": "2 preventions implemented now."
     },
     {
-      "id": "goals-accountability-6",
+      "id": "goals-accountability-7",
       "title": "Accountability Partner Rules",
       "category": "Goals & Accountability",
-      "tags": [
-        "goals",
-        "planning",
-        "accountability"
-      ],
       "role": "team coach",
       "deliverable": "Weekly check-in agenda for you and your accountability partner",
       "quick": "Create a 15-min weekly accountability agenda + commitment contract.",
       "success": "≥80% completion in 4 weeks."
     },
     {
-      "id": "goals-accountability-7",
+      "id": "goals-accountability-8",
       "title": "Personal P&L Dashboard",
       "category": "Goals & Accountability",
-      "tags": [
-        "goals",
-        "planning",
-        "accountability"
-      ],
       "role": "financial coach",
       "deliverable": "Simple profit tracker (what you make vs. what you keep)",
       "quick": "Agent P&L: income, taxes, savings, investments; alerts <40% margin.",
       "success": "Know net profit weekly."
     },
     {
-      "id": "goals-accountability-8",
+      "id": "goals-accountability-9",
       "title": "Morning Priming Prompts",
       "category": "Goals & Accountability",
-      "tags": [
-        "goals",
-        "planning",
-        "accountability"
-      ],
       "role": "mindset coach",
       "deliverable": "3-minute morning routine to start your day right",
       "quick": "3-min exercise: affirmation, visualization, gratitude, micro-goal.",
       "success": "Mood/energy ≥8/10 after 7 days."
     },
     {
-      "id": "goals-accountability-9",
+      "id": "goals-accountability-10",
       "title": "End-of-Day Debrief",
       "category": "Goals & Accountability",
-      "tags": [
-        "goals",
-        "planning",
-        "accountability"
-      ],
       "role": "reflection facilitator",
       "deliverable": "Quick end-of-day journal prompts (3 questions)",
       "quick": "Nightly check-in: what mattered, improvements, top win; auto-log.",
@@ -565,181 +397,206 @@
     },
     {
       "id": "listings-buyer-presentations-0",
+      "title": "Luxury Listing Checklist",
+      "category": "Listings & Buyer Presentations",
+      "role": "luxury listing specialist",
+      "deliverable": "Luxury listing prep and marketing checklist",
+      "quick": "Create a step-by-step checklist for preparing, marketing, and selling a luxury property in [your city/state]. Include staging, photography, marketing channels, compliance, and client communication.",
+      "success": "Sold at/above list price in ≤45 days."
+    },
+    {
+      "id": "listings-buyer-presentations-1",
+      "title": "Listing Description That Converts",
+      "category": "Listings & Buyer Presentations",
+      "role": "listing copy specialist",
+      "deliverable": "Headline + 180–300 word description + 3 CTA variations + 8–12 hashtag suggestions",
+      "quick": "Write a compelling listing description for [what type of property is this - example: 3-bedroom single-family home, 2-bed downtown condo, or new-build townhome] located at [what is the full property address - example: 1234 Oak Ridge Drive] in [type your city and state - example: Austin, TX or Denver, CO]. Highlight [name 3 standout features - example: chef kitchen, rooftop deck, energy-efficient windows], include lifestyle hooks, fair housing–compliant language, and a strong call-to-action.",
+      "success": "≥3 qualified inquiries in first 7 days."
+    },
+    {
+      "id": "listings-buyer-presentations-2",
       "title": "Pricing Strategy Script",
       "category": "Listings & Buyer Presentations",
-      "tags": [
-        "listing",
-        "buyer",
-        "presentation"
-      ],
       "role": "listing-presentation coach",
       "deliverable": "Script to explain pricing to sellers (with market data)",
       "quick": "Price talk track with comps, DOM, trends; analogy→data→position→CTA.",
       "success": "Seller accepts within 5%."
     },
     {
-      "id": "listings-buyer-presentations-1",
+      "id": "listings-buyer-presentations-3",
       "title": "Commission Value Conversation",
       "category": "Listings & Buyer Presentations",
-      "tags": [
-        "listing",
-        "buyer",
-        "presentation"
-      ],
       "role": "negotiation coach",
       "deliverable": "How to respond when sellers ask you to lower your fee",
       "quick": "Handle ‘lower your commission’: acknowledge→value reframe→choice close.",
       "success": "≥70% full fee retention."
     },
     {
-      "id": "listings-buyer-presentations-2",
-      "title": "Listing Description That Converts",
+      "id": "listings-buyer-presentations-4",
+      "title": "FSBO Conversion Sequence",
       "category": "Listings & Buyer Presentations",
-      "tags": [
-        "listing",
-        "description",
-        "marketing"
-      ],
-      "role": "listing copy specialist",
-      "deliverable": "Headline + 180–300 word description + 3 CTA variations + 8–12 hashtag suggestions",
-      "quick": "Write a compelling listing description for [property type - example: 3-bedroom single-family home, 2-bed downtown condo, new-build townhome] at [full address - example: 1234 Oak Ridge Drive] in [city/state - example: Austin, TX]. Highlight [3 standout features - example: chef kitchen, rooftop deck, energy-efficient windows], include lifestyle hooks, fair housing–compliant language, and a strong call-to-action.",
-      "success": "≥3 qualified inquiries in first 7 days."
+      "role": "lead-conversion specialist",
+      "deliverable": "Call and text scripts to convert for-sale-by-owner sellers",
+      "quick": "Create 3 phone calls and 3 text messages to convert a for-sale-by-owner seller. Their situation: [describe their situation - example: going through a divorce and need to sell in 60 days, inherited a property and want a quick sale, or downsizing and flexible on timing]. Use compliant, professional language.",
+      "success": "≥20% appointment rate."
+    },
+    {
+      "id": "listings-buyer-presentations-5",
+      "title": "Competing Agent Response",
+      "category": "Listings & Buyer Presentations",
+      "role": "persuasion coach",
+      "deliverable": "What to say when sellers are interviewing other agents",
+      "quick": "Acknowledge multi-agent interviews; differentiate→proof→low-risk CTA.",
+      "success": "≥50% signed listing."
+    },
+    {
+      "id": "listings-buyer-presentations-6",
+      "title": "Rate-Sensitivity Buyer Talk",
+      "category": "Listings & Buyer Presentations",
+      "role": "mortgage conversationalist",
+      "deliverable": "How to talk to buyers worried about interest rates",
+      "quick": "Explain payment impact; discuss buy-downs/refi-later with disclaimer.",
+      "success": "≥70% remain active."
+    },
+    {
+      "id": "listings-buyer-presentations-7",
+      "title": "Multiple-Offer Strategy",
+      "category": "Listings & Buyer Presentations",
+      "role": "buyer strategist",
+      "deliverable": "Strategy for winning in multiple-offer situations",
+      "quick": "Buyer plan: prep, terms, escalation, appraisal gap, debrief.",
+      "success": "Win rate ≥60% multi-offer."
+    },
+    {
+      "id": "listings-buyer-presentations-8",
+      "title": "Buyer Consult Deck Outline",
+      "category": "Listings & Buyer Presentations",
+      "role": "training designer",
+      "deliverable": "Slide outline for your buyer consultation meeting",
+      "quick": "Slide outline: process, timeline, stats, agency, next steps.",
+      "success": "≥90% to signed agency."
+    },
+    {
+      "id": "listings-buyer-presentations-9",
+      "title": "Listing Refresh Plan",
+      "category": "Listings & Buyer Presentations",
+      "role": "marketing consultant",
+      "deliverable": "Plan to revive a stale listing (new photos, price, ads)",
+      "quick": "Your listing has been on the market for [how many days - example: 21 days, 30 days, 45 days, or 60 days] with low activity. Create a relaunch plan: reshoot photos, rewrite description, retarget ads, adjust price, relaunch campaign.",
+      "success": "Showings ↑ ≥30% in 7 days."
+    },
+    {
+      "id": "listings-buyer-presentations-10",
+      "title": "Graceful Disengagement Scripts",
+      "category": "Listings & Buyer Presentations",
+      "role": "relationship strategist",
+      "deliverable": "5 polite ways to fire a difficult client",
+      "quick": "5 ways to exit misaligned clients while preserving goodwill.",
+      "success": "Positive reviews maintained."
+    },
+    {
+      "id": "listings-buyer-presentations-11",
+      "title": "Repair Request Negotiation",
+      "category": "Listings & Buyer Presentations",
+      "role": "contract coach",
+      "deliverable": "How to negotiate repairs after inspection",
+      "quick": "Matrix for inspection items; fix/credit/price + sample email.",
+      "success": "≥80% accepted w/o large cuts."
     },
     {
       "id": "client-service-follow-up-0",
+      "title": "Client Onboarding Welcome Kit",
+      "category": "Client Service & Follow-Up",
+      "role": "client onboarding specialist",
+      "deliverable": "Welcome kit: email, checklist, FAQ, video script",
+      "quick": "Create a welcome kit for new clients (buyers or sellers) including a personalized welcome email, checklist, FAQ, and intro video script. Output as a ready-to-send package.",
+      "success": "Client satisfaction ≥9/10 in first week."
+    },
+    {
+      "id": "client-service-follow-up-1",
       "title": "White-Glove Onboarding",
       "category": "Client Service & Follow-Up",
-      "tags": [
-        "client",
-        "service",
-        "followup"
-      ],
       "role": "CX designer",
       "deliverable": "Welcome email + 7-day checklist + FAQ video for new clients",
       "quick": "3 touches in 72h: welcome, next-7-days checklist, FAQ video.",
       "success": "Week-1 CSAT ≥9/10."
     },
     {
-      "id": "client-service-follow-up-1",
+      "id": "client-service-follow-up-2",
       "title": "Weekly Update Cadence",
       "category": "Client Service & Follow-Up",
-      "tags": [
-        "client",
-        "service",
-        "followup"
-      ],
       "role": "communications strategist",
       "deliverable": "Weekly update template (progress, next steps, key dates)",
       "quick": "Email + text summary + CRM log: progress, next steps, key dates.",
       "success": "0 status-check inquiries."
     },
     {
-      "id": "client-service-follow-up-2",
+      "id": "client-service-follow-up-3",
       "title": "Bad-News Playbook",
       "category": "Client Service & Follow-Up",
-      "tags": [
-        "client",
-        "service",
-        "followup"
-      ],
       "role": "crisis comms coach",
       "deliverable": "Scripts for delivering bad news (appraisal low, inspection issues)",
       "quick": "Scripts for appraisal shortfall/inspection issues: acknowledge→facts→options→next step.",
       "success": "≥90% stay engaged."
     },
     {
-      "id": "client-service-follow-up-3",
+      "id": "client-service-follow-up-4",
       "title": "Move-Day Concierge",
       "category": "Client Service & Follow-Up",
-      "tags": [
-        "client",
-        "service",
-        "followup"
-      ],
       "role": "service planner",
       "deliverable": "Moving day checklist + welcome kit + follow-up surveys",
       "quick": "Checklist: utilities, vendors, locksmith, mail, welcome kit + 7/30/90 surveys.",
       "success": "≥80% survey response; ≥1 referral in 6 mo."
     },
     {
-      "id": "client-service-follow-up-4",
+      "id": "client-service-follow-up-5",
       "title": "Expectations Agreement",
       "category": "Client Service & Follow-Up",
-      "tags": [
-        "client",
-        "service",
-        "followup"
-      ],
       "role": "client-relations consultant",
       "deliverable": "Client agreement (communication hours, response times)",
       "quick": "Agreement: communication hours, response times, decision rights.",
       "success": "0 major comms breakdowns."
     },
     {
-      "id": "client-service-follow-up-5",
+      "id": "client-service-follow-up-6",
       "title": "Year-1 Maintenance Series",
       "category": "Client Service & Follow-Up",
-      "tags": [
-        "client",
-        "service",
-        "followup"
-      ],
       "role": "nurture specialist",
       "deliverable": "4 seasonal maintenance emails for homeowners",
-      "quick": "Quarterly maintenance emails for [property type and climate - example: single-family in Texas heat, condo in humid Florida, house in snowy Colorado] + vendor CTAs.",
+      "quick": "Create quarterly maintenance reminder emails for homeowners with [what type of property and weather - example: single-family homes in hot Texas summers, condos in humid Florida, or houses with snowy Colorado winters]. Include vendor recommendations.",
       "success": "Open ≥40%; click ≥10%."
     },
     {
-      "id": "client-service-follow-up-6",
+      "id": "client-service-follow-up-7",
       "title": "Vendor Issue Escalation",
       "category": "Client Service & Follow-Up",
-      "tags": [
-        "client",
-        "service",
-        "followup"
-      ],
       "role": "risk manager",
       "deliverable": "Process when vendors mess up (who to contact, timeline)",
       "quick": "Flow: client→agent→vendor→broker→legal; logging + timeline.",
       "success": "Ack <24h; resolve <72h."
     },
     {
-      "id": "client-service-follow-up-7",
+      "id": "client-service-follow-up-8",
       "title": "Surprise & Delight Moments",
       "category": "Client Service & Follow-Up",
-      "tags": [
-        "client",
-        "service",
-        "followup"
-      ],
       "role": "retention strategist",
       "deliverable": "5 gift ideas for client milestones",
-      "quick": "5 touchpoints by milestone with budget $[your gift budget per client - example: $50, $100, $250] and personalization.",
+      "quick": "Plan 5 thoughtful touchpoints at key milestones. Budget per client: [how much do you spend on client gifts - example: $50, $100, or $250]. Include personalization ideas.",
       "success": "Referrals ↑ ≥20% YoY."
     },
     {
-      "id": "client-service-follow-up-8",
+      "id": "client-service-follow-up-9",
       "title": "Service Recovery Templates",
       "category": "Client Service & Follow-Up",
-      "tags": [
-        "client",
-        "service",
-        "followup"
-      ],
       "role": "reputation consultant",
       "deliverable": "Apology templates + how to fix client complaints",
       "quick": "Apology|Accountability|Remedy|Re-commit|Follow-up + public-review reply.",
       "success": "Complaints closed; ≥4★ avg."
     },
     {
-      "id": "client-service-follow-up-9",
+      "id": "client-service-follow-up-10",
       "title": "Closing-Day Story Pack",
       "category": "Client Service & Follow-Up",
-      "tags": [
-        "client",
-        "service",
-        "followup"
-      ],
       "role": "social content coach",
       "deliverable": "Shot list + captions + hashtags for closing day posts",
       "quick": "Shot list, captions, hashtags, review ask + compliance note.",
@@ -747,335 +604,602 @@
     },
     {
       "id": "finance-business-planning-0",
+      "title": "Marketing ROI Calculator",
+      "category": "Finance & Business Planning",
+      "role": "ROI analyst",
+      "deliverable": "Marketing ROI calculator for agents",
+      "quick": "Calculate the ROI for your marketing campaigns. Input: budget, leads generated, deals closed, average commission. Output: ROI %, cost per lead, cost per deal.",
+      "success": "ROI ≥20% per campaign."
+    },
+    {
+      "id": "finance-business-planning-1",
       "title": "12-Month Cashflow Model",
       "category": "Finance & Business Planning",
-      "tags": [
-        "finance",
-        "profit",
-        "budget"
-      ],
       "role": "finance coach",
       "deliverable": "Monthly income and expense tracker",
       "quick": "Forecast income/expenses with tax, reserves, profit targets; monthly table.",
       "success": "Know runway & savings by month 12."
     },
     {
+      "id": "finance-business-planning-2",
+      "title": "Marketing Budget Allocator",
+      "category": "Finance & Business Planning",
+      "role": "marketing CFO",
+      "deliverable": "How to split your marketing budget across channels",
+      "quick": "Split your monthly marketing budget of [how much per month - example: $1,000, $2,500, or $5,000] across [which platforms do you advertise on - example: Facebook Ads, Google Ads, Zillow leads, or direct mail]. Include cost-per-lead targets and rules for scaling winners or cutting losers.",
+      "success": "≤$[Y] CPL; ≥20% ROI/channel."
+    },
+    {
+      "id": "finance-business-planning-3",
+      "title": "Profitability Review Audit",
+      "category": "Finance & Business Planning",
+      "role": "business consultant",
+      "deliverable": "Which expenses to cut + 90-day savings plan",
+      "quick": "Analyze expenses by ROI; keep/cut/renegotiate + 90-day savings plan.",
+      "success": "Reduce expenses ≥15%."
+    },
+    {
+      "id": "finance-business-planning-4",
+      "title": "Commission Advance Tree",
+      "category": "Finance & Business Planning",
+      "role": "risk advisor",
+      "deliverable": "When to take a commission advance (decision tree)",
+      "quick": "Decision framework: cashflow, deal certainty, cost, alternatives.",
+      "success": "0 unnecessary advances."
+    },
+    {
+      "id": "finance-business-planning-5",
+      "title": "Team Compensation Plan",
+      "category": "Finance & Business Planning",
+      "role": "comp architect",
+      "deliverable": "Pay structure for assistants and coordinators",
+      "quick": "Comp for ISA/LA/TC: base/split/bonus/cap + retention incentives.",
+      "success": "Turnover <10% annually."
+    },
+    {
+      "id": "finance-business-planning-6",
+      "title": "Quarterly Tax Planning",
+      "category": "Finance & Business Planning",
+      "role": "tax strategy coach",
+      "deliverable": "Tax checklist + deductions + quarterly payment reminders",
+      "quick": "Checklist: estimates, deductions log, retirement, receipts; reminders.",
+      "success": "100% on-time payments."
+    },
+    {
+      "id": "finance-business-planning-7",
+      "title": "Investor Service Line",
+      "category": "Finance & Business Planning",
+      "role": "business developer",
+      "deliverable": "Service offering for real estate investors",
+      "quick": "Offering for investors: criteria, underwriting sheet, fees, deck.",
+      "success": "Launch in ≤45 days."
+    },
+    {
+      "id": "finance-business-planning-8",
+      "title": "Market Analytics Template",
+      "category": "Finance & Business Planning",
+      "role": "data analyst",
+      "deliverable": "Market stats dashboard with talking points",
+      "quick": "Create a market statistics dashboard for [describe your specific market - example: downtown Austin condos, suburban single-family homes in Plano, or luxury estates in Scottsdale]. Include sale-to-list price ratios, days on market, months of inventory, and talking points.",
+      "success": "Monthly update informs listings."
+    },
+    {
+      "id": "finance-business-planning-9",
+      "title": "Vendor RFP Generator",
+      "category": "Finance & Business Planning",
+      "role": "procurement advisor",
+      "deliverable": "Request for proposal template for vendors",
+      "quick": "RFP template: scope, deliverables, metrics, pricing, rubric.",
+      "success": "Clarity pre-contract."
+    },
+    {
+      "id": "finance-business-planning-10",
+      "title": "Insurance & Risk Checklist",
+      "category": "Finance & Business Planning",
+      "role": "risk manager",
+      "deliverable": "Insurance policies you need + renewal tracker",
+      "quick": "Policies: E&O, cyber, GL, data; renewal dates; claims protocol.",
+      "success": "0 coverage gaps; on-time renewals."
+    },
+    {
+      "id": "negotiation-deal-strategy-0",
+      "title": "Appraisal Gap Negotiation Script",
+      "category": "Negotiation & Deal Strategy",
+      "role": "negotiation strategist",
+      "deliverable": "Appraisal gap negotiation script for agents",
+      "quick": "Create a negotiation script for handling appraisal gaps (when the appraisal comes in below contract price). Include talking points for buyers and sellers, options for bridging the gap, and compliance reminders.",
+      "success": "≥80% gap resolved without contract cancellation."
+    },
+    {
+      "id": "negotiation-deal-strategy-1",
+      "title": "BATNA Power Map",
+      "category": "Negotiation & Deal Strategy",
+      "role": "negotiation coach",
+      "deliverable": "Backup options if this deal falls through",
+      "quick": "Build your backup plan (BATNA) for this negotiation: [describe the situation - example: appraisal came in $15k low, buyer wants $10k in seller credits, or you're dealing with multiple offers]. Include risk assessment.",
+      "success": "≥2 creative options + thresholds."
+    },
+    {
+      "id": "negotiation-deal-strategy-2",
+      "title": "Concession Strategy Ladder",
+      "category": "Negotiation & Deal Strategy",
+      "role": "deal architect",
+      "deliverable": "What to give up and what to ask for in return",
+      "quick": "Rank tradeables by cost to client vs value to other party.",
+      "success": "≥50% concessions offset."
+    },
+    {
+      "id": "negotiation-deal-strategy-3",
+      "title": "Anchoring Language Framework",
+      "category": "Negotiation & Deal Strategy",
+      "role": "persuasive linguist",
+      "deliverable": "How to set price expectations with words",
+      "quick": "3 anchors: data-first, emotional story, bracketed range; phrases to avoid.",
+      "success": "Offers land within 3% target."
+    },
+    {
+      "id": "negotiation-deal-strategy-4",
+      "title": "Calibrated Question Builder",
+      "category": "Negotiation & Deal Strategy",
+      "role": "Voss-style trainer",
+      "deliverable": "10 questions to uncover what the other side really wants",
+      "quick": "10 ‘how/what’ questions + labels to uncover constraints.",
+      "success": "≥50% more info disclosed."
+    },
+    {
+      "id": "negotiation-deal-strategy-5",
+      "title": "Appraisal Gap Plan",
+      "category": "Negotiation & Deal Strategy",
+      "role": "transaction strategist",
+      "deliverable": "What to do when appraisal comes in low",
+      "quick": "The appraisal came in low by [how much - example: $5,000, $10,000, or $15,000]. Create a plan with these options: challenge the appraisal, adjust the price, find cash to bridge the gap, renegotiate terms, or cancel the contract.",
+      "success": "≥70% resolved w/o cancel."
+    },
+    {
+      "id": "negotiation-deal-strategy-6",
+      "title": "Inspection Resolution Matrix",
+      "category": "Negotiation & Deal Strategy",
+      "role": "mediator",
+      "deliverable": "How to handle inspection items (repair, credit, or ignore)",
+      "quick": "Minor/major matrix: repair/credit/ignore with suggested language.",
+      "success": "≥90% resolution in 3 days."
+    },
+    {
+      "id": "negotiation-deal-strategy-7",
+      "title": "Deadline Pressure Playbook",
+      "category": "Negotiation & Deal Strategy",
+      "role": "time-based tactician",
+      "deliverable": "How to handle artificial deadlines",
+      "quick": "Resist TILI deadlines: scripts, alternatives, reframes; pre-deadline checklist.",
+      "success": "0 rushed concessions."
+    },
+    {
+      "id": "negotiation-deal-strategy-8",
+      "title": "Deal Rescue Protocol",
+      "category": "Negotiation & Deal Strategy",
+      "role": "conflict specialist",
+      "deliverable": "How to save deals that are falling apart",
+      "quick": "Save deals with financing/inspection/cold-feet issues; flow + scripts.",
+      "success": "≥60% revived."
+    },
+    {
+      "id": "negotiation-deal-strategy-9",
+      "title": "Multiple-Offer Ethics Guide",
+      "category": "Negotiation & Deal Strategy",
+      "role": "compliance advisor",
+      "deliverable": "How to handle multiple offers ethically and legally",
+      "quick": "Create ethical scripts and procedures for handling multiple offers according to [your state or brokerage rules - example: Texas TREC regulations, California DRE requirements, Keller Williams policy, or eXp Realty guidelines]. Include disclosure requirements and offer management.",
+      "success": "100% compliance; 0 complaints."
+    },
+    {
+      "id": "negotiation-deal-strategy-10",
+      "title": "Negotiation Post-Mortem",
+      "category": "Negotiation & Deal Strategy",
+      "role": "reflective coach",
+      "deliverable": "Review template after each negotiation",
+      "quick": "Debrief: what worked, surprises, missed clues, system change; rubric.",
+      "success": "Complete within 48h of close."
+    },
+    {
       "id": "home-search-market-intel-0",
-      "title": "Needs-Match Matrix",
+      "title": "Relocation Brief",
       "category": "Home Search & Market Intel",
-      "tags": [
-        "buyer",
-        "search",
-        "tools"
-      ],
-      "role": "profiling strategist",
-      "deliverable": "Weighted table with fit scores.",
-      "quick": "Must-have vs nice-to-have matrix for [your target client - example: first-time buyers, move-up buyers, downsizers] in [your market - example: Austin, TX] with commute band [X–Y].",
-      "success": "≥3 neighborhoods fit ≥80%."
+      "role": "relocation advisor",
+      "deliverable": "Relocation welcome pack for buyers",
+      "quick": "Create a relocation brief for buyers moving to [your city/state]. Include schools, commute, rent vs buy, neighborhoods, and local tips. Output as a welcome pack.",
+      "success": "Client shortlists 3 areas within 48h."
     },
     {
       "id": "home-search-market-intel-1",
+      "title": "Needs-Match Matrix",
+      "category": "Home Search & Market Intel",
+      "role": "profiling strategist",
+      "deliverable": "Weighted table with fit scores.",
+      "quick": "Create a must-have versus nice-to-have matrix for [describe your client - example: first-time buyers with a $300K budget, move-up buyers needing more space, or downsizers going from house to condo] in [type your city and state - example: Austin, TX or Portland, OR]. Include commute preferences.",
+      "success": "≥3 neighborhoods fit ≥80%."
+    },
+    {
+      "id": "home-search-market-intel-2",
       "title": "Smart Search Strings",
       "category": "Home Search & Market Intel",
-      "tags": [
-        "buyer",
-        "search",
-        "tools"
-      ],
       "role": "portal power-user",
       "deliverable": "Search filters to find exactly what buyers want",
-      "quick": "MLS/portal boolean strings + alerts for [buyer criteria - example: 3bed/2bath under $400K with pool in 78704, new construction 4bed in top-rated school district, waterfront condos under $600K] across MLS/Zillow/Redfin.",
+      "quick": "Create MLS and portal search strings with alerts for [what is your buyer looking for - example: 3 bedroom 2 bath under $400K with a pool in the 78704 zip code, new construction 4 bedroom homes in top-rated school districts, or waterfront condos under $600K]. Set up across MLS, Zillow, and Redfin.",
       "success": "≤3 irrelevant listings/week."
     },
     {
+      "id": "home-search-market-intel-3",
+      "title": "Off-Market Outreach",
+      "category": "Home Search & Market Intel",
+      "role": "listing acquisition specialist",
+      "deliverable": "Letters and emails to find off-market properties",
+      "quick": "Write letters, emails, and text messages to find off-market properties in [describe your target - example: single-family homes in the Westlake neighborhood, luxury condos in downtown, or investment properties in East Austin]. Include legally compliant language and opt-out instructions.",
+      "success": "≥5% response / 100 sends."
+    },
+    {
+      "id": "home-search-market-intel-4",
+      "title": "New-Build vs Resale",
+      "category": "Home Search & Market Intel",
+      "role": "buyer educator",
+      "deliverable": "Side-by-side comparison for buyers",
+      "quick": "Side-by-side with lifecycle cost + agent talking points.",
+      "success": "Client chooses confidently."
+    },
+    {
+      "id": "home-search-market-intel-5",
+      "title": "Lender Options Explainer",
+      "category": "Home Search & Market Intel",
+      "role": "financing translator",
+      "deliverable": "How to compare lenders and loan programs",
+      "quick": "Compare different lenders and loan programs for a buyer with [describe their financial situation - example: 720 credit score earning $80K per year, 650 credit score earning $120K per year, or 780 credit score earning $55K per year]. Show pros and cons of each option.",
+      "success": "Select 2 qualified options in 48h."
+    },
+    {
+      "id": "home-search-market-intel-6",
+      "title": "Investor Deal Screener",
+      "category": "Home Search & Market Intel",
+      "role": "underwriting coach",
+      "deliverable": "Quick calculator for investment properties",
+      "quick": "Create a quick screening tool for [what's your investment strategy - example: buying properties to flip and resell, buying rentals to hold long-term, or using the BRRRR method to refinance after rehab]. Calculate cap rate, cash-on-cash return, and debt service coverage ratio.",
+      "success": "Shortlist in under 10 minutes."
+    },
+    {
+      "id": "home-search-market-intel-7",
+      "title": "Relocation Brief",
+      "category": "Home Search & Market Intel",
+      "role": "relocation advisor",
+      "deliverable": "Welcome pack for buyers moving to your area",
+      "quick": "Relocation pack: schools, commute, rents vs buys, neighborhoods.",
+      "success": "Client shortlists 3 areas."
+    },
+    {
+      "id": "home-search-market-intel-8",
+      "title": "School-Zone Navigator",
+      "category": "Home Search & Market Intel",
+      "role": "family move strategist",
+      "deliverable": "How to search by school ratings and zones",
+      "quick": "Create a school-focused search guide for [describe the family - example: a couple with 2 elementary-age kids, a single parent with one teenager, or a young family planning for future children]. Include school ratings, attendance zones, and property taxes.",
+      "success": "Confidence in top 2 zones."
+    },
+    {
+      "id": "home-search-market-intel-9",
+      "title": "Downsizer Options Map",
+      "category": "Home Search & Market Intel",
+      "role": "downsizing consultant",
+      "deliverable": "Condo and townhome options for downsizers",
+      "quick": "Condos/townhomes w/ accessibility, HOA insights, budgets.",
+      "success": "Tour list within 48h."
+    },
+    {
+      "id": "home-search-market-intel-10",
+      "title": "First-Time Buyer Roadmap",
+      "category": "Home Search & Market Intel",
+      "role": "first-time coach",
+      "deliverable": "Step-by-step timeline from pre-approval to closing",
+      "quick": "From pre-approval to close with expectation management scripts.",
+      "success": "On-track milestones each week."
+    },
+    {
       "id": "database-referral-engine-0",
-      "title": "12-Touch Sphere Plan",
+      "title": "Referral Request Script",
       "category": "Database & Referral Engine",
-      "tags": [
-        "sphere",
-        "community",
-        "nurture"
-      ],
-      "role": "retention strategist",
-      "deliverable": "Monthly outreach plan for past clients and sphere",
-      "quick": "Monthly plan for SOI/past clients/vendors with channel + theme + CTA.",
-      "success": "≥30% engagement/touch."
+      "role": "referral specialist",
+      "deliverable": "Referral request scripts (email, text, call)",
+      "quick": "Write a script for requesting referrals from past clients after a successful closing. Include email, text, and phone call variations. Make it friendly, professional, and easy to personalize.",
+      "success": "≥20% response rate within 30 days."
     },
     {
       "id": "database-referral-engine-1",
+      "title": "12-Touch Sphere Plan",
+      "category": "Database & Referral Engine",
+      "role": "retention strategist",
+      "deliverable": "Monthly outreach plan for past clients and sphere",
+      "quick": "Create a monthly outreach plan for your sphere of influence (past clients, friends, family, and vendors). Include the right channel, theme, and call-to-action for each touchpoint.",
+      "success": "≥30% engagement/touch."
+    },
+    {
+      "id": "database-referral-engine-2",
       "title": "Home-Anniversary Automation",
       "category": "Database & Referral Engine",
-      "tags": [
-        "sphere",
-        "community",
-        "nurture"
-      ],
       "role": "automation expert",
       "deliverable": "Automated anniversary messages + gift tiers",
       "quick": "CRM workflow: reminder→gift tier [$25/$50/$100]→message→social post.",
       "success": "≥95% anniversaries auto-celebrated."
     },
     {
-      "id": "database-referral-engine-2",
+      "id": "database-referral-engine-3",
       "title": "Community Spotlight Series",
       "category": "Database & Referral Engine",
-      "tags": [
-        "sphere",
-        "community",
-        "nurture"
-      ],
       "role": "local content creator",
       "deliverable": "12 posts featuring local businesses",
-      "quick": "12-episode plan on local businesses/nonprofits/events in [your target neighborhood - example: Tarrytown, Hyde Park, Westlake].",
+      "quick": "Plan 12 social media posts featuring local businesses, nonprofits, and community events in [which neighborhood are you focusing on - example: Tarrytown in Austin, Hyde Park in Austin, or Westlake Hills].",
       "success": "+25% local followers; 3 collabs."
     },
     {
-      "id": "database-referral-engine-3",
+      "id": "database-referral-engine-4",
       "title": "Client-Appreciation Event",
       "category": "Database & Referral Engine",
-      "tags": [
-        "sphere",
-        "community",
-        "nurture"
-      ],
       "role": "event marketer",
       "deliverable": "Event planning checklist (venue, vendors, invites)",
-      "quick": "Plan for [season and theme - example: summer BBQ, holiday cocktail party, spring garden tour, fall tailgate]: timeline, vendors, sponsors, RSVP.",
+      "quick": "Plan a client appreciation event. What kind: [describe your event - example: a summer BBQ, holiday cocktail party, spring garden tour, or fall tailgate party]. Include timeline, vendors, sponsors, and RSVP system.",
       "success": "≥60% attendance; ≥3 referrals."
     },
     {
-      "id": "database-referral-engine-4",
+      "id": "database-referral-engine-5",
       "title": "Review-to-Referral Bridge",
       "category": "Database & Referral Engine",
-      "tags": [
-        "sphere",
-        "community",
-        "nurture"
-      ],
       "role": "relationship copywriter",
       "deliverable": "How to turn 5-star reviews into referral requests",
       "quick": "Turn 5★ reviews into warm referral asks (text/email/DM).",
       "success": "≥20% provide a referral in 30 days."
     },
     {
-      "id": "database-referral-engine-5",
+      "id": "database-referral-engine-6",
       "title": "Newsletter Engine",
       "category": "Database & Referral Engine",
-      "tags": [
-        "sphere",
-        "community",
-        "nurture"
-      ],
       "role": "newsletter editor",
       "deliverable": "Monthly newsletter template (market stats + tips + local picks)",
       "quick": "Monthly template: market stat, story, tip, local pick, CTA.",
       "success": "Open ≥35%, click ≥6%."
     },
     {
-      "id": "database-referral-engine-6",
+      "id": "database-referral-engine-7",
       "title": "Past-Client Care Calendar",
       "category": "Database & Referral Engine",
-      "tags": [
-        "sphere",
-        "community",
-        "nurture"
-      ],
       "role": "client care planner",
       "deliverable": "Quarterly check-ins for past clients",
       "quick": "Quarterly touches: maintenance notes, check-ins, invites.",
       "success": "Retention/referrals up YoY."
     },
     {
-      "id": "database-referral-engine-7",
+      "id": "database-referral-engine-8",
       "title": "Hyperlocal Facebook Group",
       "category": "Database & Referral Engine",
-      "tags": [
-        "sphere",
-        "community",
-        "nurture"
-      ],
       "role": "community manager",
       "deliverable": "How to start and grow a neighborhood Facebook group",
       "quick": "Start/moderate a local group: rules, weekly topics, promo limits.",
       "success": "1000 members in 6 mo."
     },
     {
-      "id": "database-referral-engine-8",
+      "id": "database-referral-engine-9",
       "title": "Vendor Co-Marketing Kit",
       "category": "Database & Referral Engine",
-      "tags": [
-        "sphere",
-        "community",
-        "nurture"
-      ],
       "role": "partnership lead",
       "deliverable": "Co-marketing plan with lenders and contractors",
       "quick": "Co-marketing SOP with lenders/contractors; shared content calendar.",
       "success": "2 co-branded assets/month."
     },
     {
+      "id": "database-referral-engine-10",
+      "title": "'Just Closed' Story Framework",
+      "category": "Database & Referral Engine",
+      "role": "story coach",
+      "deliverable": "Template for closing day social media posts",
+      "quick": "Client story → lesson → CTA format for posts and emails.",
+      "success": "Save/share rate ↑ 25%."
+    },
+    {
       "id": "tech-ai-marketing-automation-0",
-      "title": "Landing Page CRO Audit",
+      "title": "CRM Automation Workflow Builder",
       "category": "Tech, AI & Marketing Automation",
-      "tags": [
-        "marketing",
-        "ads",
-        "ai"
-      ],
-      "role": "CRO expert",
-      "deliverable": "What's wrong with your landing page + how to fix it",
-      "quick": "Audit [your website URL - example: https://yourdomain.com/home-valuation]: headline, proof, CTA, friction, load/mobile; give fixes + examples.",
-      "success": "Conv ↑ ≥30% in 14 days."
+      "role": "CRM automation architect",
+      "deliverable": "CRM automation workflow + checklist for agents",
+      "quick": "Design a CRM automation workflow for agents. Include lead capture, assignment, follow-up, reminders, and reporting. Output as a flowchart and checklist.",
+      "success": "100% leads assigned and followed up within 5 min."
     },
     {
       "id": "tech-ai-marketing-automation-1",
-      "title": "7-Day Follow-Up Sequence",
+      "title": "Landing Page CRO Audit",
       "category": "Tech, AI & Marketing Automation",
-      "tags": [
-        "marketing",
-        "ads",
-        "ai"
-      ],
-      "role": "sales automation copywriter",
-      "deliverable": "Day-by-day email and text templates for new leads",
-      "quick": "SMS+Email for [lead source - example: Facebook ad, Zillow, referral, open house]: Day-by-day copy with branches.",
-      "success": "≥25% reply in 7 days."
+      "role": "CRO expert",
+      "deliverable": "What's wrong with your landing page + how to fix it",
+      "quick": "Audit this landing page: [paste your full website URL - example: https://yourdomain.com/home-valuation or https://yoursite.com/seller-guide]. Review headline, social proof, call-to-action, friction points, loading speed, and mobile experience. Give specific fixes with examples.",
+      "success": "Conv ↑ ≥30% in 14 days."
     },
     {
       "id": "tech-ai-marketing-automation-2",
+      "title": "7-Day Follow-Up Sequence",
+      "category": "Tech, AI & Marketing Automation",
+      "role": "sales automation copywriter",
+      "deliverable": "Day-by-day email and text templates for new leads",
+      "quick": "Create a 7-day email and text message sequence for new leads from [where did this lead come from - example: a Facebook ad, a Zillow inquiry, a referral from a past client, or someone who visited your open house]. Day-by-day copy with decision branches.",
+      "success": "≥25% reply in 7 days."
+    },
+    {
+      "id": "tech-ai-marketing-automation-3",
       "title": "No-Show Prevention Flow",
       "category": "Tech, AI & Marketing Automation",
-      "tags": [
-        "marketing",
-        "ads",
-        "ai"
-      ],
       "role": "workflow optimizer",
       "deliverable": "Automated reminders to reduce no-shows",
       "quick": "Booking → 24h → 1h reminders + ‘what to expect’ checklist.",
       "success": "No-shows <10%."
     },
     {
-      "id": "tech-ai-marketing-automation-3",
+      "id": "tech-ai-marketing-automation-4",
       "title": "Retargeting Ad Set",
       "category": "Tech, AI & Marketing Automation",
-      "tags": [
-        "marketing",
-        "ads",
-        "ai"
-      ],
       "role": "digital ad strategist",
       "deliverable": "3 Facebook ads for people who visited your site",
-      "quick": "3 ad angles (pain/proof/curiosity) for visitors who bounced on [landing page - example: home valuation page, seller guide download, buyer consultation booking, neighborhood guide].",
+      "quick": "Create 3 Facebook retargeting ads (using pain points, social proof, and curiosity angles) for people who visited [which page did they look at - example: your home valuation page, seller guide download page, buyer consultation booking page, or neighborhood guide page] but didn't convert.",
       "success": "Re-engagement CTR ≥15%."
     },
     {
-      "id": "tech-ai-marketing-automation-4",
+      "id": "tech-ai-marketing-automation-5",
       "title": "Site Chatbot Script",
       "category": "Tech, AI & Marketing Automation",
-      "tags": [
-        "marketing",
-        "ads",
-        "ai"
-      ],
       "role": "AI convo designer",
       "deliverable": "Chatbot conversation flow to qualify and book leads",
       "quick": "Qualify and book leads: greeting→qualify→offer→booking→CRM tags.",
       "success": "Chat→lead ≥25%."
     },
     {
-      "id": "tech-ai-marketing-automation-5",
+      "id": "tech-ai-marketing-automation-6",
       "title": "AI Systems Stack",
       "category": "Tech, AI & Marketing Automation",
-      "tags": [
-        "marketing",
-        "ads",
-        "ai"
-      ],
       "role": "tech architect",
       "deliverable": "Which AI tools to use and how to connect them",
-      "quick": "Design AI stack for [number of people on your team - example: 2, 5, 10 agents]: workflows, tools, integration notes, privacy.",
+      "quick": "Design an AI tools stack for [how big is your team - example: just yourself, 2 agents, 5 agents, or 10 agents]. Map out workflows, recommend specific tools, explain how they connect, and address privacy concerns.",
       "success": "Admin time −30%/week."
     },
     {
-      "id": "tech-ai-marketing-automation-6",
+      "id": "tech-ai-marketing-automation-7",
       "title": "Super-Prompt Trio",
       "category": "Tech, AI & Marketing Automation",
-      "tags": [
-        "marketing",
-        "ads",
-        "ai"
-      ],
       "role": "prompt engineer",
       "deliverable": "3 powerful prompts you'll use every day",
       "quick": "3 super-prompts: Listing Pack, Seller Brief, Negotiation Coach.",
       "success": "10× output speed & consistency."
     },
     {
-      "id": "tech-ai-marketing-automation-7",
+      "id": "tech-ai-marketing-automation-8",
       "title": "AI Usage & Ethics Policy",
       "category": "Tech, AI & Marketing Automation",
-      "tags": [
-        "marketing",
-        "ads",
-        "ai"
-      ],
       "role": "compliance strategist",
       "deliverable": "Policy for using AI ethically in your business",
-      "quick": "Policy for [your brokerage name - example: RE/MAX, Keller Williams, eXp Realty]: purpose, use, data, verification, disclosure, fair housing.",
+      "quick": "Create an AI usage policy for [what's your brokerage name - example: RE/MAX, Keller Williams, eXp Realty, Coldwell Banker, or an independent brokerage]. Cover purpose, acceptable uses, data handling, human verification requirements, disclosure rules, and fair housing compliance.",
       "success": "100% agent compliance."
     },
     {
-      "id": "tech-ai-marketing-automation-8",
+      "id": "tech-ai-marketing-automation-9",
       "title": "Daily AI Briefing Ritual",
       "category": "Tech, AI & Marketing Automation",
-      "tags": [
-        "marketing",
-        "ads",
-        "ai"
-      ],
       "role": "learning coach",
       "deliverable": "10-minute daily habit to stay current on AI",
       "quick": "10-min habit: scan sources, save, apply, share; 3 daily questions.",
       "success": "30-day habit formed."
     },
     {
-      "id": "tech-ai-marketing-automation-9",
+      "id": "tech-ai-marketing-automation-10",
       "title": "AI Market Dashboard Spec",
       "category": "Tech, AI & Marketing Automation",
-      "tags": [
-        "marketing",
-        "ads",
-        "ai"
-      ],
       "role": "product designer",
       "deliverable": "Automated market report dashboard",
       "quick": "KPIs (New Listings, DOM, MOI, SP/LP, $/sqft) + auto-summary + CSV/Notion embed.",
       "success": "Used daily for client reports."
     },
     {
+      "id": "ai-workflows-automation-0",
+      "title": "AI Automation Blueprint",
+      "category": "AI Workflows & Automation",
+      "role": "AI systems architect",
+      "deliverable": "Map of all automations for your business",
+      "quick": "Map out all possible automations for [how many people on your team - example: just yourself, 2 agents, 5 agents, or 10 agents] using [which tools do you currently use - example: Follow Up Boss, Canva, Google Workspace, or Calendly]. Show triggers, actions, and time saved per week.",
+      "success": "≥10 hrs saved/agent/week."
+    },
+    {
+      "id": "ai-workflows-automation-1",
+      "title": "Lead Routing + Auto Follow-Up",
+      "category": "AI Workflows & Automation",
+      "role": "CRM automation consultant",
+      "deliverable": "Automated lead assignment and follow-up",
+      "quick": "Source→CRM→owner assign→SMS/email→task; include tags and SLA.",
+      "success": "100% leads replied <5 min."
+    },
+    {
+      "id": "ai-workflows-automation-2",
+      "title": "Post-Closing Drip (12 Mo.)",
+      "category": "AI Workflows & Automation",
+      "role": "retention automation designer",
+      "deliverable": "12-month automated email sequence for past clients",
+      "quick": "Design 12-month nurture: monthly topic + personalization fields.",
+      "success": "≥25% repeat/referral in 12 mo."
+    },
+    {
+      "id": "ai-workflows-automation-3",
+      "title": "Content Repurposing Flow",
+      "category": "AI Workflows & Automation",
+      "role": "content systems engineer",
+      "deliverable": "Turn 1 video into 5 social posts automatically",
+      "quick": "Turn 1 long video/blog into 5 assets via AI + schedulers.",
+      "success": "5× outputs in <30 min."
+    },
+    {
+      "id": "ai-workflows-automation-4",
+      "title": "Transaction Status Bot",
+      "category": "AI Workflows & Automation",
+      "role": "workflow developer",
+      "deliverable": "Automated status updates for clients",
+      "quick": "Status change → templated client updates via SMS/email.",
+      "success": "0 ‘what’s next?’ messages."
+    },
+    {
+      "id": "ai-workflows-automation-5",
+      "title": "Smart Scheduling Sync",
+      "category": "AI Workflows & Automation",
+      "role": "calendar workflow designer",
+      "deliverable": "Connect your calendar to your contact database",
+      "quick": "Calendly↔Google↔CRM; reminders + logging; double-book prevention.",
+      "success": "No-shows <5%."
+    },
+    {
+      "id": "ai-workflows-automation-6",
+      "title": "AI Email → Task",
+      "category": "AI Workflows & Automation",
+      "role": "productivity consultant",
+      "deliverable": "Automatically create tasks from emails",
+      "quick": "Classify Gmail → create tasks in Todoist/Notion with GPT descriptors.",
+      "success": "100% inbox triage automated."
+    },
+    {
+      "id": "ai-workflows-automation-7",
+      "title": "Weekly Metrics Summary Bot",
+      "category": "AI Workflows & Automation",
+      "role": "data-reporting specialist",
+      "deliverable": "Automated weekly stats email",
+      "quick": "Compile leads/showings/offers into Slack/email with graph.",
+      "success": "100% team awareness weekly."
+    },
+    {
+      "id": "ai-workflows-automation-8",
+      "title": "Auto Social Posting",
+      "category": "AI Workflows & Automation",
+      "role": "marketing automation expert",
+      "deliverable": "Automatically post new listings to social media",
+      "quick": "New listing/closing/blog → caption via AI → publish → log.",
+      "success": "≥3 posts/week automated."
+    },
+    {
+      "id": "ai-workflows-automation-9",
+      "title": "'/delegate' Task Assistant",
+      "category": "AI Workflows & Automation",
+      "role": "VA workflow designer",
+      "deliverable": "Automated task creation system for your virtual assistant",
+      "quick": "Slash-command creates detailed tasks with GPT expansion.",
+      "success": "−80% manual task entry time."
+    },
+    {
       "id": "learning-industry-resources-0",
       "title": "Market Data Source Finder",
       "category": "Learning & Industry Resources",
-      "tags": [
-        "learning",
-        "research",
-        "intel"
-      ],
       "role": "data researcher",
       "deliverable": "Top 10 sources for market data and stats",
-      "quick": "Top 10 data/report/API sources for [geographic level - example: national housing trends, Texas state data, Austin metro area, downtown Seattle neighborhood] stats; frequency + use case.",
+      "quick": "Find the top 10 sources for market data at [what level do you need - example: national housing trends, Texas state-level statistics, Austin metro area data, or downtown Seattle neighborhood-specific information]. Include how often each updates and best use cases.",
       "success": "Updated data weekly."
     },
     {
       "id": "learning-industry-resources-1",
       "title": "Realtor Blog Curator",
       "category": "Learning & Industry Resources",
-      "tags": [
-        "learning",
-        "research",
-        "intel"
-      ],
       "role": "content scout",
       "deliverable": "15 best blogs for real estate agents",
       "quick": "Top 15 blogs for real estate/marketing/AI; why valuable + frequency.",
@@ -1085,11 +1209,6 @@
       "id": "learning-industry-resources-2",
       "title": "YouTube Channel Radar",
       "category": "Learning & Industry Resources",
-      "tags": [
-        "learning",
-        "research",
-        "intel"
-      ],
       "role": "media analyst",
       "deliverable": "15 best YouTube channels for agents",
       "quick": "Top 15 channels for sales/AI/branding/tech; best playlists.",
@@ -1099,11 +1218,6 @@
       "id": "learning-industry-resources-3",
       "title": "Podcast Playbook",
       "category": "Learning & Industry Resources",
-      "tags": [
-        "learning",
-        "research",
-        "intel"
-      ],
       "role": "learning strategist",
       "deliverable": "15 best podcasts for real estate professionals",
       "quick": "Top 15 podcasts; theme, length, why listen; weekly schedule.",
@@ -1113,11 +1227,6 @@
       "id": "learning-industry-resources-4",
       "title": "Substack/Newsletter Watchlist",
       "category": "Learning & Industry Resources",
-      "tags": [
-        "learning",
-        "research",
-        "intel"
-      ],
       "role": "knowledge curator",
       "deliverable": "10 must-read newsletters",
       "quick": "10 must-subscribe AI+RE newsletters; focus + frequency + value.",
@@ -1127,11 +1236,6 @@
       "id": "learning-industry-resources-5",
       "title": "Social Expert Tracker",
       "category": "Learning & Industry Resources",
-      "tags": [
-        "learning",
-        "research",
-        "intel"
-      ],
       "role": "social intel researcher",
       "deliverable": "20 experts to follow on social media",
       "quick": "Top 20 LinkedIn/X/IG/TikTok accounts; niche + notable insights.",
@@ -1141,11 +1245,6 @@
       "id": "learning-industry-resources-6",
       "title": "Realtor News Portal Guide",
       "category": "Learning & Industry Resources",
-      "tags": [
-        "learning",
-        "research",
-        "intel"
-      ],
       "role": "news curator",
       "deliverable": "10 news sources for housing and policy",
       "quick": "10 news outlets for housing/policy/tech; bias/slant + usage tips.",
@@ -1155,11 +1254,6 @@
       "id": "learning-industry-resources-7",
       "title": "Trend Watch Prompt",
       "category": "Learning & Industry Resources",
-      "tags": [
-        "learning",
-        "research",
-        "intel"
-      ],
       "role": "trend analyst",
       "deliverable": "Weekly prompt to discover emerging trends",
       "quick": "Weekly search/prompt template to find emerging AI/housing trends.",
@@ -1169,25 +1263,15 @@
       "id": "learning-industry-resources-8",
       "title": "Local Intelligence Dashboard",
       "category": "Learning & Industry Resources",
-      "tags": [
-        "learning",
-        "research",
-        "intel"
-      ],
       "role": "hyperlocal researcher",
       "deliverable": "Track local development and economic data",
-      "quick": "Template aggregating permits, zoning, dev, employers for [city or county - example: Austin TX, Travis County, Seattle WA, Orange County CA].",
+      "quick": "Create a local intelligence dashboard tracking building permits, zoning changes, new developments, and major employers for [type your city or county - example: Austin TX, Travis County, Seattle WA, or Orange County CA].",
       "success": "1-page local insights hub."
     },
     {
       "id": "learning-industry-resources-9",
       "title": "Personal Learning Roadmap (6 mo.)",
       "category": "Learning & Industry Resources",
-      "tags": [
-        "learning",
-        "research",
-        "intel"
-      ],
       "role": "learning architect",
       "deliverable": "6-month learning plan (what to read, watch, practice)",
       "quick": "Month-by-month plan mixing blogs, podcasts, YouTube, newsletters, AI practice.",
@@ -1195,8 +1279,8 @@
     }
   ],
   "metadata": {
-    "description": "AI Prompt Vault for Real Estate - Complete prompt library for agents, brokers, and teams",
-    "usage": "Search by category, tags, or keywords. Personalize with your market, niche, and tools.",
+    "description": "AI Prompt Vault for Real Estate - Auto-exported prompt library",
+    "usage": "Search by category, personalize with your market, niche, tools.",
     "webApp": "https://ai-prompt-vault.vercel.app"
   }
 }
