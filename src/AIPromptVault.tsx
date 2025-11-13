@@ -281,6 +281,17 @@ export default function AIPromptVault() {
   const [wizardResultText, setWizardResultText] = useState<string>("");
   const [wizardSelectedPrompt, setWizardSelectedPrompt] = useState<PromptItem | null>(null);
   
+  // A/B test: Wizard CTA variant
+  const [wizardCTAVariant] = useState<'A' | 'B' | 'C'>(() => {
+    try {
+      const saved = localStorage.getItem('rpv:abWizardCTA');
+      if (saved && ['A', 'B', 'C'].includes(saved)) return saved as 'A' | 'B' | 'C';
+      const variant = ['A', 'B', 'C'][Math.floor(Math.random() * 3)] as 'A' | 'B' | 'C';
+      localStorage.setItem('rpv:abWizardCTA', variant);
+      return variant;
+    } catch { return 'A'; }
+  });
+  
   // Sequence tracking state
   const [sequences, setSequences] = useState<SequenceData>({ pairs: {}, totalSequences: 0 });
   const [sessionHistory, setSessionHistory] = useState<SessionCopy[]>([]);
@@ -1377,7 +1388,7 @@ export default function AIPromptVault() {
       await navigator.clipboard.writeText(wizardResultText);
       trackEvent('rpv:prompt_copy', { source: 'wizard', challenge: wizardChallenge });
       if (GPT_STORE_URL) {
-        trackEvent('rpv:cta_gpt_click', { label: 'wizard_result' });
+        trackEvent('rpv:cta_gpt_click', { label: 'wizard_result', variant: wizardCTAVariant });
         window.open(GPT_STORE_URL as string, '_blank');
       }
     } catch {}
@@ -1452,7 +1463,9 @@ export default function AIPromptVault() {
                 {wizardResultText}
               </div>
               <div style={{ display: 'flex', gap: 8, marginTop: 12, flexWrap: 'wrap' }}>
-                <button onClick={copyAndOpenGPT} style={{ background: 'linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%)', color: 'var(--text-inverse)', border: 'none', borderRadius: 10, padding: '10px 14px', fontWeight: 800, cursor: 'pointer' }}>Copy + Open ChatGPT →</button>
+                <button onClick={copyAndOpenGPT} style={{ background: 'linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%)', color: 'var(--text-inverse)', border: 'none', borderRadius: 10, padding: '10px 14px', fontWeight: 800, cursor: 'pointer' }}>
+                  {wizardCTAVariant === 'A' ? 'Copy + Open ChatGPT →' : wizardCTAVariant === 'B' ? 'Use in ChatGPT →' : 'Get My Answer →'}
+                </button>
                 {wizardSelectedPrompt && (
                   <button onClick={() => { setSelectedPrompt(wizardSelectedPrompt!); setWizardOpen(false); }} style={{ background: 'var(--surface-hover)', border: '1px solid var(--border)', borderRadius: 10, padding: '10px 14px', cursor: 'pointer' }}>Edit in app</button>
                 )}
