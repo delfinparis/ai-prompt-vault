@@ -1,0 +1,234 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "AI Prompt Vault for Real Estate",
+    "description": "Professional AI prompts and workflows specifically designed for real estate agents, brokers, and teams. Access proven templates for marketing, lead generation, client communication, and business automation.",
+    "version": "1.0.0"
+  },
+  "servers": [
+    {
+      "url": "https://ai-prompt-vault.vercel.app"
+    }
+  ],
+  "paths": {
+    "/api/prompts": {
+      "get": {
+        "operationId": "listPrompts",
+        "summary": "List all available real estate AI prompts",
+        "description": "Returns a categorized list of AI prompts for real estate professionals, including marketing, lead generation, client service, and business automation.",
+        "parameters": [
+          {
+            "name": "category",
+            "in": "query",
+            "description": "Filter by category: marketing, leads, listings, clients, finance, negotiation, automation, etc.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "search",
+            "in": "query",
+            "description": "Search prompts by keyword",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of prompts",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "prompts": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Prompt"
+                      }
+                    },
+                    "total": {
+                      "type": "integer"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/prompt/{id}": {
+      "get": {
+        "operationId": "getPrompt",
+        "summary": "Get a specific prompt by ID",
+        "description": "Returns the full details of a specific AI prompt including instructions, format, and usage examples.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "The prompt ID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Prompt details",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PromptDetail"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/track": {
+      "post": {
+        "operationId": "trackUsage",
+        "summary": "Track prompt usage (analytics)",
+        "description": "Anonymously tracks which prompts are being used to help improve the library. No personal data is stored.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "promptId": {
+                    "type": "string",
+                    "description": "The ID of the prompt that was used"
+                  },
+                  "category": {
+                    "type": "string",
+                    "description": "The category of the prompt"
+                  },
+                  "source": {
+                    "type": "string",
+                    "description": "Source of the request (e.g., 'gpt-store')"
+                  }
+                },
+                "required": ["promptId"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Tracking recorded",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Prompt": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Unique prompt identifier"
+          },
+          "title": {
+            "type": "string",
+            "description": "Short descriptive title"
+          },
+          "category": {
+            "type": "string",
+            "description": "Category (e.g., Marketing, Lead Generation)"
+          },
+          "tags": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Search tags"
+          },
+          "description": {
+            "type": "string",
+            "description": "Brief description of what this prompt does"
+          },
+          "popularity": {
+            "type": "integer",
+            "description": "Usage count"
+          }
+        }
+      },
+      "PromptDetail": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "category": {
+            "type": "string"
+          },
+          "tags": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "fullPrompt": {
+            "type": "string",
+            "description": "The complete prompt text ready to use"
+          },
+          "inputs": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "name": {
+                  "type": "string"
+                },
+                "description": {
+                  "type": "string"
+                },
+                "placeholder": {
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Variables that can be customized"
+          },
+          "format": {
+            "type": "string",
+            "description": "Expected output format"
+          },
+          "audience": {
+            "type": "string",
+            "description": "Target audience"
+          },
+          "webLink": {
+            "type": "string",
+            "description": "Link to use this prompt in the full web app"
+          }
+        }
+      }
+    }
+  }
+}
