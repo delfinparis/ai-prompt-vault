@@ -1,15 +1,9 @@
 {
   "buildCommand": "npm run build",
   "installCommand": "npm install",
-  "framework": null,
+  "outputDirectory": "build",
   "routes": [
-    {
-      "src": "/api/(.*)",
-      "dest": "/api/$1"
-    },
-    {
-      "src": "/(.*)",
-      "dest": "/index.html"
-    }
+    { "handle": "filesystem" },
+    { "src": "/(.*)", "dest": "/index.html" }
   ]
 }
