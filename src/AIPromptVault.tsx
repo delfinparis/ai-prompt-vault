@@ -490,12 +490,9 @@ export default function AIPromptVault() {
         setShowOnboarding(true);
       }
       
-      // Check if user has completed profile setup (show after main onboarding)
-      // Only show if they've onboarded but haven't completed profile
-      if (hasOnboarded && !isProfileComplete) {
-        // Delay to show after onboarding completes
-        setTimeout(() => setShowProfileSetup(true), 500);
-      }
+      // Check if user has completed profile setup
+      // Only show after user's first successful copy (not on initial load)
+      // This prevents interrupting exploration for new users
       
       // Set last updated timestamp
       const now = new Date();
@@ -780,6 +777,11 @@ export default function AIPromptVault() {
           colors: ['#2563eb', '#06b6d4', '#f59e0b', '#ec4899'],
         });
         localStorage.setItem(KEY_FIRST_COPY, 'true');
+        
+        // Show profile setup after first successful copy (if not completed yet)
+        if (!isProfileComplete) {
+          setTimeout(() => setShowProfileSetup(true), 2000);
+        }
       }
       
   trackEvent("prompt_copied", { title: prompt.title, module: prompt.module, utm: utmParams });
@@ -794,7 +796,7 @@ export default function AIPromptVault() {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     }
-  }, [fieldValues, copyCounts, recentlyCopied, sessionHistory, getEnhancedSuggestions, recordSequence]);
+  }, [fieldValues, copyCounts, recentlyCopied, sessionHistory, getEnhancedSuggestions, recordSequence, isProfileComplete]);
 
   // Copy handler with guardrail for missing fields
   const handleCopy = useCallback(async (prompt: PromptItem) => {
@@ -1352,8 +1354,11 @@ export default function AIPromptVault() {
             {allPrompts.length} Prompts
           </span>
         </div>
-        <p className="subtitle" style={{ marginBottom: 8 }}>
-          The best AI prompts for real estate agents. Copy, paste, close deals.
+        <p className="subtitle" style={{ marginBottom: 16, fontSize: 18, fontWeight: 600 }}>
+          Marketing plans, listing copy & lead generation — ready in seconds
+        </p>
+        <p style={{ fontSize: 14, color: "var(--muted)", marginBottom: 8, maxWidth: 640, margin: "0 auto 16px" }}>
+          Professional AI prompts designed for real estate agents. Choose a prompt, personalize it, copy and paste.
         </p>
         {lastUpdated && (
           <p style={{ fontSize: 12, color: "var(--text-secondary)", marginBottom: 16 }}>
@@ -1362,11 +1367,11 @@ export default function AIPromptVault() {
         )}
 
         {/* Search Bar */}
-        <div style={{ maxWidth: 640, position: "relative" }}>
+        <div style={{ maxWidth: 640, position: "relative", marginBottom: 20 }}>
           <input
             ref={searchInputRef}
             type="search"
-            placeholder="What do you need help with? Try: 'listing description', 'social media', 'open house'..."
+            placeholder="Try: listing description, social media, lead generation..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="rpv-search-hero"
@@ -1403,6 +1408,70 @@ export default function AIPromptVault() {
             </span>
           )}
         </div>
+        
+        {/* Quick starter buttons for new users */}
+        {!search && !activeTag && !activeCollection && Object.values(copyCounts).reduce((sum, count) => sum + count, 0) === 0 && (
+          <div style={{ 
+            display: "flex", 
+            gap: 12, 
+            justifyContent: "center", 
+            flexWrap: "wrap",
+            marginBottom: 16,
+          }}>
+            <button
+              onClick={() => {
+                const popularPrompt = allPrompts.find((p: any) => p.title === "90-Day Inbound Lead Blueprint" || p.title.includes("Listing Description"));
+                if (popularPrompt) selectPrompt(popularPrompt);
+              }}
+              style={{
+                padding: "10px 20px",
+                background: "var(--primary)",
+                color: "var(--text-inverse)",
+                border: "none",
+                borderRadius: "var(--radius-md)",
+                fontSize: 14,
+                fontWeight: 600,
+                cursor: "pointer",
+                transition: "all 200ms ease",
+                boxShadow: "var(--shadow-sm)",
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.transform = "translateY(-2px)";
+                e.currentTarget.style.boxShadow = "var(--shadow-lg)";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = "translateY(0)";
+                e.currentTarget.style.boxShadow = "var(--shadow-sm)";
+              }}
+            >
+              ⚡ Try a Popular Prompt
+            </button>
+            <button
+              onClick={() => setShowKeyboardShortcuts(true)}
+              style={{
+                padding: "10px 20px",
+                background: "var(--surface-hover)",
+                color: "var(--text)",
+                border: "2px solid var(--border)",
+                borderRadius: "var(--radius-md)",
+                fontSize: 14,
+                fontWeight: 600,
+                cursor: "pointer",
+                transition: "all 200ms ease",
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.transform = "translateY(-2px)";
+                e.currentTarget.style.borderColor = "var(--primary)";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = "translateY(0)";
+                e.currentTarget.style.borderColor = "var(--border)";
+              }}
+            >
+              📚 See Keyboard Shortcuts
+            </button>
+          </div>
+        )}
 
         {/* Active filters */}
         {(activeTag || search) && (
@@ -1451,8 +1520,12 @@ export default function AIPromptVault() {
       </header>
       )}
 
-      {/* Usage Dashboard */}
+      {/* Usage Dashboard - only show if user has activity */}
       {!search && !activeTag && !activeCollection && (
+        Object.values(copyCounts).reduce((sum, count) => sum + count, 0) > 0 ||
+        favorites.length > 0 ||
+        recentlyCopied.length > 0
+      ) && (
         <section style={{ 
           marginBottom: 32,
           padding: 20,
@@ -1566,11 +1639,111 @@ export default function AIPromptVault() {
         </section>
       )}
 
+      {/* Featured Prompts for New Users */}
+      {!search && !activeTag && !activeCollection && Object.values(copyCounts).reduce((sum, count) => sum + count, 0) === 0 && (
+        <section style={{ 
+          marginBottom: 32,
+          padding: 24,
+          background: "linear-gradient(135deg, rgba(37, 99, 235, 0.05) 0%, rgba(59, 130, 246, 0.08) 100%)",
+          borderRadius: "var(--radius-md)",
+          border: "2px solid var(--primary)",
+          animation: "fadeIn 500ms ease-out",
+        }}>
+          <h2 style={{ fontSize: 18, fontWeight: 700, color: "var(--text)", marginBottom: 8, display: "flex", alignItems: "center", gap: 8 }}>
+            ⭐ Start Here - Most Popular
+          </h2>
+          <p style={{ fontSize: 14, color: "var(--muted)", marginBottom: 20 }}>
+            These prompts help agents get results fast. Pick one to try:
+          </p>
+          
+          <div style={{ 
+            display: "grid", 
+            gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
+            gap: 16,
+          }}>
+            {[
+              {
+                title: "90-Day Inbound Lead Blueprint",
+                emoji: "🎯",
+                description: "Complete marketing plan to generate consistent leads",
+                tag: "marketing"
+              },
+              {
+                title: "Listing Description That Converts",
+                emoji: "✍️",
+                description: "Write compelling property descriptions that sell",
+                tag: "listing"
+              },
+              {
+                title: "Instagram Reels Calendar (30 Days)",
+                emoji: "📱",
+                description: "Month of social content ideas ready to post",
+                tag: "social"
+              }
+            ].map((featured) => {
+              const prompt = allPrompts.find((p: any) => p.title === featured.title);
+              if (!prompt) return null;
+              
+              return (
+                <button
+                  key={featured.title}
+                  onClick={() => selectPrompt(prompt)}
+                  style={{
+                    padding: 20,
+                    background: "var(--surface)",
+                    border: "2px solid var(--border)",
+                    borderRadius: "var(--radius-md)",
+                    textAlign: "left",
+                    cursor: "pointer",
+                    transition: "all 200ms ease",
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.borderColor = "var(--primary)";
+                    e.currentTarget.style.transform = "translateY(-4px)";
+                    e.currentTarget.style.boxShadow = "var(--shadow-lg)";
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.borderColor = "var(--border)";
+                    e.currentTarget.style.transform = "translateY(0)";
+                    e.currentTarget.style.boxShadow = "none";
+                  }}
+                >
+                  <div style={{ fontSize: 32, marginBottom: 12 }}>{featured.emoji}</div>
+                  <div style={{ fontSize: 15, fontWeight: 700, color: "var(--text)", marginBottom: 8 }}>
+                    {featured.title}
+                  </div>
+                  <div style={{ fontSize: 13, color: "var(--muted)", lineHeight: 1.5, marginBottom: 12 }}>
+                    {featured.description}
+                  </div>
+                  <div style={{ 
+                    display: "inline-block",
+                    padding: "4px 10px",
+                    background: "var(--badge-bg)",
+                    color: "var(--primary)",
+                    borderRadius: "var(--radius-pill)",
+                    fontSize: 11,
+                    fontWeight: 600,
+                  }}>
+                    #{featured.tag}
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        </section>
+      )}
+
       {/* Hot Right Now / Search Results */}
       <section style={{ marginBottom: 40 }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
           <h2 style={{ fontSize: 20, fontWeight: 700, color: "var(--text)" }}>
-            {activeTag ? `#${activeTag} (${filteredPrompts.length})` : search ? `Search Results (${filteredPrompts.length})` : "🔥 Hot Right Now"}
+            {activeTag 
+              ? `#${activeTag} (${filteredPrompts.length})` 
+              : search 
+              ? `Search Results (${filteredPrompts.length})` 
+              : Object.values(copyCounts).reduce((sum, count) => sum + count, 0) > 0
+              ? "🔥 Hot Right Now"
+              : "🚀 All Prompts"}
           </h2>
           {!search && !activeTag && (
             <button
