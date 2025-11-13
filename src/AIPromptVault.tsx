@@ -374,7 +374,7 @@ export default function AIPromptVault() {
   }, [recentlyCopied, allPrompts]);
 
   // Record a sequence pair (when user copies prompt B shortly after prompt A)
-  const recordSequence = (fromId: string, toId: string) => {
+  const recordSequence = useCallback((fromId: string, toId: string) => {
     const pairKey = `${fromId}->${toId}`;
     const now = Date.now();
     
@@ -406,10 +406,10 @@ export default function AIPromptVault() {
       to: toId, 
       count: updatedSequences.pairs[pairKey].count 
     });
-  };
+  }, [sequences]);
 
   // Get enhanced suggestions with metadata
-  const getEnhancedSuggestions = (promptId: string, limit: number = 3): SuggestionMeta[] => {
+  const getEnhancedSuggestions = useCallback((promptId: string, limit: number = 3): SuggestionMeta[] => {
     const suggestions: SuggestionMeta[] = [];
     
     // Priority 1: Sequence-based suggestions
@@ -482,7 +482,7 @@ export default function AIPromptVault() {
     }
     
     return suggestions.slice(0, limit);
-  };
+  }, [sequences, allPrompts]);
 
   // Copy handler
   const handleCopy = useCallback(async (prompt: PromptItem) => {
