@@ -1240,31 +1240,29 @@ export default function AIPromptVault() {
     setFieldValues(prev => ({ ...prev, [field]: value }));
   };
   
-  // Debounced save to localStorage (avoid disrupting typing)
-  const debouncedSaveFieldValue = useCallback((field: string, value: string) => {
-    if (value.trim()) {
-      const newSavedFields = { ...savedFieldValues, [field]: value };
-      setSavedFieldValues(newSavedFields);
-      localStorage.setItem(KEY_SAVED_FIELDS, JSON.stringify(newSavedFields));
-      
-      // Update field history (keep last 5 unique values per field)
-      const currentHistory = fieldHistory[field] || [];
-      const newHistory = [value, ...currentHistory.filter(v => v !== value)].slice(0, 5);
-      const updatedHistory = { ...fieldHistory, [field]: newHistory };
-      setFieldHistory(updatedHistory);
-      localStorage.setItem(KEY_FIELD_HISTORY, JSON.stringify(updatedHistory));
-    }
-  }, [savedFieldValues, fieldHistory]);
-  
   // Save field values after user stops typing (500ms debounce)
   const debouncedSave = useDebounce(fieldValues, 500);
   useEffect(() => {
     Object.entries(debouncedSave).forEach(([field, value]) => {
       if (value && typeof value === 'string' && value.trim()) {
-        debouncedSaveFieldValue(field, value);
+        // Save to localStorage
+        setSavedFieldValues(prev => {
+          const updated = { ...prev, [field]: value };
+          localStorage.setItem(KEY_SAVED_FIELDS, JSON.stringify(updated));
+          return updated;
+        });
+        
+        // Update field history (keep last 5 unique values per field)
+        setFieldHistory(prev => {
+          const currentHistory = prev[field] || [];
+          const newHistory = [value, ...currentHistory.filter(v => v !== value)].slice(0, 5);
+          const updated = { ...prev, [field]: newHistory };
+          localStorage.setItem(KEY_FIELD_HISTORY, JSON.stringify(updated));
+          return updated;
+        });
       }
     });
-  }, [debouncedSave, debouncedSaveFieldValue]);
+  }, [debouncedSave]);
 
   // Animated house + lightning bolt icon
   const LoadingOverlay = () => (
