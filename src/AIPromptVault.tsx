@@ -1236,10 +1236,12 @@ export default function AIPromptVault() {
   
   // Update field value and save to localStorage
   const updateFieldValue = (field: string, value: string) => {
-    const newFieldValues = { ...fieldValues, [field]: value };
-    setFieldValues(newFieldValues);
-    
-    // Save to localStorage for future use
+    // Immediately update the field value for responsive typing
+    setFieldValues(prev => ({ ...prev, [field]: value }));
+  };
+  
+  // Debounced save to localStorage (avoid disrupting typing)
+  const debouncedSaveFieldValue = useCallback((field: string, value: string) => {
     if (value.trim()) {
       const newSavedFields = { ...savedFieldValues, [field]: value };
       setSavedFieldValues(newSavedFields);
@@ -1252,7 +1254,17 @@ export default function AIPromptVault() {
       setFieldHistory(updatedHistory);
       localStorage.setItem(KEY_FIELD_HISTORY, JSON.stringify(updatedHistory));
     }
-  };
+  }, [savedFieldValues, fieldHistory]);
+  
+  // Save field values after user stops typing (500ms debounce)
+  const debouncedSave = useDebounce(fieldValues, 500);
+  useEffect(() => {
+    Object.entries(debouncedSave).forEach(([field, value]) => {
+      if (value && typeof value === 'string' && value.trim()) {
+        debouncedSaveFieldValue(field, value);
+      }
+    });
+  }, [debouncedSave, debouncedSaveFieldValue]);
 
   // Animated house + lightning bolt icon
   const LoadingOverlay = () => (
