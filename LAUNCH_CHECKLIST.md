@@ -134,7 +134,7 @@ Follow **LAUNCH_NOW_GUIDE.md** steps 1–7:
 - [ ] **Step 1:** Open GPT Builder → https://chat.openai.com/gpts/editor
 - [ ] **Step 2:** Configure name, description, instructions (copy from guide)
 - [ ] **Step 3:** Add 6 conversation starters
-- [ ] **Step 4:** Upload `prompts-export.json` (84 prompts)
+- [ ] **Step 4:** Upload `prompts-export.json` (see `totalPrompts` inside the file)
 - [ ] **Step 5:** Set capabilities (all OFF)
 - [ ] **Step 6:** Create/upload profile picture (house + lightning bolt)
 - [ ] **Step 7:** Test privately (set visibility: "Only me")

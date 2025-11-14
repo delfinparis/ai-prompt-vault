@@ -386,7 +386,7 @@ Track these numbers:
 **Solution:** You need ChatGPT Plus ($20/month) to create GPTs. It's worth it for the distribution channel.
 
 ### Issue: "Knowledge file too large"
-**Solution:** Your file is only 42KB - well under the limit. No problem!
+**Solution:** The knowledge file is small and well under GPT's limits. You can confirm by checking the file size or the `totalPrompts` count in `prompts-export.json` — both are safe for launch.
 
 ### Issue: "GPT isn't finding prompts"
 **Solution:** Make sure prompts-export.json uploaded successfully. Try reuploading.
@@ -414,7 +414,7 @@ Track these numbers:
 
 Everything you need is in your repo:
 
-- `prompts-export.json` - Upload this as knowledge (currently 84 prompts; upload a refreshed export later if you add more)
+- `prompts-export.json` - Upload this as knowledge (see `totalPrompts` inside the file; re‑export and upload a fresh copy if you add more)
 - `GPT_CONFIG.md` - Full configuration reference
 - `GPT_STORE_STRATEGY.md` - Marketing strategy
 - `GPT_LAUNCH_WORKAROUND.md` - Why we're not using API (yet)
