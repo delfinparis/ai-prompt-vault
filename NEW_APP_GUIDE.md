@@ -1,53 +1,71 @@
 # 🚀 Realtor Execution App - User Guide
 
+**Live App:** https://ai-prompt-vault-two.vercel.app/
+
 ## What Changed?
 
 The app now **defaults to the new execution-focused experience** that helps realtors identify and overcome the activities they're avoiding.
 
 ### Default Experience (NEW)
-**URL:** `http://localhost:3001/` or `https://your-domain.com/`
+**URL:** `https://ai-prompt-vault-two.vercel.app/`
 
 A guided 3-step journey:
 1. **Diagnostic** - "Let's figure out where you're stuck"
-2. **Dashboard** - Your daily command center with streaks & urgent actions
-3. **Execution** - AI-powered content generation to get it done NOW
+2. **Pick ONE Activity** - The single thing you're avoiding most right now
+3. **Select Your Barrier** - 12 universal psychological barriers OR custom reason
+4. **Dashboard** - Your daily command center with streaks & urgent actions
+5. **Execution** - AI-powered content generation to get it done NOW
 
 ### Legacy Experience (OLD)
 **URL:** Add `?legacy=true` or `?v1=true` to access the original prompt library
 
-Example: `http://localhost:3001/?legacy=true`
+Example: `https://ai-prompt-vault-two.vercel.app/?legacy=true`
 
 ---
 
 ## 🎯 The New User Journey
 
-### Step 1: Diagnostic Flow (2-3 minutes)
+### Step 1: Profile Setup (30 seconds)
 
-**Profile Setup:**
-- Enter your name, market, experience level, business goal
-- Sets context for personalized recommendations
+**What You'll Enter:**
+- Name, market, experience level
+- Business goal for the year
 
-**Honest Assessment:**
-- Review 10 core activities that separate top producers from everyone else:
-  1. Daily Prospecting (5+ contacts/day)
-  2. Past Client Follow-Up (Monthly)
-  3. Immediate Lead Response (<5 min)
-  4. CRM/Database Updates (Daily)
-  5. Social Media Content (3-5x/week)
-  6. Email/Newsletter to Sphere (Monthly)
-  7. Property Previews & Market Research (Weekly)
-  8. Hosting Open Houses (1-2x/month)
-  9. Asking for Referrals (Every closing)
-  10. Skills Training & Script Practice (30 mins/day)
+### Step 2: Pick ONE Activity (1 minute)
 
-- Mark each: ✅ Doing it | ⚠️ Sometimes | ❌ Avoiding
+**Choose from 10 core activities:**
+1. Daily Prospecting (5+ contacts/day)
+2. Past Client Follow-Up (Monthly)
+3. Immediate Lead Response (<5 min)
+4. CRM/Database Updates (Daily)
+5. Social Media Content (3-5x/week)
+6. Email/Newsletter to Sphere (Monthly)
+7. Property Previews & Market Research (Weekly)
+8. Hosting Open Houses (1-2x/month)
+9. Asking for Referrals (Every closing)
+10. Skills Training & Script Practice (30 mins/day)
 
-**Results:**
-- See your strengths (activities you're crushing)
-- Identify top 3 gaps based on impact score
-- Focus on what will move the needle most
+**Important:** Pick the ONE you're avoiding most right now. You can always come back later.
 
-### Step 2: Dashboard (Your Daily Command Center)
+### Step 3: Select Your Barrier (1 minute)
+
+**12 Universal Psychological Barriers:**
+1. Fear of judgment or rejection
+2. Perfectionism or fear of failure  
+3. Overwhelm or don't know where to start
+4. Low energy, burnout, or exhaustion
+5. Discomfort with self-promotion
+6. Immediate discomfort vs. delayed reward
+7. Lack of confidence or skill
+8. Past negative experience
+9. Identity conflict ("This isn't who I am")
+10. Distraction or competing priorities
+11. Fear of success or change
+12. Need for certainty or control
+
+**OR type your own custom reason**
+
+### Step 4: Dashboard (Your Daily Command Center)
 
 **What You'll See:**
 - **Quick Stats:** Completions this week, longest streak, activities needing attention
@@ -61,7 +79,7 @@ Example: `http://localhost:3001/?legacy=true`
 - Days-since-last-completion warnings
 - AI badges showing which activities have AI help
 
-### Step 3: Execution Engine (Get It Done NOW)
+### Step 5: Execution Engine (Get It Done NOW)
 
 **For AI-Powered Activities:**
 1. Customize inputs (topic, tone, length)

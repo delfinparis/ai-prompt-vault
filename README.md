@@ -1,16 +1,21 @@
-# AI Prompt Vault
+# AI Prompt Vault - Realtor Execution App
 
-A curated library of AI prompts for real estate agents, featuring smart workflow tracking and direct AI generation.
+**Live App:** https://ai-prompt-vault-two.vercel.app/
+
+A behavior change engine for real estate agents that identifies what you're avoiding and removes friction with AI-powered execution.
+
+## The Core Problem
+
+Realtors don't lack knowledge - they lack consistent execution. This app doesn't teach what to do; it diagnoses WHY you're not doing it and helps you execute immediately.
 
 ## Features
 
-- 📚 **170+ Professional Prompts** - Organized by real estate workflows
-- ✨ **Direct AI Generation** - Generate content without leaving the platform
-- 🧠 **Smart Suggestions** - Learn your workflow patterns
-- 🎯 **Sequence Tracking** - Discover which prompts work best together
-- 💾 **Save Outputs** - Keep a library of your best AI-generated content
-- 🎨 **Beautiful UX** - Gradients, animations, and delightful interactions
-- 🧪 **Coaching Wizard** - 3‑step guided flow: choose a high‑level challenge category → refine with selectable chips + custom inputs → receive a structured strategy + action plan prompt ready for ChatGPT.
+- 🎯 **Pick-One Diagnostic** - Identify the single activity holding you back right now
+- 🧠 **12 Universal Barriers** - Deep psychological insights into what stops action (fear, perfectionism, overwhelm, etc.)
+- ✨ **AI Execution Engine** - Generate content in 60 seconds to remove friction
+- 🔥 **Streak Tracking** - Build momentum with daily accountability
+- 📊 **Dashboard Command Center** - See what's urgent, celebrate wins
+- 💡 **Coaching Tips** - Personalized guidance based on your specific barrier
 
 ## Quick Start
 
