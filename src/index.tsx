@@ -3,5 +3,33 @@ import { createRoot } from "react-dom/client";
 import AIPromptVault from "./AIPromptVault";
 import "./index.css";
 
+// Suppress harmless ResizeObserver errors (browser timing quirk during quality meter updates)
+const resizeObserverError = 'ResizeObserver loop completed with undelivered notifications.';
+const resizeObserverErrorLegacy = 'ResizeObserver loop limit exceeded';
+
+// Suppress both console errors and React error overlay
+window.addEventListener('error', (e) => {
+  if (e.message?.includes('ResizeObserver')) {
+    e.stopImmediatePropagation();
+    e.preventDefault();
+    return false;
+  }
+});
+
+// Also catch unhandled rejections
+window.addEventListener('unhandledrejection', (e) => {
+  if (e.reason?.message?.includes('ResizeObserver')) {
+    e.stopImmediatePropagation();
+    e.preventDefault();
+  }
+});
+
+// Override console.error to filter ResizeObserver warnings
+const originalError = console.error;
+console.error = (...args) => {
+  if (args[0]?.includes?.('ResizeObserver')) return;
+  originalError.apply(console, args);
+};
+
 const root = createRoot(document.getElementById("root")!);
 root.render(<AIPromptVault />);

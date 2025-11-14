@@ -1484,7 +1484,12 @@ export default function AIPromptVault() {
     const { score, suggestions } = computeQualityMeta(wizardAnswers, config);
     trackEvent('rpv:wizard_quality_generate', { challenge: wizardChallenge, score, suggestionsRemaining: suggestions });
   };
-  // (Quality meta helper removed; using inline meter only)
+
+  // Memoize current challenge config
+  const currentChallenge = useMemo(() => {
+    if (!wizardChallenge) return null;
+    return CHALLENGES.find(x => x.key === wizardChallenge) || null;
+  }, [wizardChallenge]);
 
   const copyAndOpenGPT = async () => {
     try {
@@ -1499,6 +1504,7 @@ export default function AIPromptVault() {
 
   const WizardModal: React.FC = () => {
     if (!wizardOpen) return null;
+
     return (
       <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 4000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
         <div style={{ background: 'var(--surface)', color: 'var(--text)', width: 'min(720px, 96vw)', borderRadius: 16, border: '1px solid var(--border)', boxShadow: 'var(--shadow-lg)', padding: 24 }}>
@@ -1539,19 +1545,16 @@ export default function AIPromptVault() {
             </div>
           )}
 
-          {wizardStep === 2 && wizardChallenge && (
-            <div>
-              {(() => {
-                const c = CHALLENGES.find(x => x.key === wizardChallenge)!;
-                return (
-                  <div>
-                    <h3 style={{ marginTop: 0, fontSize: 16, fontWeight: 800 }}>{c.label}</h3>
-                    <div style={{ fontSize: 13, color: 'var(--muted)', marginBottom: 12 }}>
-                      Provide complete, specific answers (full sentences are best). The more context, the stronger your tailored prompt.<br />
-                      <b>Tip:</b> Mention audience, timeframe, tone, and any constraints.
-                    </div>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                      {c.questions.map(q => (
+          {wizardStep === 2 && currentChallenge && (
+            <div key={`wizard-step2-${wizardChallenge}`}>
+              <div>
+                <h3 style={{ marginTop: 0, fontSize: 16, fontWeight: 800 }}>{currentChallenge.label}</h3>
+                <div style={{ fontSize: 13, color: 'var(--muted)', marginBottom: 12 }}>
+                  Provide complete, specific answers (full sentences are best). The more context, the stronger your tailored prompt.<br />
+                  <b>Tip:</b> Mention audience, timeframe, tone, and any constraints.
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                  {currentChallenge.questions.map(q => (
                         <div key={q.id}>
                           <label style={{ display: 'block', fontSize: 13, fontWeight: 700, marginBottom: 6 }}>{q.label}</label>
                           {WIZARD_OPTION_SETS[q.id] ? (
@@ -1579,10 +1582,11 @@ export default function AIPromptVault() {
                                 })}
                               </div>
                               <input
+                                key={`custom-${q.id}`}
                                 type="text"
                                 placeholder={q.placeholder + ' (add custom)'}
-                                value={wizardAnswers[q.id + '_custom'] || ''}
-                                onChange={(e) => updateWizardCustomForQuestion(q.id, e.target.value)}
+                                defaultValue={wizardAnswers[q.id + '_custom'] || ''}
+                                onBlur={(e) => updateWizardCustomForQuestion(q.id, e.target.value)}
                                 style={{ width: '100%', padding: '10px 12px', borderRadius: 10, border: '1px solid var(--border)', background: 'var(--surface)' }}
                               />
                               <div style={{ fontSize: 11, color: 'var(--muted)', marginTop: 4 }}>
@@ -1598,10 +1602,11 @@ export default function AIPromptVault() {
                           ) : (
                             <>
                               <input
+                                key={`input-${q.id}`}
                                 type="text"
                                 placeholder={q.placeholder}
-                                value={wizardAnswers[q.id] || ''}
-                                onChange={(e) => setWizardAnswers(prev => ({ ...prev, [q.id]: e.target.value }))}
+                                defaultValue={wizardAnswers[q.id] || ''}
+                                onBlur={(e) => setWizardAnswers(prev => ({ ...prev, [q.id]: e.target.value }))}
                                 style={{ width: '100%', padding: '10px 12px', borderRadius: 10, border: '1px solid var(--border)', background: 'var(--surface)' }}
                               />
                               {q.help && <div style={{ fontSize: 12, color: 'var(--muted)', marginTop: 4 }}>{q.help}</div>}
@@ -1615,86 +1620,12 @@ export default function AIPromptVault() {
                         </div>
                       ))}
                     </div>
-                    {(() => {
-                      // Quality meter evaluation
-                      const answerEntries = Object.entries(wizardAnswers).filter(([k]) => !k.endsWith('_custom'));
-                      const nonEmpty = answerEntries.filter(([, v]) => String(v).trim().length > 0);
-                      const lenTotal = nonEmpty.reduce((s, [, v]) => s + v.length, 0);
-                      const hasGoal = /goal|topGoal|desiredOutcome|strategicGoal/.test(nonEmpty.map(([k]) => k).join(','));
-                      const hasBlocker = /obstacle|blocker|blockers|biggestBlocker|shiftConcern/.test(nonEmpty.map(([k]) => k).join(','));
-                      const hasSituation = /market|propertyType|challengeSummary|situation|clientType/.test(nonEmpty.map(([k]) => k).join(','));
-                      const hasTone = /tone/.test(nonEmpty.map(([k]) => k).join(','));
-                      const hasTimeframe = /urgency|cadence|timeframe/.test(nonEmpty.map(([k]) => k).join(','));
-                      // Scoring weights
-                      let score = 0;
-                      if (hasSituation) score += 25;
-                      if (hasGoal) score += 20;
-                      if (hasBlocker) score += 20;
-                      if (hasTone) score += 10;
-                      if (hasTimeframe) score += 10;
-                      // Length bonus (up to 15)
-                      const lengthBonus = Math.min(15, Math.floor(lenTotal / 140 * 15));
-                      score += lengthBonus;
-                      const tier = score >= 85 ? 'Excellent' : score >= 65 ? 'Strong' : score >= 45 ? 'Moderate' : 'Needs More Detail';
-                      const suggestions: string[] = [];
-                      if (!hasSituation) suggestions.push('Describe your market or core situation.');
-                      if (!hasGoal) suggestions.push('Add a clear, measurable goal.');
-                      if (!hasBlocker) suggestions.push('Mention the biggest blocker or obstacle.');
-                      if (!hasTimeframe) suggestions.push('Add urgency or timeframe (e.g., 30 days).');
-                      if (!hasTone) suggestions.push('Specify tone (friendly, authoritative, etc.).');
-                      if (lengthBonus < 8) suggestions.push('Provide fuller sentence answers for depth.');
-                      return (
-                        <div style={{ marginTop: 18, border: '1px solid var(--border)', borderRadius: 12, padding: 12, background: 'var(--surface-hover)' }}>
-                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                            <div style={{ fontWeight: 700, fontSize: 13 }}>Quality Meter</div>
-                            <div style={{ fontSize: 12, fontWeight: 700, color: tier === 'Excellent' ? 'var(--primary)' : tier === 'Strong' ? 'var(--accent)' : 'var(--warn, #d97706)' }}>{tier}</div>
-                          </div>
-                          <div style={{ marginTop: 8 }}>
-                            <div style={{ height: 6, background: 'var(--surface)', borderRadius: 4, overflow: 'hidden' }}>
-                              <div style={{ width: `${Math.min(score, 100)}%`, height: '100%', background: score >= 85 ? 'var(--primary)' : score >= 65 ? 'var(--accent)' : score >= 45 ? 'orange' : 'var(--border)' }} />
-                            </div>
-                            <div style={{ fontSize: 11, color: 'var(--muted)', marginTop: 4 }}>Score {score}/100 · Inputs filled {nonEmpty.length}/{c.questions.length}</div>
-                          </div>
-                          {suggestions.length > 0 && (
-                            <ul style={{ margin: '8px 0 0', paddingLeft: 18, fontSize: 11, color: 'var(--muted)', lineHeight: 1.4 }}>
-                              {suggestions.slice(0, 4).map(s => <li key={s}>{s}</li>)}
-                            </ul>
-                          )}
-                          {!hasTimeframe && (
-                            <div style={{ marginTop: 8 }}>
-                              <span style={{ fontSize: 11, color: 'var(--muted)', marginRight: 6 }}>Quick add timeframe:</span>
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  // Prefer urgency/timeframe/cadence in that order
-                                  const tfId = (c.questions.find(q => q.id === 'urgency')?.id)
-                                    || (c.questions.find(q => q.id === 'timeframe')?.id)
-                                    || (c.questions.find(q => q.id === 'cadence')?.id);
-                                  if (!tfId) return;
-                                  if (WIZARD_OPTION_SETS[tfId]) {
-                                    // Set chip and answer
-                                    setWizardSelections(prev => ({ ...prev, [tfId]: ['Next 30 days'] }));
-                                    setWizardAnswers(prev => ({ ...prev, [tfId]: ['Next 30 days', (prev[tfId + '_custom'] || '').trim()].filter(Boolean).join(', ') }));
-                                  } else {
-                                    setWizardAnswers(prev => ({ ...prev, [tfId]: 'Next 30 days' }));
-                                  }
-                                  trackEvent('rpv:wizard_quick_timeframe', { id: tfId, value: 'Next 30 days' });
-                                }}
-                                style={{ padding: '6px 10px', borderRadius: 999, fontSize: 12, cursor: 'pointer', border: '1px solid var(--border)', background: 'var(--badge-bg)' }}
-                              >Next 30 days</button>
-                            </div>
-                          )}
-                        </div>
-                      );
-                    })()}
-                    <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 16 }}>
-                      <button onClick={() => setWizardStep(1)} style={{ background: 'var(--surface-hover)', border: '1px solid var(--border)', borderRadius: 8, padding: '10px 14px', cursor: 'pointer' }}>← Back</button>
-                      <button onClick={completeDrilldown} style={{ background: 'var(--primary)', color: 'var(--text-inverse)', border: 'none', borderRadius: 8, padding: '10px 14px', cursor: 'pointer', fontWeight: 800 }}>See my tailored prompt →</button>
-                    </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 16 }}>
+                    <button onClick={() => setWizardStep(1)} style={{ background: 'var(--surface-hover)', border: '1px solid var(--border)', borderRadius: 8, padding: '10px 14px', cursor: 'pointer' }}>← Back</button>
+                    <button onClick={completeDrilldown} style={{ background: 'var(--primary)', color: 'var(--text-inverse)', border: 'none', borderRadius: 8, padding: '10px 14px', cursor: 'pointer', fontWeight: 800 }}>See my tailored prompt →</button>
                   </div>
-                );
-              })()}
-            </div>
+                </div>
+              </div>
           )}
 
           {wizardStep === 3 && (
