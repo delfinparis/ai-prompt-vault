@@ -14,92 +14,172 @@ export const UNIVERSAL_BARRIERS = [
     label: 'Fear of judgment or rejection', 
     subtext: '"What will they think of me?"',
     type: 'fear' as BarrierType,
-    coachingTip: 'Rejection is information, not a reflection of your worth. Every "no" is data that refines your approach. Let\'s reframe this as curiosity instead of seeking approval.'
+    coachingTip: 'Rejection is information, not a reflection of your worth. Every "no" is data that refines your approach. Let\'s reframe this as curiosity instead of seeking approval.',
+    intervention: {
+      validate: 'Fear of rejection is hardwired - it kept our ancestors alive. Your brain is doing its job.',
+      reframe: 'But here\'s the truth: people are thinking about YOU way less than you think. They\'re worried about their own stuff. And the ones judging? They\'re not your people anyway.',
+      microAction: 'Start with someone safe - a past client who loves you, or a friend in your sphere. Test the water with low stakes first.',
+      mantra: '"I\'m helping, not bothering. If it\'s not for them, it\'s for someone else."'
+    }
   },
   { 
     id: 'perfectionism', 
     label: 'Perfectionism or fear of failure', 
     subtext: '"If I can\'t do it perfectly, why bother?"',
     type: 'fear' as BarrierType,
-    coachingTip: 'Done is better than perfect. Your first version doesn\'t need to be your best version. Let\'s aim for "good enough to help someone" and iterate from there.'
+    coachingTip: 'Done is better than perfect. Your first version doesn\'t need to be your best version. Let\'s aim for "good enough to help someone" and iterate from there.',
+    intervention: {
+      validate: 'You have high standards - that\'s actually a strength. But it becomes a cage when it stops you from starting.',
+      reframe: 'Perfectionism isn\'t about excellence - it\'s about fear of criticism. Excellence is iteration. Version 1 can\'t exist without Version 0.',
+      microAction: 'Set a timer for 10 minutes. Whatever you create in that time IS the finished version. Ship it. Perfect is the enemy of done.',
+      mantra: '"B+ work done beats A+ work imagined."'
+    }
   },
   { 
     id: 'overwhelm', 
     label: 'Overwhelm or don\'t know where to start', 
     subtext: '"This feels too big"',
     type: 'skill' as BarrierType,
-    coachingTip: 'Break it into the smallest possible first step. You don\'t need to see the whole staircase, just the first step. Let\'s make this so small it feels almost silly not to do it.'
+    coachingTip: 'Break it into the smallest possible first step. You don\'t need to see the whole staircase, just the first step. Let\'s make this so small it feels almost silly not to do it.',
+    intervention: {
+      validate: 'Your brain freezes when the task feels undefined or massive. That\'s normal - it\'s called decision paralysis.',
+      reframe: 'You don\'t need a plan for the whole thing. You need ONE next action. Just one. The rest will reveal itself.',
+      microAction: 'What\'s the stupidly simple first move? Open your laptop? Pull up your CRM? Write one sentence? Do ONLY that. Then stop. You\'ll find momentum takes over.',
+      mantra: '"Just the next right step. That\'s all I need to know."'
+    }
   },
   { 
     id: 'low-energy', 
     label: 'Low energy, burnout, or exhaustion', 
     subtext: '"I\'m just too tired right now"',
     type: 'motivation' as BarrierType,
-    coachingTip: 'Energy follows action more than action follows energy. Can you commit to just 5 minutes? Often starting creates momentum. But also: are you taking care of yourself? Rest isn\'t optional.'
+    coachingTip: 'Energy follows action more than action follows energy. Can you commit to just 5 minutes? Often starting creates momentum. But also: are you taking care of yourself? Rest isn\'t optional.',
+    intervention: {
+      validate: 'If you\'re burned out, that\'s real. Your body is telling you something. Honor that.',
+      reframe: 'But also: sometimes "tired" is code for "I don\'t want to feel uncomfortable." Be honest - are you physically depleted, or emotionally avoiding?',
+      microAction: 'Commit to 5 minutes. Set a timer. If after 5 minutes you\'re truly exhausted, stop and rest guilt-free. But if you feel momentum, keep going.',
+      mantra: '"Motion creates emotion. Just 5 minutes."'
+    }
   },
   { 
     id: 'discomfort-self-promotion', 
     label: 'Discomfort with self-promotion', 
     subtext: '"I don\'t want to be pushy or salesy"',
     type: 'authenticity' as BarrierType,
-    coachingTip: 'You\'re not bragging - you\'re making it easy for people to find help when they need it. Shift from "promoting myself" to "being visible so I can serve." That\'s service, not sales.'
+    coachingTip: 'You\'re not bragging - you\'re making it easy for people to find help when they need it. Shift from "promoting myself" to "being visible so I can serve." That\'s service, not sales.',
+    intervention: {
+      validate: 'You were raised to be humble, not brag. That\'s a good value. But it\'s being weaponized against you.',
+      reframe: 'Visibility isn\'t vanity - it\'s service. Someone needs what you have. If you hide, they can\'t find you. You\'re doing THEM a disservice by staying quiet.',
+      microAction: 'Rewrite your message as "Here\'s something helpful" instead of "Here\'s why I\'m great." Lead with value, not credentials. That\'s not salesy - that\'s generous.',
+      mantra: '"Visibility = service. Hiding = selfish."'
+    }
   },
   { 
     id: 'present-bias', 
     label: 'Immediate discomfort vs. delayed reward', 
     subtext: '"I don\'t feel like it right now"',
     type: 'motivation' as BarrierType,
-    coachingTip: 'Your future self is begging you to do this now. Can you do it FOR them? Imagine yourself 3 months from now thanking yourself for pushing through the discomfort today.'
+    coachingTip: 'Your future self is begging you to do this now. Can you do it FOR them? Imagine yourself 3 months from now thanking yourself for pushing through the discomfort today.',
+    intervention: {
+      validate: 'Your brain is wired to choose comfort now over rewards later. That\'s evolution - it kept you alive.',
+      reframe: 'But you\'re not running from a tiger anymore. The "discomfort" is just fear. And on the other side? Freedom. Money. Success. Your future self is BEGGING you to push through.',
+      microAction: 'Picture yourself 90 days from now. What does that version of you wish you\'d done today? Do it for THEM, not for you right now.',
+      mantra: '"Future me is counting on present me."'
+    }
   },
   { 
     id: 'lack-confidence', 
     label: 'Lack of confidence or skill', 
     subtext: '"I don\'t know how to do this well"',
     type: 'skill' as BarrierType,
-    coachingTip: 'You learn by doing, not by waiting until you\'re "ready." Let\'s use AI to scaffold the first version so you\'re not starting from scratch. Competence comes from repetition, not perfection.'
+    coachingTip: 'You learn by doing, not by waiting until you\'re "ready." Let\'s use AI to scaffold the first version so you\'re not starting from scratch. Competence comes from repetition, not perfection.',
+    intervention: {
+      validate: 'You don\'t feel ready because you\'re not - YET. Confidence comes AFTER action, not before.',
+      reframe: 'Every expert was once a beginner. They didn\'t wait to feel confident - they acted their way into it. You will too.',
+      microAction: 'Use AI to draft it for you. Then just tweak it. You\'re not starting from zero - you\'re editing. Way less scary.',
+      mantra: '"I don\'t need to be great. I just need to start."'
+    }
   },
   { 
     id: 'past-negative', 
     label: 'Past negative experience', 
     subtext: '"I tried this before and it didn\'t work"',
     type: 'fear' as BarrierType,
-    coachingTip: 'The past is data, not destiny. What\'s different now? What did you learn? Let\'s adjust the approach based on what you know now. This isn\'t the same situation - you\'re not the same person.'
+    coachingTip: 'The past is data, not destiny. What\'s different now? What did you learn? Let\'s adjust the approach based on what you know now. This isn\'t the same situation - you\'re not the same person.',
+    intervention: {
+      validate: 'You tried and it hurt. That pain is real. Your brain is trying to protect you from feeling that again.',
+      reframe: 'But the past taught you what NOT to do. You\'re smarter now. Different market. Different you. This isn\'t round 2 - it\'s a new game.',
+      microAction: 'Change ONE variable from last time. Different script, different time of day, different audience. Make it feel new, not repeated.',
+      mantra: '"I\'m not the same person who failed. I\'m the one who learned."'
+    }
   },
   { 
     id: 'identity-conflict', 
     label: 'Identity conflict', 
     subtext: '"This isn\'t who I am"',
     type: 'authenticity' as BarrierType,
-    coachingTip: 'Who you are is who you choose to become. You don\'t have to change your identity - just add a new skill to your toolbox. "I\'m not a cold caller" can become "I\'m someone who reaches out to help people."'
+    coachingTip: 'Who you are is who you choose to become. You don\'t have to change your identity - just add a new skill to your toolbox. "I\'m not a cold caller" can become "I\'m someone who reaches out to help people."',
+    intervention: {
+      validate: 'You have a story about who you are. "I\'m not the type to..." That story feels true because you\'ve believed it for years.',
+      reframe: 'But identity isn\'t fixed - it\'s chosen. Every action is a vote for the person you\'re becoming. You don\'t have to BE a salesperson. Just do ONE sales action. That\'s it.',
+      microAction: 'Don\'t call it "prospecting" - call it "checking in." Language matters. Reframe the action to fit your identity, not fight it.',
+      mantra: '"I\'m not changing who I am. I\'m expanding what I can do."'
+    }
   },
   { 
     id: 'distraction', 
     label: 'Distraction or competing priorities', 
     subtext: '"I have more urgent things to do"',
     type: 'time' as BarrierType,
-    coachingTip: 'Urgent rarely equals important. What you avoid is often what would move the needle most. Can you time-block 15 minutes FIRST thing tomorrow, before distractions pile up? Protect this time like a client appointment.'
+    coachingTip: 'Urgent rarely equals important. What you avoid is often what would move the needle most. Can you time-block 15 minutes FIRST thing tomorrow, before distractions pile up? Protect this time like a client appointment.',
+    intervention: {
+      validate: 'You\'re busy. There\'s always something screaming for attention. Urgent feels important.',
+      reframe: 'But busy-work is a hiding place. The hard stuff - prospecting, content, follow-ups - that\'s what builds the business. Urgent is a trap.',
+      microAction: 'Block 15 minutes FIRST THING tomorrow. Before email, before social media, before anything. Make it sacred. This is your business-building time.',
+      mantra: '"Urgent is the enemy of important. I choose important."'
+    }
   },
   { 
     id: 'fear-success', 
     label: 'Fear of success or change', 
     subtext: '"What if this actually works and my life changes?"',
     type: 'fear' as BarrierType,
-    coachingTip: 'Your nervous system fears the unknown more than the familiar struggle. Success means new territory - that\'s scary! Let\'s name it: what specifically are you afraid will change? Often just naming it reduces its power.'
+    coachingTip: 'Your nervous system fears the unknown more than the familiar struggle. Success means new territory - that\'s scary! Let\'s name it: what specifically are you afraid will change? Often just naming it reduces its power.',
+    intervention: {
+      validate: 'Success is scarier than failure. Failure is familiar. Success? Unknown. More responsibility. Higher expectations. What if you can\'t handle it?',
+      reframe: 'But you\'re already handling hard things. You CAN handle success. And if it gets overwhelming? You\'ll figure it out then. Cross that bridge when you get there.',
+      microAction: 'Name the fear out loud: "I\'m afraid if I succeed, then ___." Just naming it strips away some of its power. Then do it anyway.',
+      mantra: '"I\'m afraid of success, and I\'m doing it anyway."'
+    }
   },
   { 
     id: 'need-certainty', 
     label: 'Need for certainty or control', 
     subtext: '"I can\'t predict the outcome"',
     type: 'fear' as BarrierType,
-    coachingTip: 'No one has certainty - they just have willingness to try anyway. Can you get comfortable with "I don\'t know, let\'s find out"? The only way to know if something works is to test it. Small experiments, not big bets.'
+    coachingTip: 'No one has certainty - they just have willingness to try anyway. Can you get comfortable with "I don\'t know, let\'s find out"? The only way to know if something works is to test it. Small experiments, not big bets.',
+    intervention: {
+      validate: 'You want guarantees. You want to know it\'ll work before you try. That\'s not crazy - that\'s smart risk management.',
+      reframe: 'But there are no guarantees. Ever. The only certainty is that NOT trying guarantees nothing changes. Trying gives you a CHANCE.',
+      microAction: 'Treat this as an experiment, not a commitment. "I\'m testing this for 7 days." That\'s it. Low stakes. Gather data. Decide later.',
+      mantra: '"I don\'t need certainty. I need curiosity."'
+    }
   }
 ] as const;
+
+export interface BarrierIntervention {
+  validate: string; // "Your feeling is real and normal"
+  reframe: string; // "But here's a different way to see it"
+  microAction: string; // "Try this tiny specific thing"
+  mantra: string; // "Repeat this to yourself"
+}
 
 export interface Barrier {
   id: string;
   label: string; // Short label shown to user
   type: BarrierType;
   coachingTip: string; // What to tell them to help overcome this
+  intervention?: BarrierIntervention; // Deep intervention to get them unstuck
 }
 
 export interface Activity {

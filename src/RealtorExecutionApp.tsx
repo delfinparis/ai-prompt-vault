@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { DiagnosticFlow } from './DiagnosticFlow';
 import { DashboardHome } from './DashboardHome';
 import { ExecutionEngine } from './ExecutionEngine';
+import { BarrierIntervention } from './BarrierIntervention';
 import {
   UserProfile,
   UserActivity,
@@ -22,7 +23,7 @@ import {
   loadBarriers
 } from './storage';
 
-type AppView = 'diagnostic' | 'dashboard' | 'execution';
+type AppView = 'diagnostic' | 'intervention' | 'dashboard' | 'execution';
 
 export const RealtorExecutionApp: React.FC = () => {
   const [view, setView] = useState<AppView>('diagnostic');
@@ -30,6 +31,7 @@ export const RealtorExecutionApp: React.FC = () => {
   const [userActivities, setUserActivities] = useState<UserActivity[]>([]);
   const [completions, setCompletions] = useState<ActivityCompletion[]>([]);
   const [selectedActivityId, setSelectedActivityId] = useState<string | null>(null);
+  const [selectedBarrier, setSelectedBarrier] = useState<string>(''); // Store selected barrier for intervention
 
   // Load data on mount
   useEffect(() => {
@@ -51,7 +53,7 @@ export const RealtorExecutionApp: React.FC = () => {
   const handleDiagnosticComplete = (
     newProfile: UserProfile,
     selectedActivityId: string,
-    selectedBarrier: string
+    barrierSelection: string
   ) => {
     // Save to localStorage
     saveProfile(newProfile);
@@ -61,7 +63,7 @@ export const RealtorExecutionApp: React.FC = () => {
     saveActivityStatuses(statuses);
     
     // Save single barrier
-    const barriers = new Map<string, string>([[selectedActivityId, selectedBarrier]]);
+    const barriers = new Map<string, string>([[selectedActivityId, barrierSelection]]);
     saveBarriers(barriers);
 
     // Initialize user activities WITH barriers
@@ -70,13 +72,26 @@ export const RealtorExecutionApp: React.FC = () => {
     // Update state
     setProfile(newProfile);
     setUserActivities(activities);
-    setSelectedActivityId(selectedActivityId); // Set the activity to execute
+    setSelectedActivityId(selectedActivityId);
+    setSelectedBarrier(barrierSelection); // Store barrier for intervention
     
-    // Scroll to top when transitioning to execution
+    // Scroll to top when transitioning to intervention
     window.scrollTo({ top: 0, behavior: 'smooth' });
     
-    // Go directly to execution instead of dashboard
+    // Go to intervention FIRST, then execution
+    setView('intervention');
+  };
+  
+  const handleInterventionReady = () => {
+    // User acknowledged the intervention and is ready to execute
+    window.scrollTo({ top: 0, behavior: 'smooth' });
     setView('execution');
+  };
+  
+  const handleInterventionBack = () => {
+    // Go back to diagnostic
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    setView('diagnostic');
   };
 
   const handleActivityClick = (activityId: string) => {
@@ -139,6 +154,26 @@ export const RealtorExecutionApp: React.FC = () => {
   // Render current view
   if (view === 'diagnostic') {
     return <DiagnosticFlow onComplete={handleDiagnosticComplete} />;
+  }
+
+  if (view === 'intervention' && selectedActivityId && selectedBarrier && profile) {
+    const activity = getActivityById(selectedActivityId);
+    
+    if (!activity) {
+      // Fallback if activity not found
+      setView('diagnostic');
+      return null;
+    }
+
+    return (
+      <BarrierIntervention
+        activity={activity}
+        selectedBarrier={selectedBarrier}
+        userName={profile.name}
+        onReady={handleInterventionReady}
+        onBack={handleInterventionBack}
+      />
+    );
   }
 
   if (view === 'dashboard' && profile) {
