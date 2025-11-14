@@ -48,6 +48,9 @@ export const ExecutionEngine: React.FC<ExecutionEngineProps> = ({
     setError('');
     setGeneratedContent('');
     
+    // Check if running locally without API
+    const isDevelopment = window.location.hostname === 'localhost';
+    
     try {
       const contentType = getContentTypeForActivity();
       
@@ -92,6 +95,9 @@ export const ExecutionEngine: React.FC<ExecutionEngineProps> = ({
       });
 
       if (!response.ok) {
+        if (isDevelopment && response.status === 404) {
+          throw new Error('API not available in local development. Deploy to Vercel to test AI generation, or mark the activity complete without generating content.');
+        }
         throw new Error('Generation failed');
       }
 
@@ -99,7 +105,11 @@ export const ExecutionEngine: React.FC<ExecutionEngineProps> = ({
       setGeneratedContent(data.output);
       setMetadata(data.metadata || {});
     } catch (err: any) {
-      setError(err.message || 'Failed to generate content. Please try again.');
+      if (err.message.includes('Failed to fetch') && isDevelopment) {
+        setError('⚠️ API not available in local development. To test AI generation:\n\n1. Deploy to Vercel (already deployed at your production URL)\n2. Or mark this activity complete without AI content\n\nThe API works in production!');
+      } else {
+        setError(err.message || 'Failed to generate content. Please try again.');
+      }
     } finally {
       setGenerating(false);
     }
