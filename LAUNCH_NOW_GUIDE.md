@@ -178,9 +178,9 @@ Add these 6 conversation starters:
 3. Upload the file: `prompts-export.json` (located in your project root)
 4. Wait for it to process
 
-This gives the GPT access to all 84 prompts without needing an API!
+This gives the GPT access to your full prompt library without needing an API!
 
-Note on counts: The web app ships with 120+ prompts, while the current knowledge file includes 84 (see the `totalPrompts` field inside `prompts-export.json`). That’s normal for MVP launch. If you expand the library later, just upload a fresh `prompts-export.json` to update your GPT’s knowledge.
+Note on counts: The web app may ship with more prompts than the initial knowledge file. Check the `totalPrompts` field inside `prompts-export.json` to see the current count. That’s normal for MVP launch. If you expand the library later, just upload a fresh `prompts-export.json` to update your GPT’s knowledge.
 
 ---
 
