@@ -1,6 +1,7 @@
 import React from "react";
 import { createRoot } from "react-dom/client";
 import AIPromptVault from "./AIPromptVault";
+import { RealtorExecutionApp } from "./RealtorExecutionApp";
 import "./index.css";
 
 // Suppress harmless ResizeObserver errors (browser timing quirk during quality meter updates)
@@ -28,5 +29,9 @@ console.error = (...args) => {
   originalError.apply(console, args);
 };
 
+// Check URL parameter to determine which app to render
+const params = new URLSearchParams(window.location.search);
+const useNewApp = params.get('v2') === 'true' || params.get('execution') === 'true';
+
 const root = createRoot(document.getElementById("root")!);
-root.render(<AIPromptVault />);
+root.render(useNewApp ? <RealtorExecutionApp /> : <AIPromptVault />);
