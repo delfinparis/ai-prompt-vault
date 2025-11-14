@@ -34,6 +34,10 @@ export const DiagnosticFlow: React.FC<DiagnosticFlowProps> = ({ onComplete }) =>
       priorityActivities: [selectedActivityId],
       onboardingComplete: true
     };
+    
+    // Scroll to top before completing
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    
     onComplete(profile, selectedActivityId, selectedBarrier);
   };
 
@@ -147,7 +151,10 @@ export const DiagnosticFlow: React.FC<DiagnosticFlowProps> = ({ onComplete }) =>
       </div>
 
       <button
-        onClick={() => name && market && businessGoal && setStep(2)}
+        onClick={() => {
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+          if (name && market && businessGoal) setStep(2);
+        }}
         disabled={!name || !market || !businessGoal}
         style={{
           width: '100%',
@@ -217,7 +224,10 @@ export const DiagnosticFlow: React.FC<DiagnosticFlowProps> = ({ onComplete }) =>
 
       <div style={{ display: 'flex', gap: '12px', marginTop: '24px' }}>
         <button
-          onClick={() => setStep(1)}
+          onClick={() => {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+            setStep(1);
+          }}
           style={{
             flex: 1,
             padding: '16px',
@@ -233,7 +243,10 @@ export const DiagnosticFlow: React.FC<DiagnosticFlowProps> = ({ onComplete }) =>
           ← Back
         </button>
         <button
-          onClick={() => selectedActivityId && setStep(3)}
+          onClick={() => {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+            selectedActivityId && setStep(3);
+          }}
           disabled={!selectedActivityId}
           style={{
             flex: 2,
@@ -366,7 +379,10 @@ export const DiagnosticFlow: React.FC<DiagnosticFlowProps> = ({ onComplete }) =>
 
         <div style={{ marginTop: '40px', display: 'flex', gap: '16px' }}>
           <button
-            onClick={() => setStep(2)}
+            onClick={() => {
+              window.scrollTo({ top: 0, behavior: 'smooth' });
+              setStep(2);
+            }}
             style={{
               flex: 1,
               padding: '16px',

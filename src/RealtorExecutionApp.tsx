@@ -70,11 +70,17 @@ export const RealtorExecutionApp: React.FC = () => {
     // Update state
     setProfile(newProfile);
     setUserActivities(activities);
+    
+    // Scroll to top when transitioning to dashboard
+    window.scrollTo({ top: 0, behavior: 'smooth' });
     setView('dashboard');
   };
 
   const handleActivityClick = (activityId: string) => {
     setSelectedActivityId(activityId);
+    
+    // Scroll to top when going to execution
+    window.scrollTo({ top: 0, behavior: 'smooth' });
     setView('execution');
   };
 
@@ -98,6 +104,9 @@ export const RealtorExecutionApp: React.FC = () => {
 
     // Show success and return to dashboard
     setSelectedActivityId(null);
+    
+    // Scroll to top when returning to dashboard
+    window.scrollTo({ top: 0, behavior: 'smooth' });
     setView('dashboard');
 
     // Optional: Show confetti or success message
@@ -112,10 +121,15 @@ export const RealtorExecutionApp: React.FC = () => {
 
   const handleBackToDashboard = () => {
     setSelectedActivityId(null);
+    
+    // Scroll to top when going back
+    window.scrollTo({ top: 0, behavior: 'smooth' });
     setView('dashboard');
   };
 
   const handleEditProfile = () => {
+    // Scroll to top when editing profile
+    window.scrollTo({ top: 0, behavior: 'smooth' });
     setView('diagnostic');
   };
 
