@@ -1,5 +1,5 @@
 {
-  "status": "failed",
+  "status": "interrupted",
   "failedTests": [
     "ceae8d42728a3fcdf4bb-400259e8c85679974f49",
     "ceae8d42728a3fcdf4bb-287c07a3c8c165333828",
@@ -8,18 +8,6 @@
     "ceae8d42728a3fcdf4bb-e1e2b3ee104be2e65812",
     "ceae8d42728a3fcdf4bb-9d946de4f020f9597090",
     "ceae8d42728a3fcdf4bb-9d13e401f7004c708847",
-    "ceae8d42728a3fcdf4bb-6a4630a904091689b0e7",
-    "ceae8d42728a3fcdf4bb-07b87aa4393090135232",
-    "ceae8d42728a3fcdf4bb-f5aee99e45da24fa4292",
-    "ceae8d42728a3fcdf4bb-9fb878e34031e3bfafad",
-    "ceae8d42728a3fcdf4bb-d1e6d6bb30b60df55d5b",
-    "ceae8d42728a3fcdf4bb-e9801a66bbc379bb3ab2",
-    "ceae8d42728a3fcdf4bb-86fc539e452c1e54af96",
-    "ceae8d42728a3fcdf4bb-6ab9c1538177e46e7100",
-    "ceae8d42728a3fcdf4bb-7a7b8e20e215863c8243",
-    "ceae8d42728a3fcdf4bb-492a0fbbcfb46e89a392",
-    "ceae8d42728a3fcdf4bb-a450942b0044ce192353",
-    "ceae8d42728a3fcdf4bb-d466b3cf175c69919c93",
-    "ceae8d42728a3fcdf4bb-29f0b110811fe914b085"
+    "ceae8d42728a3fcdf4bb-6a4630a904091689b0e7"
   ]
 }
