@@ -1,5 +1,7 @@
 "use client";
-import React, { useState, useMemo, useEffect, useCallback } from "react";
+import React, { useState, useMemo, useEffect, useCallback, useRef } from "react";
+import { buildEnhancedWizardPrompt } from "./wizardPromptBuilder";
+import { computeQualityMeta } from "./qualityMeter";
 import confetti from "canvas-confetti";
 import "./AIPromptVault.css";
 import { prompts as fullPrompts } from "./prompts";
@@ -280,6 +282,66 @@ export default function AIPromptVault() {
   const [wizardAnswers, setWizardAnswers] = useState<Record<string, string>>({});
   const [wizardResultText, setWizardResultText] = useState<string>("");
   const [wizardSelectedPrompt, setWizardSelectedPrompt] = useState<PromptItem | null>(null);
+  const [wizardCustomChallenge, setWizardCustomChallenge] = useState<string>('');
+  // Chip selections (multi-select) keyed by question id
+  const [wizardSelections, setWizardSelections] = useState<Record<string, string[]>>({});
+
+  // Quality meter threshold tracking
+  const lastQualityScoreRef = useRef<number>(0);
+
+  // Quality meta now imported from qualityMeter.ts
+
+  // Emit threshold events when quality crosses tiers during Step 2
+  useEffect(() => {
+    if (wizardStep !== 2 || !wizardChallenge) return;
+    const cfg = CHALLENGES.find(c => c.key === wizardChallenge);
+    if (!cfg) return;
+    const { score, suggestions } = computeQualityMeta(wizardAnswers, cfg);
+    const last = lastQualityScoreRef.current;
+    [45, 65, 85].forEach(t => {
+      if (last < t && score >= t) {
+        trackEvent('rpv:wizard_quality_threshold', { from: last, to: t, challenge: wizardChallenge, suggestionsRemaining: suggestions });
+      }
+    });
+    lastQualityScoreRef.current = score;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [wizardAnswers, wizardChallenge, wizardStep]);
+
+  // Preset option chips for common questions
+  const WIZARD_OPTION_SETS: Record<string, string[]> = {
+    channel: ['Instagram', 'Email Newsletter', 'YouTube', 'Open Houses', 'Referral Outreach', 'LinkedIn'],
+    tone: ['Friendly', 'Direct', 'Authoritative', 'Helpful', 'Empathetic'],
+    cadence: ['Daily', 'Every 3 Days', 'Weekly', 'Bi-Weekly'],
+    urgency: ['ASAP', 'Next 30 days', 'This quarter', 'Just researching'],
+    obstacle: ['Pricing', 'Emotions', 'Slow Response', 'Fear of Commitment', 'Low Urgency'],
+    timeBlocks: ['Prospecting AM', 'Follow-Up Midday', 'Admin Friday', 'Content Batch Monday', 'Client Updates PM'],
+    biggestBlocker: ['Context Switching', 'Procrastination', 'Low Energy', 'Distractions', 'Overwhelm']
+  };
+
+  const toggleWizardChip = (questionId: string, value: string) => {
+    setWizardSelections(prev => {
+      const existing = prev[questionId] || [];
+      const isSelected = existing.includes(value);
+      const next = isSelected ? existing.filter(v => v !== value) : [...existing, value];
+      const updated = { ...prev, [questionId]: next };
+      // Reflect into wizardAnswers (comma separated + any custom text if present)
+      const customPart = (wizardAnswers[questionId + '_custom'] || '').trim();
+      const combined = [...next, customPart].filter(Boolean).join(', ');
+      setWizardAnswers(ans => ({ ...ans, [questionId]: combined }));
+      trackEvent('rpv:wizard_chip_select', { questionId, value, selected: !isSelected });
+      return updated;
+    });
+  };
+
+  const updateWizardCustomForQuestion = (questionId: string, text: string) => {
+    setWizardAnswers(prev => {
+      // store raw custom in a hidden key to avoid losing chip toggles
+      const next = { ...prev, [questionId + '_custom']: text };
+      const chips = wizardSelections[questionId] || [];
+      next[questionId] = [...chips, text.trim()].filter(Boolean).join(', ');
+      return next;
+    });
+  };
   
   // A/B test: Wizard CTA variant
   const [wizardCTAVariant] = useState<'A' | 'B' | 'C'>(() => {
@@ -312,9 +374,6 @@ export default function AIPromptVault() {
     }
   });
   const [defaultsAppliedCount, setDefaultsAppliedCount] = useState<number>(0);
-  
-  // Typewriter effect for loading animation
-  const [typewriterText, setTypewriterText] = useState<string>("");
   
   // Agent profile integration
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -379,12 +438,13 @@ export default function AIPromptVault() {
   }, []);
   
   // Calculate current dark mode state (for tooltip)
-  const getDarkModeState = () => {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const getDarkModeState = useCallback(() => {
     const saved = localStorage.getItem(KEY_DARK_MODE);
     if (saved === null) return 'auto';
     if (saved === 'true') return 'dark';
     return 'light';
-  };
+  }, []);
   
   const searchInputRef = React.useRef<HTMLInputElement>(null);
   const fieldInputRef = React.useRef<HTMLInputElement>(null);
@@ -1201,58 +1261,17 @@ export default function AIPromptVault() {
     }
   }, [currentFieldIndex, selectedPrompt]);
 
-  // Typewriter effect for loading animation
-  useEffect(() => {
-    const message = "Creating your prompt...";
-    if (isGenerating) {
-      setTypewriterText("");
-      let currentIndex = 0;
-      const interval = setInterval(() => {
-        if (currentIndex <= message.length) {
-          setTypewriterText(message.slice(0, currentIndex));
-          currentIndex++;
-        } else {
-          clearInterval(interval);
-        }
-      }, 80);
-      return () => clearInterval(interval);
-    }
-  }, [isGenerating]);
-
   // Animated house + lightning bolt icon
-  const AnimatedIcon = () => (
-    <svg width="80" height="80" viewBox="0 0 100 100" style={{ display: 'block', margin: '0 auto' }}>
-      {/* House */}
-      <path
-        d="M20 50 L50 20 L80 50 L80 85 L20 85 Z"
-        fill="var(--primary)"
-        opacity="0.2"
-        style={{
-          animation: 'fadeIn 600ms ease-out',
-        }}
-      />
-      <path
-        d="M20 50 L50 20 L80 50 L80 85 L20 85 Z"
-        stroke="var(--primary)"
-        strokeWidth="3"
-        fill="none"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        style={{
-          strokeDasharray: 300,
-          strokeDashoffset: 300,
-          animation: 'drawLine 1.5s ease-out forwards',
-        }}
-      />
-      {/* Lightning bolt */}
-      <path
-        d="M55 35 L45 50 L52 50 L48 65 L58 50 L51 50 Z"
-        fill="var(--warning)"
-        style={{
-          animation: 'flash 2s ease-in-out infinite',
-        }}
-      />
-    </svg>
+  const LoadingOverlay = () => (
+    <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.6)', backdropFilter:'blur(4px)', display:'flex', alignItems:'center', justifyContent:'center', zIndex:3000, animation:'fadeIn 160ms ease-out' }}>
+      <div style={{ background:'var(--surface)', padding:32, borderRadius:16, width:'min(520px,90vw)', display:'flex', flexDirection:'column', alignItems:'center', gap:16, border:'1px solid var(--border)', boxShadow:'var(--shadow-lg)' }}>
+        <div style={{ fontWeight:800, fontSize:16 }}>Preparing your AI-generated content…</div>
+        <div style={{ fontSize:13, color:'var(--muted)', textAlign:'center' }}>Optimizing prompt and assembling structured output.</div>
+        <div style={{ width:'100%', height:6, background:'var(--surface-hover)', borderRadius:4, overflow:'hidden' }}>
+          <div style={{ width:'40%', height:'100%', background:'linear-gradient(90deg,var(--primary),var(--accent))', animation:'pulse 1.2s infinite alternate' }} />
+        </div>
+      </div>
+    </div>
   );
 
   // ------- Wizard Config -------
@@ -1272,9 +1291,9 @@ export default function AIPromptVault() {
       description: 'Pick a channel and goal to start booking appointments',
       defaultPromptTitle: '90-Day Inbound Lead Blueprint',
       questions: [
-        { id: 'market', label: 'Your market/city', placeholder: 'e.g., Austin, TX' },
-        { id: 'niche', label: 'Your niche (optional)', placeholder: 'first-time buyers, luxury, investors' },
-        { id: 'channel', label: 'Primary channel', placeholder: 'Instagram, Email, Cold outreach' },
+        { id: 'market', label: 'Your market/city', placeholder: 'e.g., Austin, TX', help: 'Example: "Austin, TX – focus on downtown condos."' },
+        { id: 'niche', label: 'Your niche (optional)', placeholder: 'first-time buyers, luxury, investors', help: 'Example: "First-time buyers and young professionals."' },
+        { id: 'channel', label: 'Primary channel', placeholder: 'Instagram, Email, Cold outreach', help: 'Example: "Instagram and a weekly email newsletter."' },
       ],
       followups: ['Landing Page CRO Audit', '7-Day Follow-Up Sequence']
     },
@@ -1284,10 +1303,10 @@ export default function AIPromptVault() {
       description: 'Create high-converting property copy and launch assets',
       defaultPromptTitle: 'Listing Description That Converts',
       questions: [
-        { id: 'propertyType', label: 'Property type', placeholder: '3-bed single family, condo, townhome' },
-        { id: 'area', label: 'Area (address or neighborhood)', placeholder: 'e.g., Bouldin Creek, Austin' },
-        { id: 'features', label: '3–5 standout features', placeholder: 'chef kitchen, rooftop deck, EV charger' },
-        { id: 'tier', label: 'Positioning tier', placeholder: 'entry-level, mid-range, luxury' },
+        { id: 'propertyType', label: 'Property type', placeholder: '3-bed single family, condo, townhome', help: 'Example: "Luxury 2BR condo with rooftop deck."' },
+        { id: 'area', label: 'Area (address or neighborhood)', placeholder: 'e.g., Bouldin Creek, Austin', help: 'Example: "Bouldin Creek near South Congress."' },
+        { id: 'features', label: '3–5 standout features', placeholder: 'chef kitchen, rooftop deck, EV charger', help: 'Example: "Chef kitchen, EV charger, floor-to-ceiling windows."' },
+        { id: 'tier', label: 'Positioning tier', placeholder: 'entry-level, mid-range, luxury', help: 'Example: "Luxury tier targeting move-up buyers."' },
       ],
       followups: ['Open House Promo Pack', 'Pricing Strategy Script']
     },
@@ -1297,9 +1316,9 @@ export default function AIPromptVault() {
       description: 'Turn more leads into conversations with timely messages',
       defaultPromptTitle: '7-Day Follow-Up Sequence',
       questions: [
-        { id: 'leadSource', label: 'Lead source', placeholder: 'Zillow, open house, IG DM, referral' },
-        { id: 'tone', label: 'Tone', placeholder: 'helpful, direct, friendly' },
-        { id: 'cadence', label: 'Cadence', placeholder: '7 days, 14 days' },
+        { id: 'leadSource', label: 'Lead source', placeholder: 'Zillow, open house, IG DM, referral', help: 'Example: "Zillow inquiry after open house."' },
+        { id: 'tone', label: 'Tone', placeholder: 'helpful, direct, friendly', help: 'Example: "Friendly but confident."' },
+        { id: 'cadence', label: 'Cadence', placeholder: '7 days, 14 days', help: 'Example: "Every 7 days for 3 weeks."' },
       ],
       followups: ['Review-to-Referral Bridge', 'Home-Anniversary Automation']
     },
@@ -1309,8 +1328,8 @@ export default function AIPromptVault() {
       description: 'Publish a month of content without the overwhelm',
       defaultPromptTitle: 'Instagram Reels Calendar (30 Days)',
       questions: [
-        { id: 'niche', label: 'Audience/niche', placeholder: 'relocators, luxury, first-time buyers' },
-        { id: 'goal', label: 'Primary goal', placeholder: 'reach, replies, appointments' },
+        { id: 'niche', label: 'Audience/niche', placeholder: 'relocators, luxury, first-time buyers', help: 'Example: "First-time buyers relocating to Austin."' },
+        { id: 'goal', label: 'Primary goal', placeholder: 'reach, replies, appointments', help: 'Example: "Book appointments (DM replies)."' },
       ],
       followups: ['90-Day Inbound Lead Blueprint']
     },
@@ -1320,9 +1339,9 @@ export default function AIPromptVault() {
       description: 'Set clear expectations and win in competitive markets',
       defaultPromptTitle: 'Buyer Onboarding Journey',
       questions: [
-        { id: 'market', label: 'Your market/city', placeholder: 'e.g., Denver, CO' },
-        { id: 'price', label: 'Price range (optional)', placeholder: '$400k–$700k' },
-        { id: 'urgency', label: 'Urgency', placeholder: 'moving in 60 days, just browsing' },
+        { id: 'market', label: 'Your market/city', placeholder: 'e.g., Denver, CO', help: 'Example: "Denver – Highlands neighborhood focus."' },
+        { id: 'price', label: 'Price range (optional)', placeholder: '$400k–$700k', help: 'Example: "$450k–$650k typical."' },
+        { id: 'urgency', label: 'Urgency', placeholder: 'moving in 60 days, just browsing', help: 'Example: "Must move in 60 days for job transfer."' },
       ],
       followups: ['Multiple-Offer Strategy', 'Needs-Match Matrix']
     },
@@ -1332,11 +1351,68 @@ export default function AIPromptVault() {
       description: 'Get your week under control and free up time',
       defaultPromptTitle: 'Weekly Productivity Audit',
       questions: [
-        { id: 'topGoal', label: 'Top outcome this week', placeholder: 'book 5 appts, prep new listing' },
-        { id: 'timePerDay', label: 'Time available per day', placeholder: 'e.g., 90 minutes' },
+        { id: 'topGoal', label: 'Top outcome this week', placeholder: 'book 5 appts, prep new listing', help: 'Example: "Book 5 buyer consults & prep one new listing."' },
+        { id: 'timePerDay', label: 'Time available per day', placeholder: 'e.g., 90 minutes', help: 'Example: "~90 minutes of focused time daily."' },
       ],
       followups: ['90-Day Inbound Lead Blueprint']
     },
+    {
+      key: 'client',
+      label: 'Client Management & Negotiation',
+      description: 'Handle expectations and negotiate winning deals',
+      defaultPromptTitle: 'Client Communication & Negotiation Strategy',
+      questions: [
+        { id: 'situation', label: 'Current client situation', placeholder: 'e.g., buyer losing offers, seller stalling', help: 'Example: "Buyer has lost 3 offers in competitive mid-range segment."' },
+        { id: 'clientType', label: 'Client type', placeholder: 'first-time buyer, luxury seller, investor', help: 'Example: "First-time buyer relocating for tech job."' },
+        { id: 'obstacle', label: 'Biggest obstacle', placeholder: 'pricing, emotions, slow response', help: 'Example: "Emotional decision-making causing overbidding hesitation."' },
+      ],
+      followups: ['Multiple-Offer Strategy']
+    },
+    {
+      key: 'productivity',
+      label: 'Productivity & Organization',
+      description: 'Prioritize, structure, and systemize your week',
+      defaultPromptTitle: 'Personal Productivity Systems Builder',
+      questions: [
+        { id: 'topGoal', label: 'Primary outcome this quarter', placeholder: 'increase listings, close 15 transactions', help: 'Example: "Close 12 transactions with 3 new listings."' },
+        { id: 'timeBlocks', label: 'Existing time blocks', placeholder: 'prospecting AM, admin Fri', help: 'Example: "Prospecting 8-9am, admin Friday afternoons."' },
+        { id: 'biggestBlocker', label: 'Biggest blocker', placeholder: 'context switching, procrastination', help: 'Example: "Context switching between CRM + email kills focus."' },
+      ],
+      followups: ['Weekly Productivity Audit']
+    },
+    {
+      key: 'market',
+      label: 'Market Knowledge & Strategy',
+      description: 'Position clients and your brand ahead of shifts',
+      defaultPromptTitle: 'Local Market Trend Briefing',
+      questions: [
+        { id: 'market', label: 'Your market', placeholder: 'e.g., Phoenix AZ metro', help: 'Example: "Phoenix AZ – East Valley focus."' },
+        { id: 'shiftConcern', label: 'Shift or trend concern', placeholder: 'inventory drop, rates rising', help: 'Example: "Inventory tightening + rising rates causing buyer hesitation."' },
+        { id: 'strategicGoal', label: 'Strategic goal', placeholder: 'educate buyers, attract listings', help: 'Example: "Educate move-up buyers & attract listing consultations."' },
+      ],
+      followups: ['Pricing Strategy Script']
+    },
+    {
+      key: 'custom',
+      label: 'Your Custom Challenge',
+      description: 'Refine and turn your unique situation into a powerful prompt',
+      defaultPromptTitle: 'Tailored Strategy & Action Plan',
+      questions: [
+        { id: 'challengeSummary', label: 'Brief summary', placeholder: 'What is happening?', help: 'Example: "Past clients not engaging with quarterly updates."' },
+        { id: 'desiredOutcome', label: 'Desired outcome', placeholder: 'What success looks like', help: 'Example: "Re-engage 30% of past clients & book 5 reviews."' },
+        { id: 'blockers', label: 'Current blockers', placeholder: 'list 1–2', help: 'Example: "Low email open rate, weak CTA."' },
+      ],
+      followups: []
+    },
+  ];
+
+  // Consolidated high-level challenge categories (tap-friendly)
+  const CHALLENGE_CATEGORIES = [
+    { key: 'lead-gen', label: 'Lead Generation & Conversion', examples: ['Generating leads','Converting leads','Referral network','Social media','Open houses'] },
+    { key: 'listing', label: 'Listing & Marketing', examples: ['Low inventory','Pricing','Listing marketing','Presentations','Reviews'] },
+    { key: 'client', label: 'Client Management & Negotiation', examples: ['Expectations','Negotiations','Multiple offers','Luxury + first-time','Retention'] },
+    { key: 'productivity', label: 'Productivity & Organization', examples: ['Time management','Organization','Paperwork','Work/life','Scaling'] },
+    { key: 'market', label: 'Market Knowledge & Strategy', examples: ['Trends','Shifts','Competition','Branding','Faster closings'] },
   ];
 
   const startWizard = React.useCallback(() => {
@@ -1358,7 +1434,30 @@ export default function AIPromptVault() {
   const selectChallenge = (key: string) => {
     setWizardChallenge(key);
     setWizardStep(2);
-    trackEvent('rpv:wizard_challenge_selected', { challenge: key });
+    trackEvent('rpv:wizard_category_select', { challenge: key });
+    // Pre-select a couple sensible defaults if present to reduce friction
+    try {
+      const cfg = CHALLENGES.find(c => c.key === key);
+      if (!cfg) return;
+      const defaults: Record<string, string[]> = {};
+      if (cfg.questions.some(q => q.id === 'tone')) {
+        defaults['tone'] = ['Helpful'];
+      }
+      if (cfg.questions.some(q => q.id === 'cadence')) {
+        defaults['cadence'] = ['Weekly'];
+      }
+      if (Object.keys(defaults).length) {
+        setWizardSelections(prev => ({ ...prev, ...defaults }));
+        setWizardAnswers(prev => {
+          const next = { ...prev } as Record<string, string>;
+          Object.entries(defaults).forEach(([id, values]) => {
+            const custom = (prev[id + '_custom'] || '').trim();
+            next[id] = [...values, custom].filter(Boolean).join(', ');
+          });
+          return next;
+        });
+      }
+    } catch {}
   };
 
   const findPromptByTitle = (title: string): PromptItem | null => {
@@ -1366,28 +1465,28 @@ export default function AIPromptVault() {
     return p || null;
   };
 
+
   const completeDrilldown = () => {
     if (!wizardChallenge) return;
     const config = CHALLENGES.find(c => c.key === wizardChallenge);
     if (!config) return;
     const prompt = findPromptByTitle(config.defaultPromptTitle);
     setWizardSelectedPrompt(prompt);
-    // Build a context block from answers
-    const contextLines = Object.entries(wizardAnswers)
-      .filter(([, v]) => String(v || '').trim().length > 0)
-      .map(([k, v]) => `- ${k.replace(/([A-Z])/g, ' $1')}: ${v}`);
-    const context = contextLines.length > 0 ? `\n\nContext (use these to tailor the output):\n${contextLines.join('\n')}` : '';
-    const base = prompt ? buildFullPrompt(prompt) : 'You are an expert real estate marketing assistant. Create a high-quality output based on the details below.';
-    const finalText = `${base}${context}\n\nDeliver a complete, copy-ready result. Avoid demographic descriptors; keep lifestyle framing neutral.`;
+    const base = prompt ? buildFullPrompt(prompt) : 'You are an expert real estate marketing assistant.';
+    const finalText = buildEnhancedWizardPrompt(base, wizardChallenge, wizardAnswers);
     setWizardResultText(finalText);
     setWizardStep(3);
-    trackEvent('rpv:wizard_drilldown_complete', { challenge: wizardChallenge, q_count: Object.keys(wizardAnswers).length });
+    const answerMeta = Object.entries(wizardAnswers).filter(([k]) => !k.endsWith('_custom')).map(([k, v]) => ({ k, len: (v || '').length }));
+    trackEvent('rpv:wizard_generate', { challenge: wizardChallenge, answers: answerMeta, totalChars: answerMeta.reduce((s, a) => s + a.len, 0) });
+    const { score, suggestions } = computeQualityMeta(wizardAnswers, config);
+    trackEvent('rpv:wizard_quality_generate', { challenge: wizardChallenge, score, suggestionsRemaining: suggestions });
   };
+  // (Quality meta helper removed; using inline meter only)
 
   const copyAndOpenGPT = async () => {
     try {
       await navigator.clipboard.writeText(wizardResultText);
-      trackEvent('rpv:prompt_copy', { source: 'wizard', challenge: wizardChallenge });
+      trackEvent('rpv:wizard_prompt_copy', { challenge: wizardChallenge, length: wizardResultText.length });
       if (GPT_STORE_URL) {
         trackEvent('rpv:cta_gpt_click', { label: 'wizard_result', variant: wizardCTAVariant });
         window.open(GPT_STORE_URL as string, '_blank');
@@ -1409,15 +1508,27 @@ export default function AIPromptVault() {
           {wizardStep === 1 && (
             <div>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 12, marginTop: 12 }}>
-                {CHALLENGES.map(c => (
-                  <button key={c.key} onClick={() => selectChallenge(c.key)} style={{ textAlign: 'left', padding: 16, background: 'var(--surface-hover)', border: '1px solid var(--border)', borderRadius: 12, cursor: 'pointer', transition: 'all 160ms ease' }}
+                {CHALLENGE_CATEGORIES.map(cat => (
+                  <button key={cat.key} onClick={() => selectChallenge(cat.key)} style={{ textAlign: 'left', padding: 16, background: 'var(--surface-hover)', border: '1px solid var(--border)', borderRadius: 12, cursor: 'pointer', transition: 'all 160ms ease' }}
                     onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'var(--primary)'; e.currentTarget.style.transform = 'translateY(-2px)'; }}
                     onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.transform = 'translateY(0)'; }}
                   >
-                    <div style={{ fontWeight: 800, marginBottom: 6 }}>{c.label}</div>
-                    <div style={{ fontSize: 13, color: 'var(--muted)' }}>{c.description}</div>
+                    <div style={{ fontWeight: 800, marginBottom: 6 }}>{cat.label}</div>
+                    <div style={{ fontSize: 13, color: 'var(--muted)' }}>{cat.examples.join(', ')}</div>
                   </button>
                 ))}
+              </div>
+              <div style={{ marginTop: 12 }}>
+                <input
+                  type="text"
+                  placeholder="Or describe your unique challenge..."
+                  value={wizardCustomChallenge}
+                  onChange={(e) => setWizardCustomChallenge(e.target.value)}
+                  style={{ width: '100%', padding: '12px 14px', borderRadius: 10, border: '1px solid var(--border)', background: 'var(--surface)', marginTop: 8 }}
+                />
+                {wizardCustomChallenge && (
+                  <button onClick={() => { trackEvent('rpv:wizard_custom_challenge_submit', { chars: wizardCustomChallenge.length }); setWizardChallenge('custom'); setWizardStep(2); }} style={{ marginTop: 10, background: 'var(--primary)', color: 'var(--text-inverse)', border: 'none', borderRadius: 8, padding: '10px 14px', cursor: 'pointer', fontWeight: 800 }}>Use my challenge →</button>
+                )}
               </div>
               <div style={{ marginTop: 12, textAlign: 'right' }}>
                 <button onClick={dismissWizard} style={{ background: 'transparent', border: 'none', color: 'var(--muted)', textDecoration: 'underline', cursor: 'pointer', fontSize: 13 }}>Skip and browse the library →</button>
@@ -1432,21 +1543,147 @@ export default function AIPromptVault() {
                 return (
                   <div>
                     <h3 style={{ marginTop: 0, fontSize: 16, fontWeight: 800 }}>{c.label}</h3>
+                    <div style={{ fontSize: 13, color: 'var(--muted)', marginBottom: 12 }}>
+                      Provide complete, specific answers (full sentences are best). The more context, the stronger your tailored prompt.<br />
+                      <b>Tip:</b> Mention audience, timeframe, tone, and any constraints.
+                    </div>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                       {c.questions.map(q => (
                         <div key={q.id}>
                           <label style={{ display: 'block', fontSize: 13, fontWeight: 700, marginBottom: 6 }}>{q.label}</label>
-                          <input
-                            type="text"
-                            placeholder={q.placeholder}
-                            value={wizardAnswers[q.id] || ''}
-                            onChange={(e) => setWizardAnswers(prev => ({ ...prev, [q.id]: e.target.value }))}
-                            style={{ width: '100%', padding: '10px 12px', borderRadius: 10, border: '1px solid var(--border)', background: 'var(--surface)' }}
-                          />
-                          {q.help && <div style={{ fontSize: 12, color: 'var(--muted)', marginTop: 4 }}>{q.help}</div>}
+                          {WIZARD_OPTION_SETS[q.id] ? (
+                            <>
+                              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 8 }}>
+                                {WIZARD_OPTION_SETS[q.id].map(opt => {
+                                  const active = (wizardSelections[q.id] || []).includes(opt);
+                                  return (
+                                    <button
+                                      key={opt}
+                                      type="button"
+                                      onClick={() => toggleWizardChip(q.id, opt)}
+                                      style={{
+                                        padding: '6px 10px',
+                                        borderRadius: 999,
+                                        fontSize: 12,
+                                        cursor: 'pointer',
+                                        border: '1px solid ' + (active ? 'var(--primary)' : 'var(--border)'),
+                                        background: active ? 'var(--primary)' : 'var(--surface-hover)',
+                                        color: active ? 'var(--text-inverse)' : 'var(--text)',
+                                        fontWeight: 600
+                                      }}
+                                    >{opt}</button>
+                                  );
+                                })}
+                              </div>
+                              <input
+                                type="text"
+                                placeholder={q.placeholder + ' (add custom)'}
+                                value={wizardAnswers[q.id + '_custom'] || ''}
+                                onChange={(e) => updateWizardCustomForQuestion(q.id, e.target.value)}
+                                style={{ width: '100%', padding: '10px 12px', borderRadius: 10, border: '1px solid var(--border)', background: 'var(--surface)' }}
+                              />
+                              <div style={{ fontSize: 11, color: 'var(--muted)', marginTop: 4 }}>
+                                Selected: {wizardAnswers[q.id] || 'None'}
+                              </div>
+                              {q.help && <div style={{ fontSize: 12, color: 'var(--muted)', marginTop: 4 }}>{q.help}</div>}
+                              {(/goal|desiredOutcome|topGoal|situation|challengeSummary/i.test(q.id)) && (
+                                <div style={{ fontSize: 11, color: 'var(--muted)', marginTop: 4, fontStyle: 'italic' }}>
+                                  What good looks like: specific, measurable, with a timeframe. E.g., "Book 5 consults in 30 days."
+                                </div>
+                              )}
+                            </>
+                          ) : (
+                            <>
+                              <input
+                                type="text"
+                                placeholder={q.placeholder}
+                                value={wizardAnswers[q.id] || ''}
+                                onChange={(e) => setWizardAnswers(prev => ({ ...prev, [q.id]: e.target.value }))}
+                                style={{ width: '100%', padding: '10px 12px', borderRadius: 10, border: '1px solid var(--border)', background: 'var(--surface)' }}
+                              />
+                              {q.help && <div style={{ fontSize: 12, color: 'var(--muted)', marginTop: 4 }}>{q.help}</div>}
+                              {(/goal|desiredOutcome|topGoal|situation|challengeSummary/i.test(q.id)) && (
+                                <div style={{ fontSize: 11, color: 'var(--muted)', marginTop: 4, fontStyle: 'italic' }}>
+                                  What good looks like: specific, measurable, with a timeframe. E.g., "Book 5 consults in 30 days."
+                                </div>
+                              )}
+                            </>
+                          )}
                         </div>
                       ))}
                     </div>
+                    {(() => {
+                      // Quality meter evaluation
+                      const answerEntries = Object.entries(wizardAnswers).filter(([k]) => !k.endsWith('_custom'));
+                      const nonEmpty = answerEntries.filter(([, v]) => String(v).trim().length > 0);
+                      const lenTotal = nonEmpty.reduce((s, [, v]) => s + v.length, 0);
+                      const hasGoal = /goal|topGoal|desiredOutcome|strategicGoal/.test(nonEmpty.map(([k]) => k).join(','));
+                      const hasBlocker = /obstacle|blocker|blockers|biggestBlocker|shiftConcern/.test(nonEmpty.map(([k]) => k).join(','));
+                      const hasSituation = /market|propertyType|challengeSummary|situation|clientType/.test(nonEmpty.map(([k]) => k).join(','));
+                      const hasTone = /tone/.test(nonEmpty.map(([k]) => k).join(','));
+                      const hasTimeframe = /urgency|cadence|timeframe/.test(nonEmpty.map(([k]) => k).join(','));
+                      // Scoring weights
+                      let score = 0;
+                      if (hasSituation) score += 25;
+                      if (hasGoal) score += 20;
+                      if (hasBlocker) score += 20;
+                      if (hasTone) score += 10;
+                      if (hasTimeframe) score += 10;
+                      // Length bonus (up to 15)
+                      const lengthBonus = Math.min(15, Math.floor(lenTotal / 140 * 15));
+                      score += lengthBonus;
+                      const tier = score >= 85 ? 'Excellent' : score >= 65 ? 'Strong' : score >= 45 ? 'Moderate' : 'Needs More Detail';
+                      const suggestions: string[] = [];
+                      if (!hasSituation) suggestions.push('Describe your market or core situation.');
+                      if (!hasGoal) suggestions.push('Add a clear, measurable goal.');
+                      if (!hasBlocker) suggestions.push('Mention the biggest blocker or obstacle.');
+                      if (!hasTimeframe) suggestions.push('Add urgency or timeframe (e.g., 30 days).');
+                      if (!hasTone) suggestions.push('Specify tone (friendly, authoritative, etc.).');
+                      if (lengthBonus < 8) suggestions.push('Provide fuller sentence answers for depth.');
+                      return (
+                        <div style={{ marginTop: 18, border: '1px solid var(--border)', borderRadius: 12, padding: 12, background: 'var(--surface-hover)' }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <div style={{ fontWeight: 700, fontSize: 13 }}>Quality Meter</div>
+                            <div style={{ fontSize: 12, fontWeight: 700, color: tier === 'Excellent' ? 'var(--primary)' : tier === 'Strong' ? 'var(--accent)' : 'var(--warn, #d97706)' }}>{tier}</div>
+                          </div>
+                          <div style={{ marginTop: 8 }}>
+                            <div style={{ height: 6, background: 'var(--surface)', borderRadius: 4, overflow: 'hidden' }}>
+                              <div style={{ width: `${Math.min(score, 100)}%`, height: '100%', background: score >= 85 ? 'var(--primary)' : score >= 65 ? 'var(--accent)' : score >= 45 ? 'orange' : 'var(--border)' }} />
+                            </div>
+                            <div style={{ fontSize: 11, color: 'var(--muted)', marginTop: 4 }}>Score {score}/100 · Inputs filled {nonEmpty.length}/{c.questions.length}</div>
+                          </div>
+                          {suggestions.length > 0 && (
+                            <ul style={{ margin: '8px 0 0', paddingLeft: 18, fontSize: 11, color: 'var(--muted)', lineHeight: 1.4 }}>
+                              {suggestions.slice(0, 4).map(s => <li key={s}>{s}</li>)}
+                            </ul>
+                          )}
+                          {!hasTimeframe && (
+                            <div style={{ marginTop: 8 }}>
+                              <span style={{ fontSize: 11, color: 'var(--muted)', marginRight: 6 }}>Quick add timeframe:</span>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  // Prefer urgency/timeframe/cadence in that order
+                                  const tfId = (c.questions.find(q => q.id === 'urgency')?.id)
+                                    || (c.questions.find(q => q.id === 'timeframe')?.id)
+                                    || (c.questions.find(q => q.id === 'cadence')?.id);
+                                  if (!tfId) return;
+                                  if (WIZARD_OPTION_SETS[tfId]) {
+                                    // Set chip and answer
+                                    setWizardSelections(prev => ({ ...prev, [tfId]: ['Next 30 days'] }));
+                                    setWizardAnswers(prev => ({ ...prev, [tfId]: ['Next 30 days', (prev[tfId + '_custom'] || '').trim()].filter(Boolean).join(', ') }));
+                                  } else {
+                                    setWizardAnswers(prev => ({ ...prev, [tfId]: 'Next 30 days' }));
+                                  }
+                                  trackEvent('rpv:wizard_quick_timeframe', { id: tfId, value: 'Next 30 days' });
+                                }}
+                                style={{ padding: '6px 10px', borderRadius: 999, fontSize: 12, cursor: 'pointer', border: '1px solid var(--border)', background: 'var(--badge-bg)' }}
+                              >Next 30 days</button>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })()}
                     <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 16 }}>
                       <button onClick={() => setWizardStep(1)} style={{ background: 'var(--surface-hover)', border: '1px solid var(--border)', borderRadius: 8, padding: '10px 14px', cursor: 'pointer' }}>← Back</button>
                       <button onClick={completeDrilldown} style={{ background: 'var(--primary)', color: 'var(--text-inverse)', border: 'none', borderRadius: 8, padding: '10px 14px', cursor: 'pointer', fontWeight: 800 }}>See my tailored prompt →</button>
@@ -1463,15 +1700,49 @@ export default function AIPromptVault() {
               <div style={{ background: 'var(--surface-hover)', border: '1px solid var(--border)', borderRadius: 12, padding: 12, maxHeight: 260, overflow: 'auto', whiteSpace: 'pre-wrap', fontFamily: 'var(--font-mono)', fontSize: 13 }}>
                 {wizardResultText}
               </div>
-              <div style={{ display: 'flex', gap: 8, marginTop: 12, flexWrap: 'wrap' }}>
+              <div style={{ display: 'flex', gap: 8, marginTop: 12, flexWrap: 'wrap', alignItems: 'center' }}>
                 <button onClick={copyAndOpenGPT} style={{ background: 'linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%)', color: 'var(--text-inverse)', border: 'none', borderRadius: 10, padding: '10px 14px', fontWeight: 800, cursor: 'pointer' }}>
-                  {wizardCTAVariant === 'A' ? 'Copy + Open ChatGPT →' : wizardCTAVariant === 'B' ? 'Use in ChatGPT →' : 'Get My Answer →'}
+                  Copy & Open ChatGPT →
                 </button>
                 {wizardSelectedPrompt && (
                   <button onClick={() => { setSelectedPrompt(wizardSelectedPrompt!); setWizardOpen(false); }} style={{ background: 'var(--surface-hover)', border: '1px solid var(--border)', borderRadius: 10, padding: '10px 14px', cursor: 'pointer' }}>Edit in app</button>
                 )}
                 <button onClick={dismissWizard} style={{ background: 'transparent', border: 'none', color: 'var(--muted)', textDecoration: 'underline', cursor: 'pointer' }}>Close</button>
               </div>
+              {/* Refinement cues as 1-click chips */}
+              {(() => {
+                const cues: string[] = [];
+                const lc = (txt: string) => (txt || '').toLowerCase();
+                const market = wizardAnswers['market'] || wizardAnswers['area'] || '';
+                const tone = wizardAnswers['tone'] || '';
+                // Generic helpful cues
+                cues.push('Make it more concise (keep core actions)');
+                if (market) cues.push(`Add one local market stat for ${market}`);
+                cues.push('Turn Objectives into SMART goals');
+                if (tone) cues.push(`Rewrite with a more ${lc(tone)} tone`);
+                cues.push('Generate 3 compelling subject lines');
+                return (
+                  <div style={{ marginTop: 12 }}>
+                    <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 6 }}>Refine with 1 click</div>
+                    <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                      {cues.map(c => (
+                        <button
+                          key={c}
+                          onClick={async () => {
+                            const appended = `${wizardResultText}\n\nRefinement request: ${c}`;
+                            try {
+                              await navigator.clipboard.writeText(appended);
+                              trackEvent('rpv:wizard_refinement_cue_copy', { cue: c });
+                              if (GPT_STORE_URL) window.open(GPT_STORE_URL as string, '_blank');
+                            } catch {}
+                          }}
+                          style={{ padding: '8px 12px', background: 'var(--badge-bg)', border: '1px solid var(--border)', borderRadius: 999, cursor: 'pointer', fontSize: 12 }}
+                        >{c}</button>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })()}
               {wizardChallenge && (
                 <div style={{ marginTop: 16 }}>
                   <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 8 }}>Next best actions</div>
@@ -1492,242 +1763,146 @@ export default function AIPromptVault() {
     );
   };
 
-  // Loading overlay component
-  const LoadingOverlay = () => (
-    <div style={{
-      position: 'fixed',
-      inset: 0,
-      background: 'rgba(0, 0, 0, 0.6)',
-      backdropFilter: 'blur(4px)',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      zIndex: 3000,
-      flexDirection: 'column',
-      gap: 24,
-      animation: 'fadeIn 200ms ease-out',
-    }}>
-      <div style={{ 
-        background: 'var(--surface)', 
-        borderRadius: 16, 
-        padding: 32, 
-        boxShadow: '0 8px 32px rgba(37,99,235,0.12)', 
-        textAlign: 'center', 
-        minWidth: 280,
-        maxWidth: 400,
-      }}>
-        <AnimatedIcon />
-        <div style={{ 
-          fontSize: 20, 
-          fontWeight: 700, 
-          color: 'var(--primary)', 
-          marginTop: 18, 
-          minHeight: 32, 
-          letterSpacing: '0.01em', 
-          fontFamily: 'var(--font-family)',
-        }}>
-          {typewriterText}
-          <span style={{ 
-            opacity: typewriterText.length === 0 ? 0 : 1,
-            animation: 'blink 1s step-end infinite',
-          }}>|</span>
-        </div>
-        <div style={{ fontSize: 13, color: 'var(--muted)', marginTop: 10 }}>
-          Personalizing your workflow for maximum impact
+  // Lightweight Admin Dashboard: listen to rpv_event when ?admin=1
+  const [showAdminDashboard] = useState<boolean>(() => typeof window !== 'undefined' && window.location.search.includes('admin=1'));
+  const AdminDashboard: React.FC = () => {
+    const [stats, setStats] = useState(() => ({
+      categories: {} as Record<string, number>,
+      generates: 0,
+      copies: 0,
+      qualityGenerates: 0,
+      avgGenerateScore: 0,
+      qualityThresholds: { 45: 0, 65: 0, 85: 0 } as Record<number, number>,
+    }));
+    useEffect(() => {
+      const handler = (e: Event) => {
+        const { name, data } = (e as CustomEvent).detail || {};
+        setStats(prev => {
+          const next = { ...prev, categories: { ...prev.categories }, qualityThresholds: { ...prev.qualityThresholds } };
+          if (name === 'rpv:wizard_category_select') {
+            const c = data?.challenge || 'unknown';
+            next.categories[c] = (next.categories[c] || 0) + 1;
+          } else if (name === 'rpv:wizard_generate') {
+            next.generates += 1;
+          } else if (name === 'rpv:wizard_prompt_copy') {
+            next.copies += 1;
+          } else if (name === 'rpv:wizard_quality_generate') {
+            next.qualityGenerates += 1;
+            const score = Number(data?.score || 0);
+            const n = next.qualityGenerates;
+            next.avgGenerateScore = Math.round(((prev.avgGenerateScore * (n - 1)) + score) / n);
+          } else if (name === 'rpv:wizard_quality_threshold') {
+            const to = Number(data?.to);
+            if (to === 45 || to === 65 || to === 85) next.qualityThresholds[to] = (next.qualityThresholds[to] || 0) + 1;
+          }
+          return next;
+        });
+      };
+      window.addEventListener('rpv_event', handler as any);
+      return () => window.removeEventListener('rpv_event', handler as any);
+    }, []);
+    return (
+      <div style={{ position: 'fixed', bottom: 12, right: 12, zIndex: 5000, background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 12, padding: 12, boxShadow: 'var(--shadow-lg)', minWidth: 240 }}>
+        <div style={{ fontWeight: 800, fontSize: 13, marginBottom: 8 }}>Admin Dashboard</div>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, fontSize: 12 }}>
+          <div><strong>Generates</strong><div>{stats.generates}</div></div>
+          <div><strong>Copies</strong><div>{stats.copies}</div></div>
+          <div><strong>Qual. Gen</strong><div>{stats.qualityGenerates}</div></div>
+          <div><strong>Avg Score</strong><div>{stats.avgGenerateScore}</div></div>
+          <div style={{ gridColumn: '1 / -1' }}>
+            <strong>Thresholds</strong>
+            <div style={{ display: 'flex', gap: 8, marginTop: 4 }}>
+              <span>45: {stats.qualityThresholds[45]}</span>
+              <span>65: {stats.qualityThresholds[65]}</span>
+              <span>85: {stats.qualityThresholds[85]}</span>
+            </div>
+          </div>
         </div>
       </div>
-    </div>
-  );
+    );
+  };
+
+  // (Duplicate LoadingOverlay removed)
 
   return (
     <>
       <WizardModal />
       {isGenerating && <LoadingOverlay />}
       <div className="rpv-app rpv-container">
-      {/* Header - hidden in embed mode */}
       {!isEmbedMode && (
-      <header className="rpv-header" style={{ marginBottom: 32, position: "relative" }}>
-        {/* Header buttons (top-right) */}
-        <div style={{ position: "absolute", top: 0, right: 0, display: "flex", gap: 8 }}>
-          {/* GPT Store CTA - only show if configured */}
-          {GPT_STORE_URL && (
-            <button
-              onClick={() => {
-                trackEvent("cta_gpt_clicked");
-                window.open(GPT_STORE_URL as string, "_blank");
-              }}
-              style={{
-                padding: "10px 14px",
-                background: "linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%)",
-                border: "2px solid var(--primary)",
-                borderRadius: "var(--radius-md)",
-                cursor: "pointer",
-                fontSize: 14,
-                fontWeight: 700,
-                color: "var(--text-inverse)",
-                boxShadow: "var(--shadow-sm)",
-                transition: "all 200ms cubic-bezier(0.4, 0, 0.2, 1)",
-                display: "flex",
-                alignItems: "center",
-                gap: 8,
-                minHeight: 44,
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.transform = "translateY(-2px)";
-                e.currentTarget.style.boxShadow = "var(--shadow-lg)";
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.transform = "translateY(0)";
-                e.currentTarget.style.boxShadow = "var(--shadow-sm)";
-              }}
-              title="Open AI Workflow Assistant in ChatGPT"
-              aria-label="Open ChatGPT assistant"
-            >
-              🧠 Use in ChatGPT →
-            </button>
-          )}
-          {/* Start Wizard CTA */}
-          <button
-            onClick={startWizard}
-            style={{
-              padding: "10px 14px",
-              background: "var(--surface-hover)",
-              border: "2px solid var(--border)",
-              borderRadius: "var(--radius-md)",
-              cursor: "pointer",
-              fontSize: 14,
-              fontWeight: 700,
-              color: "var(--text)",
-              transition: "all 200ms cubic-bezier(0.4, 0, 0.2, 1)",
-              display: "flex",
-              alignItems: "center",
-              gap: 8,
-              minHeight: 44,
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.transform = "translateY(-2px)";
-              e.currentTarget.style.borderColor = "var(--primary)";
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.transform = "translateY(0)";
-              e.currentTarget.style.borderColor = "var(--border)";
-            }}
-            title="Start with your top challenge"
-            aria-label="Start wizard"
-          >
-            🧭 Start Wizard
-          </button>
-          {/* Edit Profile button - only show if profile exists */}
-          {isProfileComplete && (
-            <button
-              onClick={() => setShowProfileSetup(true)}
-              style={{
-                padding: "10px 14px",
-                background: "var(--surface-hover)",
-                border: "2px solid var(--border)",
-                borderRadius: "var(--radius-md)",
-                cursor: "pointer",
-                fontSize: 14,
-                fontWeight: 600,
-                color: "var(--text)",
-                transition: "all 200ms cubic-bezier(0.4, 0, 0.2, 1)",
-                display: "flex",
-                alignItems: "center",
-                gap: 6,
-                minHeight: 44,
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.background = "var(--surface-elevated)";
-                e.currentTarget.style.transform = "scale(1.05)";
-                e.currentTarget.style.borderColor = "var(--border-hover)";
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.background = "var(--surface-hover)";
-                e.currentTarget.style.transform = "scale(1)";
-                e.currentTarget.style.borderColor = "var(--border)";
-              }}
-              title="Edit your agent profile"
-              aria-label="Edit agent profile"
-            >
-              👤 Profile
-            </button>
-          )}
-          
-          {/* Dark mode toggle */}
-          <button
-            onClick={toggleDarkMode}
-            style={{
-              padding: "10px 14px",
-              background: "var(--surface-hover)",
-              border: "2px solid var(--border)",
-              borderRadius: "var(--radius-md)",
-              cursor: "pointer",
-              fontSize: 20,
-              transition: "all 200ms cubic-bezier(0.4, 0, 0.2, 1)",
-              display: "flex",
-              alignItems: "center",
-              gap: 6,
-              minHeight: 44,
-              minWidth: 44,
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.background = "var(--surface-elevated)";
-              e.currentTarget.style.transform = "scale(1.05)";
-              e.currentTarget.style.borderColor = "var(--border-hover)";
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.background = "var(--surface-hover)";
-              e.currentTarget.style.transform = "scale(1)";
-              e.currentTarget.style.borderColor = "var(--border)";
-            }}
-            title={
-              getDarkModeState() === 'auto' 
-                ? `Auto mode (currently ${darkMode ? 'dark' : 'light'}). Click for ${darkMode ? 'light' : 'dark'} mode.`
-                : getDarkModeState() === 'dark'
-                ? 'Dark mode. Click for light mode.'
-                : 'Light mode. Click for auto mode.'
-            }
-            aria-label={`Toggle dark mode. Current: ${getDarkModeState()}`}
-          >
-            {darkMode ? "☀️" : "🌙"}
-          </button>
-        </div>
-        
-        <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 8, justifyContent: "center", flexWrap: "wrap" }}>
-          <h1 className="title" style={{ margin: 0 }}>
-            🏡 AI Prompt Vault
-          </h1>
-          {GPT_STORE_URL && (
-            <span style={{
-              background: "var(--badge-bg)",
-              color: "var(--primary)",
-              padding: "4px 12px",
-              borderRadius: "var(--radius-pill)",
-              fontSize: 12,
-              fontWeight: 700,
-              boxShadow: "var(--shadow-sm)",
-            }}>
-              Now on ChatGPT
-            </span>
-          )}
-          <span style={{
-            background: "linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%)",
-            color: "var(--text-inverse)",
-            padding: "4px 12px",
-            borderRadius: "var(--radius-pill)",
-            fontSize: 14,
-            fontWeight: 700,
-            boxShadow: "var(--shadow-md)",
-            animation: "pulse 2s ease-in-out infinite",
-          }}>
-            {allPrompts.length} Prompts
-          </span>
-        </div>
+        <header className="rpv-header" style={{ marginBottom: 20 }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
+            <h1 className="title" style={{ margin: 0 }}>🏡 AI Prompt Vault</h1>
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+              {GPT_STORE_URL && (
+                <button
+                  onClick={() => { trackEvent('rpv:cta_gpt_click', { label: 'header', variant: wizardCTAVariant }); window.open(GPT_STORE_URL as string, '_blank'); }}
+                  style={{ padding: '10px 14px', background: 'linear-gradient(135deg,var(--primary) 0%, var(--accent) 100%)', border: '2px solid var(--primary)', borderRadius: 'var(--radius-md)', cursor: 'pointer', fontSize: 14, fontWeight: 700, color: 'var(--text-inverse)' }}
+                >
+                  🧠 Use in ChatGPT →
+                </button>
+              )}
+              <button
+                onClick={startWizard}
+                style={{ padding: '10px 14px', background: 'var(--surface-hover)', border: '2px solid var(--border)', borderRadius: 'var(--radius-md)', cursor: 'pointer', fontSize: 14, fontWeight: 700 }}
+              >
+                🧭 Start Wizard
+              </button>
+              {isProfileComplete && (
+                <button
+                  onClick={() => setShowProfileSetup(true)}
+                  style={{ padding: '10px 14px', background: 'var(--surface-hover)', border: '2px solid var(--border)', borderRadius: 'var(--radius-md)', cursor: 'pointer', fontSize: 14, fontWeight: 600 }}
+                >
+                  👤 Profile
+                </button>
+              )}
+              <button
+                onClick={toggleDarkMode}
+                style={{ padding: '10px 14px', background: 'var(--surface-hover)', border: '2px solid var(--border)', borderRadius: 'var(--radius-md)', cursor: 'pointer', fontSize: 16, fontWeight: 600, minWidth: 44, display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 160ms ease' }}
+                onMouseEnter={(e) => { e.currentTarget.style.transform = 'scale(1.05)'; e.currentTarget.style.borderColor = 'var(--border-hover)'; e.currentTarget.style.background = 'var(--surface-elevated)'; }}
+                onMouseLeave={(e) => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.background = 'var(--surface-hover)'; }}
+                onFocus={(e) => { e.currentTarget.style.boxShadow = '0 0 0 3px rgba(59,130,246,0.35)'; e.currentTarget.style.borderColor = 'var(--primary)'; }}
+                onBlur={(e) => { e.currentTarget.style.boxShadow = 'none'; e.currentTarget.style.borderColor = 'var(--border)'; }}
+                title={(() => {
+                  try {
+                    const saved = localStorage.getItem(KEY_DARK_MODE);
+                    if (saved === null) return `Auto mode (currently ${darkMode ? 'dark' : 'light'}). Click to switch to ${darkMode ? 'light' : 'dark'} mode.`;
+                    return saved === 'true' ? 'Dark mode. Click to switch to light.' : 'Light mode. Click to switch to auto.';
+                  } catch { return 'Toggle dark mode'; }
+                })()}
+                aria-label="Toggle dark mode"
+                aria-pressed={(() => {
+                  try {
+                    const saved = localStorage.getItem(KEY_DARK_MODE);
+                    if (saved === null) return 'mixed' as any; // tri-state: auto
+                    return saved === 'true';
+                  } catch { return false; }
+                })()}
+              >
+                {(() => {
+                  try {
+                    const saved = localStorage.getItem(KEY_DARK_MODE);
+                    const icon = darkMode ? '☀️' : '🌙';
+                    if (saved === null) {
+                      return (
+                        <span style={{ display: 'inline-flex', alignItems: 'center' }}>
+                          <span style={{ fontSize: 10, fontWeight: 800, color: 'var(--muted)', marginRight: 6, border: '1px solid var(--border)', borderRadius: 6, padding: '0 4px', lineHeight: '14px' }}>A</span>
+                          {icon}
+                        </span>
+                      );
+                    }
+                    return icon;
+                  } catch {
+                    return darkMode ? '☀️' : '🌙';
+                  }
+                })()}
+              </button>
+            </div>
+          </div>
+        </header>
+      )}
         <p className="subtitle" style={{ marginBottom: 16, fontSize: 18, fontWeight: 600 }}>
           Marketing plans, listing copy & lead generation — ready in seconds
-        </p>
-        <p style={{ fontSize: 14, color: "var(--muted)", marginBottom: 8, maxWidth: 640, margin: "0 auto 16px" }}>
-          Professional AI prompts designed for real estate agents. Choose a prompt, personalize it, copy and paste.
         </p>
         {lastUpdated && (
           <p style={{ fontSize: 12, color: "var(--text-secondary)", marginBottom: 16 }}>
@@ -1777,70 +1952,6 @@ export default function AIPromptVault() {
             </span>
           )}
         </div>
-        
-        {/* Quick starter buttons for new users */}
-        {!search && !activeTag && !activeCollection && Object.values(copyCounts).reduce((sum, count) => sum + count, 0) === 0 && (
-          <div style={{ 
-            display: "flex", 
-            gap: 12, 
-            justifyContent: "center", 
-            flexWrap: "wrap",
-            marginBottom: 16,
-          }}>
-            <button
-              onClick={() => {
-                const popularPrompt = allPrompts.find((p: any) => p.title === "90-Day Inbound Lead Blueprint" || p.title.includes("Listing Description"));
-                if (popularPrompt) selectPrompt(popularPrompt);
-              }}
-              style={{
-                padding: "10px 20px",
-                background: "var(--primary)",
-                color: "var(--text-inverse)",
-                border: "none",
-                borderRadius: "var(--radius-md)",
-                fontSize: 14,
-                fontWeight: 600,
-                cursor: "pointer",
-                transition: "all 200ms ease",
-                boxShadow: "var(--shadow-sm)",
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.transform = "translateY(-2px)";
-                e.currentTarget.style.boxShadow = "var(--shadow-lg)";
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.transform = "translateY(0)";
-                e.currentTarget.style.boxShadow = "var(--shadow-sm)";
-              }}
-            >
-              ⚡ Try a Popular Prompt
-            </button>
-            <button
-              onClick={() => setShowKeyboardShortcuts(true)}
-              style={{
-                padding: "10px 20px",
-                background: "var(--surface-hover)",
-                color: "var(--text)",
-                border: "2px solid var(--border)",
-                borderRadius: "var(--radius-md)",
-                fontSize: 14,
-                fontWeight: 600,
-                cursor: "pointer",
-                transition: "all 200ms ease",
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.transform = "translateY(-2px)";
-                e.currentTarget.style.borderColor = "var(--primary)";
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.transform = "translateY(0)";
-                e.currentTarget.style.borderColor = "var(--border)";
-              }}
-            >
-              📚 See Keyboard Shortcuts
-            </button>
-          </div>
-        )}
 
         {/* Active filters */}
         {(activeTag || search) && (
@@ -1886,8 +1997,7 @@ export default function AIPromptVault() {
             )}
           </div>
         )}
-      </header>
-      )}
+      
 
       {/* Usage Dashboard - only show if user has activity */}
       {!search && !activeTag && !activeCollection && (
@@ -4338,6 +4448,7 @@ export default function AIPromptVault() {
         </div>
       )}
     </div>
+    {showAdminDashboard && <AdminDashboard />}
     </>
   );
 }

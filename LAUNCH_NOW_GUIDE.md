@@ -400,6 +400,28 @@ Track these numbers:
 ### Issue: "Wizard doesn’t open on first visit"
 **Solution:** Test in a private window, or clear localStorage key `rpv:wizardDismissed` (DevTools → Application → Local Storage). The wizard auto‑opens for true first‑time users (no copies yet).
 
+---
+
+## Appendix: Coaching Wizard analytics and admin overlay
+
+These are the in‑app analytics events the wizard emits via `trackEvent(name, data)` which dispatches a CustomEvent `rpv_event` on `window`:
+
+- `rpv:wizard_start` – wizard opened
+- `rpv:wizard_category_select` – category chosen
+- `rpv:wizard_chip_select` – chip toggled in step 2
+- `rpv:wizard_generate` – user generated final prompt
+- `rpv:wizard_prompt_copy` – user copied the result CTA
+- `rpv:wizard_quality_generate` – emitted on generate with data: `{ challenge, score, suggestionsRemaining }`
+- `rpv:wizard_quality_threshold` – fired when the quality meter crosses 45/65/85 during step 2 with data: `{ from, to, challenge, suggestionsRemaining }`
+
+Quality meter notes:
+- Score weights: Situation 25, Goal 20, Blocker 20, Tone 10, Timeframe 10, plus length bonus up to 15.
+- Thresholds are recorded at 45/65/85.
+
+Admin dashboard overlay (debug‑only):
+- Append `?admin=1` to your app URL to show a small overlay in the bottom‑right with funnel stats: category counts, generates, copies, quality generate count + avg score, and threshold counts.
+- The overlay only listens to `rpv_event` and can be removed or expanded later.
+
 ### Issue: "Analytics aren’t showing up"
 **Solution:**
 - If using Plausible: uncomment the script in `public/index.html`, deploy, and add custom events as goals. See ANALYTICS_SETUP.md.
@@ -422,6 +444,49 @@ Everything you need is in your repo:
 - `ANALYTICS_SETUP.md` - How to enable Plausible/PostHog or use the custom endpoint
 - `WIZARD_IMPLEMENTATION.md` - How the 3‑step wizard works and how to add challenges
 - `LAUNCH_CHECKLIST.md` - End‑to‑end runbook for web app + GPT store launch
+
+---
+
+## Appendix: Coaching Wizard & Structured Synthesis
+
+The web app now includes a Coaching Wizard that transforms vague problems into a structured, high‑clarity strategy prompt. Use this model when refining GPT Instructions or future onboarding emails.
+
+### Flow Recap
+1. High‑level challenge category selection (Lead Generation & Conversion, Listing & Marketing, Client Management & Negotiation, Productivity & Organization, Market Knowledge & Strategy, or a custom typed challenge).
+2. Drill‑down with multi‑select chips + freeform inputs (goal, blockers, tone, channel, timeframe, etc.).
+3. Enhanced synthesis output sections:
+   - Situation Snapshot
+   - Objectives
+   - Constraints & Challenges
+   - Recommended Strategy (plus 3 strategic pillars)
+   - Immediate Action Steps (Today / This Week / This Month)
+   - Refinement Cues (follow‑up prompt ideas)
+
+### Extending It (Dev Notes)
+- Add or edit categories: update `CHALLENGE_CATEGORIES` + matching entry in `CHALLENGES` inside `AIPromptVault.tsx`.
+- Chip sets: modify `WIZARD_OPTION_SETS` (keys must match question `id`).
+- Synthesis logic & section formatting lives in `wizardPromptBuilder.ts` (unit‑tested in `wizardSynthesis.test.ts`).
+
+### Analytics Events Emitted
+- `rpv:wizard_category_select` – user picked a category
+- `rpv:wizard_custom_challenge_submit` – custom challenge text submitted
+- `rpv:wizard_chip_select` – chip toggled (questionId, value, selected)
+- `rpv:wizard_generate` – structured prompt built (includes answer lengths)
+- `rpv:wizard_prompt_copy` – final prompt copied (length)
+- `rpv:followup_prompt_click` – follow-up suggestion chosen
+
+Use these to build funnels (Category → Generate → Copy) and identify weak conversion steps (e.g., high generate/no copy implies value or clarity gap).
+
+### GPT Instruction Alignment
+In your GPT’s Instructions, mirror the wizard pattern so users experience consistency:
+- Ask for: challenge category, market, niche, primary goal, blockers, tone, timeframe.
+- Output the same 6 sections even if sparsely populated; do not omit headings (consistency reinforces trust and reusability).
+- Provide 2–3 “Refinement Cues” that encourage deeper multi‑turn engagement (improves retention metrics).
+
+### Quality Tips
+- Encourage users to give specific blockers (“pricing objections”, “low open rates”) vs generic (“marketing”).
+- If goals missing, structure calls this out (“Primary goals: Clarify with user.”) – invites a follow‑up.
+- Avoid demographic descriptors in listing or buyer content—keep compliance safe out of the box.
 
 ---
 

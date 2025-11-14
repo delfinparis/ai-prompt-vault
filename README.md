@@ -10,6 +10,7 @@ A curated library of AI prompts for real estate agents, featuring smart workflow
 - 🎯 **Sequence Tracking** - Discover which prompts work best together
 - 💾 **Save Outputs** - Keep a library of your best AI-generated content
 - 🎨 **Beautiful UX** - Gradients, animations, and delightful interactions
+- 🧪 **Coaching Wizard** - 3‑step guided flow: choose a high‑level challenge category → refine with selectable chips + custom inputs → receive a structured strategy + action plan prompt ready for ChatGPT.
 
 ## Quick Start
 
@@ -82,6 +83,7 @@ Vercel will automatically:
 - **Serverless Functions**: Vercel serverless (`/api/generate.ts`)
 - **State Management**: React hooks + localStorage
 - **Styling**: Inline styles with CSS variables
+- **Wizard Synthesis**: Extracted in `src/wizardPromptBuilder.ts` for testability (buildEnhancedWizardPrompt)
 
 ## Free Tier Limits
 
@@ -124,6 +126,56 @@ The app learns which prompts users commonly use together and suggests them as "n
 - Copy/clear functionality
 
 ### Smart Suggestions
+### Coaching Wizard (Diagnostic → Prescription)
+Located in `AIPromptVault.tsx` and powered by `wizardPromptBuilder.ts`.
+
+Flow:
+1. Category selection from consolidated high‑level groups (Lead Generation, Listing & Marketing, Client Management & Negotiation, Productivity & Organization, Market Knowledge & Strategy, or custom challenge).
+2. Drill‑down inputs with multi‑select chips (`WIZARD_OPTION_SETS`) plus a freeform field that merges into a comma‑separated data string.
+3. Structured synthesis creating sections: Situation Snapshot, Objectives, Constraints & Challenges, Recommended Strategy (with 3 pillars), Immediate Action Steps (Today / This Week / This Month), Refinement Cues.
+
+Extend:
+- Add / edit categories: update `CHALLENGE_CATEGORIES` & corresponding entry in `CHALLENGES` (question ids matter—regex grouping in synthesis looks for goal, obstacle, situation, etc.).
+- Add chip sets: modify `WIZARD_OPTION_SETS` (keys must match question id). Chips auto-sync into `wizardAnswers` and analytics.
+- Adjust synthesis: edit `wizardPromptBuilder.ts` (ensure tests updated if section labels changed).
+
+### Analytics Events (CustomEvent `rpv_event`)
+The wizard and broader app emit events for funnel analysis:
+- `rpv:wizard_category_select` { challenge }
+- `rpv:wizard_custom_challenge_submit` { chars }
+- `rpv:wizard_chip_select` { questionId, value, selected }
+- `rpv:wizard_generate` { challenge, answers:[{k,len}], totalChars }
+- `rpv:wizard_prompt_copy` { challenge, length }
+- `rpv:followup_prompt_click` { label, source }
+// Quality scoring additions
+- `rpv:wizard_quality_generate` { challenge, score, suggestionsRemaining }
+- `rpv:wizard_quality_threshold` { from, to, challenge, suggestionsRemaining }
+
+Listen example:
+```javascript
+window.addEventListener('rpv_event', (e) => {
+  const { name, data, ts } = (e as CustomEvent).detail;
+  console.log('[analytics]', name, data, ts);
+});
+```
+
+### Testing Additions
+`wizardSynthesis.test.ts` ensures:
+- All required sections appear for rich input.
+- Fallback situation line when missing context.
+- `_custom` keys excluded from context bullets.
+- Goal absence triggers "Clarify with user" sentinel.
+- Output stays plain text (no code fences / markdown bullet asterisks).
+
+To add more tests (e.g., extremely long custom challenge), extend that file with new cases referencing `buildEnhancedWizardPrompt`.
+
+### Admin dashboard overlay (debug)
+Append `?admin=1` to your app URL to open a small live overlay (bottom‑right) that summarizes wizard funnel stats from the same `rpv_event` stream:
+- Category selections per key
+- Generate and Copy counts
+- Quality Generate count and average score
+- Threshold counts at 45, 65, and 85
+
 - ✨ Gold badges for strong sequences (3+ uses)
 - 📊 Blue badges for emerging patterns
 - Social proof messaging ("85% of agents use this next")
