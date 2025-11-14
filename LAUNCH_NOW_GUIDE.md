@@ -394,6 +394,20 @@ Track these numbers:
 ### Issue: "Outputs are too generic"
 **Solution:** Strengthen the personalization instructions. Add more examples.
 
+### Issue: "In‑app 'Use in ChatGPT' button isn't visible"
+**Solution:** Set the environment variable `REACT_APP_GPT_STORE_URL` in your hosting provider (e.g., Vercel) to your GPT link (format: https://chat.openai.com/g/g-XXXXXXXX). Redeploy the app.
+
+### Issue: "Wizard doesn’t open on first visit"
+**Solution:** Test in a private window, or clear localStorage key `rpv:wizardDismissed` (DevTools → Application → Local Storage). The wizard auto‑opens for true first‑time users (no copies yet).
+
+### Issue: "Analytics aren’t showing up"
+**Solution:**
+- If using Plausible: uncomment the script in `public/index.html`, deploy, and add custom events as goals. See ANALYTICS_SETUP.md.
+- If using the custom endpoint: verify `/api/analytics` serverless function is enabled (check Vercel logs). See ANALYTICS_EVENTS.md for event names and properties.
+
+### Issue: "App URL mismatch or wrong domain shows a different landing"
+**Solution:** Keep the marketing site at the root domain and point the app to a subdomain (e.g., app.ai-prompt-vault.vercel.app). Update links in emails/posts to the app subdomain.
+
 ---
 
 ## 📚 Reference Files
@@ -404,6 +418,10 @@ Everything you need is in your repo:
 - `GPT_CONFIG.md` - Full configuration reference
 - `GPT_STORE_STRATEGY.md` - Marketing strategy
 - `GPT_LAUNCH_WORKAROUND.md` - Why we're not using API (yet)
+- `ANALYTICS_EVENTS.md` - Event names, schema, and funnel queries
+- `ANALYTICS_SETUP.md` - How to enable Plausible/PostHog or use the custom endpoint
+- `WIZARD_IMPLEMENTATION.md` - How the 3‑step wizard works and how to add challenges
+- `LAUNCH_CHECKLIST.md` - End‑to‑end runbook for web app + GPT store launch
 
 ---
 
