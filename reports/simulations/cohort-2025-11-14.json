@@ -1,0 +1,56 @@
+{
+  "seed": 20251113,
+  "date": "2025-11-14",
+  "metrics": {
+    "users": 10000,
+    "newUsers": 6517,
+    "returningUsers": 3483,
+    "wizardStarts": 6432,
+    "categoryCounts": {
+      "lead_generation": 1024,
+      "listing_marketing": 1093,
+      "client_management": 1094,
+      "productivity": 1069,
+      "market_strategy": 1071,
+      "custom": 1081
+    },
+    "chipSelects": 29626,
+    "generates": 4851,
+    "copies": 4472,
+    "qualityGenerates": 4851,
+    "avgGenerateScore": 82,
+    "thresholds": {
+      "45": 5861,
+      "65": 5353,
+      "85": 3075
+    },
+    "scoreBuckets": {
+      "<45": 53,
+      "45-64": 413,
+      "65-84": 1887,
+      "85+": 2498
+    },
+    "stepDropoffs": {
+      "step1_only": 512,
+      "step2_abandon": 1069,
+      "generated": 4851
+    }
+  },
+  "feedback": [
+    {
+      "area": "Quality Meter",
+      "suggestion": "Highlight missing timeframe with a subtle nudge and a one-click “Next 30 days” chip.",
+      "expectedImpact": "Shift users over the 65 threshold earlier; better strategy specificity."
+    },
+    {
+      "area": "Onboarding",
+      "suggestion": "Reduce perceived friction—relabel the first step and add “Takes ~60 seconds” microcopy.",
+      "expectedImpact": "Lower Step 1→2 drop-off by 2–3 points."
+    },
+    {
+      "area": "Admin Dashboard",
+      "suggestion": "Track 45/65/85 thresholds over cohorts; alert when 65+ dips below target for 48h.",
+      "expectedImpact": "Keeps quality regressions visible during iterations."
+    }
+  ]
+}

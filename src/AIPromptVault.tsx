@@ -1254,13 +1254,6 @@ export default function AIPromptVault() {
     }
   };
 
-  // Focus field input when field changes
-  React.useEffect(() => {
-    if (selectedPrompt && fieldInputRef.current) {
-      setTimeout(() => fieldInputRef.current?.focus(), 100);
-    }
-  }, [currentFieldIndex, selectedPrompt]);
-
   // Animated house + lightning bolt icon
   const LoadingOverlay = () => (
     <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.6)', backdropFilter:'blur(4px)', display:'flex', alignItems:'center', justifyContent:'center', zIndex:3000, animation:'fadeIn 160ms ease-out' }}>
