@@ -29,9 +29,9 @@ console.error = (...args) => {
   originalError.apply(console, args);
 };
 
-// Check URL parameter to determine which app to render
+// Check URL parameter - use old app only if explicitly requested
 const params = new URLSearchParams(window.location.search);
-const useNewApp = params.get('v2') === 'true' || params.get('execution') === 'true';
+const useOldApp = params.get('legacy') === 'true' || params.get('v1') === 'true';
 
 const root = createRoot(document.getElementById("root")!);
-root.render(useNewApp ? <RealtorExecutionApp /> : <AIPromptVault />);
+root.render(useOldApp ? <AIPromptVault /> : <RealtorExecutionApp />);
