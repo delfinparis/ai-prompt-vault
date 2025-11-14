@@ -70,10 +70,13 @@ export const RealtorExecutionApp: React.FC = () => {
     // Update state
     setProfile(newProfile);
     setUserActivities(activities);
+    setSelectedActivityId(selectedActivityId); // Set the activity to execute
     
-    // Scroll to top when transitioning to dashboard
+    // Scroll to top when transitioning to execution
     window.scrollTo({ top: 0, behavior: 'smooth' });
-    setView('dashboard');
+    
+    // Go directly to execution instead of dashboard
+    setView('execution');
   };
 
   const handleActivityClick = (activityId: string) => {
