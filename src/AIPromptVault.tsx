@@ -1339,15 +1339,16 @@ export default function AIPromptVault() {
     },
   ];
 
-  const startWizard = () => {
+  const startWizard = React.useCallback(() => {
     setWizardOpen(true);
     setWizardStep(1);
     setWizardChallenge(null);
-    setWizardAnswers({});
     setWizardResultText("");
     setWizardSelectedPrompt(null);
+    // Only reset answers if wizard is not already open
+    setWizardAnswers({});
     trackEvent('rpv:wizard_start');
-  };
+  }, []);
 
   const dismissWizard = () => {
     setWizardOpen(false);
