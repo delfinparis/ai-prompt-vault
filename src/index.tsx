@@ -4,9 +4,6 @@ import AIPromptVault from "./AIPromptVault";
 import "./index.css";
 
 // Suppress harmless ResizeObserver errors (browser timing quirk during quality meter updates)
-const resizeObserverError = 'ResizeObserver loop completed with undelivered notifications.';
-const resizeObserverErrorLegacy = 'ResizeObserver loop limit exceeded';
-
 // Suppress both console errors and React error overlay
 window.addEventListener('error', (e) => {
   if (e.message?.includes('ResizeObserver')) {

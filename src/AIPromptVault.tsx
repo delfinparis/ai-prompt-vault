@@ -1489,6 +1489,8 @@ export default function AIPromptVault() {
   const currentChallenge = useMemo(() => {
     if (!wizardChallenge) return null;
     return CHALLENGES.find(x => x.key === wizardChallenge) || null;
+    // CHALLENGES is a constant defined at module level, no need to include in deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [wizardChallenge]);
 
   const copyAndOpenGPT = async () => {
