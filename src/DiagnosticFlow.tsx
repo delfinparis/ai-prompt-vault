@@ -130,13 +130,13 @@ export const DiagnosticFlow: React.FC<DiagnosticFlowProps> = ({ onComplete }) =>
 
       <div style={{ marginBottom: '40px' }}>
         <label style={{ display: 'block', fontWeight: '600', marginBottom: '8px', color: '#333' }}>
-          What's your business goal this year?
+          How many sales do you want to close in the next 12 months?
         </label>
         <input
           type="text"
           value={businessGoal}
           onChange={(e) => setBusinessGoal(e.target.value)}
-          placeholder="e.g., Close 24 deals, Hit $100K GCI"
+          placeholder="Example: 24"
           style={{
             width: '100%',
             padding: '12px 16px',
