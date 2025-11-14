@@ -1,8 +1,12 @@
-import React, { useState } from 'react';
-import { CORE_ACTIVITIES, Activity, ActivityStatus, UserProfile } from './activities';
+import React, { useState, useMemo } from 'react';
+import { CORE_ACTIVITIES, UNIVERSAL_BARRIERS, Activity, UserProfile } from './activities';
 
 interface DiagnosticFlowProps {
-  onComplete: (profile: UserProfile, selectedActivities: Map<string, ActivityStatus>) => void;
+  onComplete: (
+    profile: UserProfile, 
+    selectedActivityId: string,
+    selectedBarrier: string
+  ) => void;
 }
 
 export const DiagnosticFlow: React.FC<DiagnosticFlowProps> = ({ onComplete }) => {
@@ -11,31 +15,26 @@ export const DiagnosticFlow: React.FC<DiagnosticFlowProps> = ({ onComplete }) =>
   const [market, setMarket] = useState('');
   const [experienceLevel, setExperienceLevel] = useState<'new' | 'intermediate' | 'experienced'>('intermediate');
   const [businessGoal, setBusinessGoal] = useState('');
-  const [activityStatuses, setActivityStatuses] = useState<Map<string, ActivityStatus>>(new Map());
+  const [selectedActivityId, setSelectedActivityId] = useState<string>('');
+  const [selectedBarrier, setSelectedBarrier] = useState<string>('');
 
-  const handleActivityStatusChange = (activityId: string, status: ActivityStatus) => {
-    const newStatuses = new Map(activityStatuses);
-    newStatuses.set(activityId, status);
-    setActivityStatuses(newStatuses);
-  };
-
-  const getAvoidedActivities = (): Activity[] => {
-    return CORE_ACTIVITIES.filter(a => {
-      const status = activityStatuses.get(a.id);
-      return status === 'not-doing' || status === 'doing-sometimes';
-    }).sort((a, b) => b.impactScore - a.impactScore);
-  };
+  const selectedActivity: Activity | undefined = useMemo(
+    () => CORE_ACTIVITIES.find(a => a.id === selectedActivityId || ''),
+    [selectedActivityId]
+  );
 
   const handleSubmit = () => {
+    if (!selectedActivityId || !selectedBarrier) return;
+
     const profile: UserProfile = {
       name,
       market,
       experienceLevel,
       businessGoal,
-      priorityActivities: getAvoidedActivities().slice(0, 3).map(a => a.id),
+      priorityActivities: [selectedActivityId],
       onboardingComplete: true
     };
-    onComplete(profile, activityStatuses);
+    onComplete(profile, selectedActivityId, selectedBarrier);
   };
 
   const renderStep1 = () => (
@@ -169,146 +168,54 @@ export const DiagnosticFlow: React.FC<DiagnosticFlowProps> = ({ onComplete }) =>
   );
 
   const renderStep2 = () => (
-    <div style={{ maxWidth: '800px', margin: '0 auto', padding: '40px 20px' }}>
+    <div style={{ maxWidth: '900px', margin: '0 auto', padding: '40px 20px' }}>
       <h1 style={{ fontSize: '32px', fontWeight: 'bold', marginBottom: '16px', color: '#1a1a1a' }}>
-        The Honest Assessment
+        Pick just one to tackle now
       </h1>
-      <p style={{ fontSize: '18px', color: '#666', marginBottom: '32px', lineHeight: '1.6' }}>
-        Here are the 10 activities that separate top producers from everyone else.
-        <br />
-        <strong>Be brutally honest:</strong> Which ones are you actually doing consistently?
+      <p style={{ fontSize: '18px', color: '#666', marginBottom: '24px', lineHeight: '1.6' }}>
+        Of the 10 high-impact activities, which are you <strong>most avoiding right this moment</strong>?
+        We'll focus on just one. You can always come back for another later.
       </p>
 
-      <div style={{ marginBottom: '40px' }}>
-        {CORE_ACTIVITIES.map((activity, index) => {
-          const status = activityStatuses.get(activity.id);
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '16px' }}>
+        {CORE_ACTIVITIES.map((activity) => {
+          const selected = selectedActivityId === activity.id;
           return (
-            <div
+            <button
               key={activity.id}
+              onClick={() => {
+                setSelectedActivityId(activity.id);
+                // Reset barrier choice when switching activity
+                setSelectedBarrier('');
+              }}
               style={{
-                background: 'white',
-                border: '2px solid #e0e0e0',
+                textAlign: 'left',
+                background: selected ? '#E8F5E9' : 'white',
+                border: `2px solid ${selected ? '#4CAF50' : '#e0e0e0'}`,
                 borderRadius: '12px',
-                padding: '24px',
-                marginBottom: '16px',
-                transition: 'all 0.2s'
+                padding: '16px',
+                cursor: 'pointer',
+                transition: 'all 0.2s',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '8px'
               }}
             >
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', marginBottom: '16px' }}>
-                <div style={{ flex: 1 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
-                    <span style={{
-                      background: '#4CAF50',
-                      color: 'white',
-                      width: '32px',
-                      height: '32px',
-                      borderRadius: '50%',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      fontWeight: 'bold',
-                      fontSize: '14px'
-                    }}>
-                      {index + 1}
-                    </span>
-                    <h3 style={{ fontSize: '20px', fontWeight: 'bold', color: '#1a1a1a', margin: 0 }}>
-                      {activity.title}
-                    </h3>
-                  </div>
-                  <p style={{ fontSize: '14px', color: '#666', marginBottom: '12px' }}>
-                    {activity.description}
-                  </p>
-                  <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap' }}>
-                    <span style={{ fontSize: '13px', color: '#888', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                      <strong>Frequency:</strong> {activity.frequency}
-                    </span>
-                    <span style={{ fontSize: '13px', color: '#888', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                      <strong>Time:</strong> {activity.timeEstimate}
-                    </span>
-                    <span style={{ fontSize: '13px', fontWeight: 'bold', color: '#FF6B6B', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                      Impact: {'⭐'.repeat(Math.ceil(activity.impactScore / 2))}
-                    </span>
-                  </div>
-                </div>
+              <h3 style={{ fontSize: '18px', fontWeight: 'bold', color: '#1a1a1a', margin: 0 }}>
+                {selected && '✓ '} {activity.title}
+              </h3>
+              <p style={{ fontSize: '13px', color: '#666', margin: 0 }}>{activity.description}</p>
+              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                <span style={{ fontSize: '12px', color: '#888' }}>📅 {activity.frequency}</span>
+                <span style={{ fontSize: '12px', color: '#888' }}>⏱️ {activity.timeEstimate}</span>
+                <span style={{ fontSize: '12px', fontWeight: 'bold', color: '#FF6B6B' }}>⭐ {activity.impactScore}/10</span>
               </div>
-
-              <div style={{ display: 'flex', gap: '8px' }}>
-                <button
-                  onClick={() => handleActivityStatusChange(activity.id, 'doing-consistently')}
-                  style={{
-                    flex: 1,
-                    padding: '12px',
-                    fontSize: '14px',
-                    fontWeight: '600',
-                    border: `2px solid ${status === 'doing-consistently' ? '#4CAF50' : '#e0e0e0'}`,
-                    borderRadius: '8px',
-                    background: status === 'doing-consistently' ? '#E8F5E9' : 'white',
-                    color: status === 'doing-consistently' ? '#2E7D32' : '#666',
-                    cursor: 'pointer',
-                    transition: 'all 0.2s'
-                  }}
-                >
-                  ✅ Doing it
-                </button>
-                <button
-                  onClick={() => handleActivityStatusChange(activity.id, 'doing-sometimes')}
-                  style={{
-                    flex: 1,
-                    padding: '12px',
-                    fontSize: '14px',
-                    fontWeight: '600',
-                    border: `2px solid ${status === 'doing-sometimes' ? '#FF9800' : '#e0e0e0'}`,
-                    borderRadius: '8px',
-                    background: status === 'doing-sometimes' ? '#FFF3E0' : 'white',
-                    color: status === 'doing-sometimes' ? '#E65100' : '#666',
-                    cursor: 'pointer',
-                    transition: 'all 0.2s'
-                  }}
-                >
-                  ⚠️ Sometimes
-                </button>
-                <button
-                  onClick={() => handleActivityStatusChange(activity.id, 'not-doing')}
-                  style={{
-                    flex: 1,
-                    padding: '12px',
-                    fontSize: '14px',
-                    fontWeight: '600',
-                    border: `2px solid ${status === 'not-doing' ? '#F44336' : '#e0e0e0'}`,
-                    borderRadius: '8px',
-                    background: status === 'not-doing' ? '#FFEBEE' : 'white',
-                    color: status === 'not-doing' ? '#C62828' : '#666',
-                    cursor: 'pointer',
-                    transition: 'all 0.2s'
-                  }}
-                >
-                  ❌ Avoiding
-                </button>
-              </div>
-
-              {status === 'not-doing' && (
-                <div style={{
-                  marginTop: '12px',
-                  padding: '12px',
-                  background: '#FFF3E0',
-                  borderRadius: '6px',
-                  fontSize: '13px',
-                  color: '#E65100'
-                }}>
-                  <strong>Common reasons agents skip this:</strong>
-                  <ul style={{ margin: '8px 0 0 0', paddingLeft: '20px' }}>
-                    {activity.avoidanceReasons.map((reason, i) => (
-                      <li key={i}>{reason}</li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-            </div>
+            </button>
           );
         })}
       </div>
 
-      <div style={{ display: 'flex', gap: '12px' }}>
+      <div style={{ display: 'flex', gap: '12px', marginTop: '24px' }}>
         <button
           onClick={() => setStep(1)}
           style={{
@@ -326,160 +233,172 @@ export const DiagnosticFlow: React.FC<DiagnosticFlowProps> = ({ onComplete }) =>
           ← Back
         </button>
         <button
-          onClick={() => activityStatuses.size === CORE_ACTIVITIES.length && setStep(3)}
-          disabled={activityStatuses.size !== CORE_ACTIVITIES.length}
+          onClick={() => selectedActivityId && setStep(3)}
+          disabled={!selectedActivityId}
           style={{
             flex: 2,
             padding: '16px',
             fontSize: '18px',
             fontWeight: 'bold',
-            background: activityStatuses.size !== CORE_ACTIVITIES.length ? '#ccc' : '#4CAF50',
+            background: !selectedActivityId ? '#ccc' : '#4CAF50',
             color: 'white',
             border: 'none',
             borderRadius: '8px',
-            cursor: activityStatuses.size !== CORE_ACTIVITIES.length ? 'not-allowed' : 'pointer'
+            cursor: !selectedActivityId ? 'not-allowed' : 'pointer'
           }}
         >
-          See My Results →
+          Next: What's really stopping you? →
         </button>
       </div>
     </div>
   );
 
   const renderStep3 = () => {
-    const avoided = getAvoidedActivities();
-    const consistent = CORE_ACTIVITIES.filter(a => activityStatuses.get(a.id) === 'doing-consistently');
-
+    if (!selectedActivity) return null;
     return (
-      <div style={{ maxWidth: '700px', margin: '0 auto', padding: '40px 20px' }}>
+      <div style={{ maxWidth: '900px', margin: '0 auto', padding: '40px 20px' }}>
         <h1 style={{ fontSize: '32px', fontWeight: 'bold', marginBottom: '16px', color: '#1a1a1a' }}>
-          Here's the truth, {name}
+          Let's dig deeper, {name}
         </h1>
-
-        {consistent.length > 0 && (
-          <div style={{
-            background: '#E8F5E9',
-            border: '2px solid #4CAF50',
+        <p style={{ fontSize: '18px', color: '#666', marginBottom: '16px', lineHeight: '1.6' }}>
+          You chose: <strong style={{ color: '#1a1a1a' }}>{selectedActivity.title}</strong>.
+          Now the critical question: <strong style={{ color: '#1a1a1a' }}>What's really stopping you?</strong>
+        </p>
+        <p style={{ fontSize: '16px', color: '#999', marginBottom: '32px', lineHeight: '1.5', fontStyle: 'italic' }}>
+          Be brutally honest. No judgment. This is how we prescribe the right solution.
+        </p>
+        <div
+          style={{
+            background: 'white',
+            border: '2px solid #e0e0e0',
             borderRadius: '12px',
             padding: '24px',
-            marginBottom: '24px'
-          }}>
-            <h3 style={{ fontSize: '18px', fontWeight: 'bold', color: '#2E7D32', marginBottom: '12px' }}>
-              ✅ You're crushing it on {consistent.length} activities:
-            </h3>
-            <ul style={{ margin: 0, paddingLeft: '20px', color: '#2E7D32' }}>
-              {consistent.map(a => (
-                <li key={a.id} style={{ marginBottom: '8px' }}>{a.title}</li>
-              ))}
-            </ul>
-          </div>
-        )}
-
-        {avoided.length > 0 && (
-          <>
-            <div style={{
-              background: '#FFEBEE',
-              border: '2px solid #F44336',
-              borderRadius: '12px',
-              padding: '24px',
-              marginBottom: '32px'
-            }}>
-              <h3 style={{ fontSize: '18px', fontWeight: 'bold', color: '#C62828', marginBottom: '12px' }}>
-                ⚠️ But you're leaving money on the table with these {avoided.length}:
-              </h3>
-              <div style={{ marginTop: '16px' }}>
-                {avoided.slice(0, 3).map((activity, index) => (
-                  <div
-                    key={activity.id}
-                    style={{
-                      background: 'white',
-                      padding: '16px',
-                      borderRadius: '8px',
-                      marginBottom: '12px',
-                      border: '2px solid #FFCDD2'
-                    }}
-                  >
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
-                      <span style={{
-                        background: '#F44336',
-                        color: 'white',
-                        width: '28px',
-                        height: '28px',
-                        borderRadius: '50%',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        fontWeight: 'bold',
-                        fontSize: '14px'
-                      }}>
-                        {index + 1}
-                      </span>
-                      <h4 style={{ fontSize: '16px', fontWeight: 'bold', color: '#1a1a1a', margin: 0 }}>
-                        {activity.title}
-                      </h4>
-                      <span style={{
-                        marginLeft: 'auto',
-                        fontSize: '12px',
-                        fontWeight: 'bold',
-                        color: '#F44336'
-                      }}>
-                        Impact: {activity.impactScore}/10
-                      </span>
-                    </div>
-                    <p style={{ fontSize: '14px', color: '#666', margin: 0 }}>
-                      {activity.description}
-                    </p>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <div style={{
-              background: '#FFF3E0',
-              borderLeft: '4px solid #FF9800',
-              padding: '20px',
-              marginBottom: '32px',
-              borderRadius: '4px'
-            }}>
-              <h3 style={{ fontSize: '18px', fontWeight: 'bold', color: '#E65100', marginBottom: '12px' }}>
-                💡 Here's what we're going to do:
-              </h3>
-              <p style={{ fontSize: '16px', color: '#666', lineHeight: '1.6', margin: 0 }}>
-                We'll focus on <strong>just these top 3 activities</strong> that will move the needle most for your {market} business.
-                I'll help you execute them in <strong>5 minutes or less</strong> using AI.
-                <br /><br />
-                No more excuses. No more overwhelm. Just daily action.
-              </p>
-            </div>
-          </>
-        )}
-
-        <button
-          onClick={handleSubmit}
-          style={{
-            width: '100%',
-            padding: '20px',
-            fontSize: '20px',
-            fontWeight: 'bold',
-            background: '#4CAF50',
-            color: 'white',
-            border: 'none',
-            borderRadius: '12px',
-            cursor: 'pointer',
-            boxShadow: '0 4px 12px rgba(76, 175, 80, 0.3)',
-            transition: 'all 0.2s'
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.transform = 'translateY(-2px)';
-            e.currentTarget.style.boxShadow = '0 6px 16px rgba(76, 175, 80, 0.4)';
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.transform = 'translateY(0)';
-            e.currentTarget.style.boxShadow = '0 4px 12px rgba(76, 175, 80, 0.3)';
+            marginBottom: '24px',
+            boxShadow: '0 2px 8px rgba(0,0,0,0.08)'
           }}
         >
-          Let's Get to Work 🚀
-        </button>
+          <h3 style={{ fontSize: '20px', fontWeight: 'bold', color: '#1a1a1a', marginBottom: '8px' }}>
+            {selectedActivity.title}
+          </h3>
+          <p style={{ fontSize: '14px', color: '#999', marginBottom: '20px', fontStyle: 'italic' }}>
+            What's the real reason you're not doing this?
+          </p>
+
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '12px', marginBottom: '16px' }}>
+            {UNIVERSAL_BARRIERS.map((barrier) => {
+              const isSelected = selectedBarrier === barrier.id;
+              return (
+                <button
+                  key={barrier.id}
+                  onClick={() => setSelectedBarrier(barrier.id)}
+                  style={{
+                    padding: '14px 16px',
+                    fontSize: '14px',
+                    textAlign: 'left',
+                    border: `2px solid ${isSelected ? '#4CAF50' : '#e0e0e0'}`,
+                    borderRadius: '8px',
+                    background: isSelected ? '#E8F5E9' : 'white',
+                    color: isSelected ? '#2E7D32' : '#333',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s',
+                    fontWeight: isSelected ? '600' : 'normal',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '4px'
+                  }}
+                  onMouseEnter={(e) => {
+                    if (!isSelected) {
+                      e.currentTarget.style.borderColor = '#4CAF50';
+                      e.currentTarget.style.background = '#f9f9f9';
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (!isSelected) {
+                      e.currentTarget.style.borderColor = '#e0e0e0';
+                      e.currentTarget.style.background = 'white';
+                    }
+                  }}
+                >
+                  <span style={{ fontWeight: '600' }}>
+                    {isSelected && '✓ '}
+                    {barrier.label}
+                  </span>
+                  {'subtext' in barrier && (
+                    <span style={{ fontSize: '12px', color: isSelected ? '#558B5A' : '#999', fontStyle: 'italic' }}>
+                      {(barrier as any).subtext}
+                    </span>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Custom reason input */}
+          <div style={{ marginTop: '16px', padding: '16px', background: '#f9f9f9', borderRadius: '8px' }}>
+            <label style={{ fontSize: '14px', fontWeight: '600', color: '#666', display: 'block', marginBottom: '8px' }}>
+              Or describe your own reason:
+            </label>
+            <input
+              type="text"
+              placeholder="Type your specific barrier here... (optional)"
+              value={selectedBarrier.startsWith('custom:') ? selectedBarrier.replace('custom:', '') : ''}
+              onChange={(e) => {
+                if (e.target.value.trim()) {
+                  setSelectedBarrier(`custom:${e.target.value.trim()}`);
+                } else {
+                  setSelectedBarrier('');
+                }
+              }}
+              style={{
+                width: '100%',
+                padding: '12px',
+                fontSize: '14px',
+                border: '2px solid #e0e0e0',
+                borderRadius: '6px',
+                fontFamily: 'inherit'
+              }}
+            />
+            <p style={{ fontSize: '12px', color: '#999', marginTop: '6px', fontStyle: 'italic' }}>
+              Sometimes your reason is unique. That's okay - we'll coach you through it.
+            </p>
+          </div>
+        </div>
+
+        <div style={{ marginTop: '40px', display: 'flex', gap: '16px' }}>
+          <button
+            onClick={() => setStep(2)}
+            style={{
+              flex: 1,
+              padding: '16px',
+              fontSize: '16px',
+              fontWeight: 'bold',
+              background: 'white',
+              color: '#666',
+              border: '2px solid #e0e0e0',
+              borderRadius: '8px',
+              cursor: 'pointer'
+            }}
+          >
+            ← Back
+          </button>
+          <button
+            onClick={handleSubmit}
+            disabled={!selectedBarrier}
+            style={{
+              flex: 2,
+              padding: '16px',
+              fontSize: '18px',
+              fontWeight: 'bold',
+              background: !selectedBarrier ? '#ccc' : '#4CAF50',
+              color: 'white',
+              border: 'none',
+              borderRadius: '8px',
+              cursor: !selectedBarrier ? 'not-allowed' : 'pointer'
+            }}
+          >
+            See My Custom Action Plan →
+          </button>
+        </div>
       </div>
     );
   };

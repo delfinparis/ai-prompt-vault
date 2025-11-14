@@ -9,7 +9,7 @@ const corsHeaders = {
 };
 
 // Helper to build specialized prompts for different content types
-function buildPromptForContentType(contentType: string, inputs: any = {}): string {
+function buildPromptForContentType(contentType: string, inputs: any = {}, barrierInfo: any = null): string {
   const { market, targetAudience, listingAddress, clientName, topic, tone = 'professional', length = 'medium' } = inputs;
 
   const lengthGuide = {
@@ -18,10 +18,28 @@ function buildPromptForContentType(contentType: string, inputs: any = {}): strin
     long: '500-600 words'
   };
 
+  // Add barrier-specific instruction if provided
+  let barrierInstruction = '';
+  if (barrierInfo) {
+    const barrierAdjustments: Record<string, string> = {
+      'fear': 'Use softer, less aggressive language. Focus on being helpful rather than selling. Remove any pushy calls-to-action.',
+      'skill': 'Make the language simple and easy to follow. Provide clear next steps. Use a conversational, teaching tone.',
+      'authenticity': 'Write in a genuine, personal voice. Avoid corporate jargon. Sound like a real human having a conversation, not a salesperson.',
+      'time': 'Keep it concise and action-oriented. Front-load the value. Make it quick to read and easy to act on.',
+      'technical': 'Use simple, non-technical language. Explain any necessary terms. Make it beginner-friendly.',
+      'motivation': 'Lead with impact and ROI. Show immediate value. Use encouraging, energizing language.'
+    };
+    
+    const adjustment = barrierAdjustments[barrierInfo.barrierType] || '';
+    if (adjustment) {
+      barrierInstruction = `\n\nIMPORTANT CONTEXT: The user struggles with this because: "${barrierInfo.barrierLabel}"\nAdjust your response accordingly: ${adjustment}\n`;
+    }
+  }
+
   switch (contentType) {
     case 'newsletter':
       return `You are a top-producing real estate agent in ${market || 'the local market'}. Write a ${tone} email newsletter for your sphere of influence (${targetAudience || 'past clients and leads'}).
-
+${barrierInstruction}
 Length: ${lengthGuide[length as keyof typeof lengthGuide]}
 
 Include:
@@ -42,7 +60,7 @@ Email Body:
 
     case 'social-post':
       return `You are a real estate agent in ${market || 'the local market'}. Create an engaging ${tone} social media post ${listingAddress ? `showcasing the listing at ${listingAddress}` : `about ${topic || 'the current real estate market'}`}.
-
+${barrierInstruction}
 Length: ${length === 'short' ? '50-80 words' : length === 'medium' ? '100-150 words' : '150-200 words'}
 
 Include:
@@ -62,7 +80,7 @@ HASHTAGS:
 
     case 'prospecting-script':
       return `You are a top real estate coach. Write a natural, conversational ${tone} phone script for ${topic || 'cold calling FSBOs (For Sale By Owners)'}.
-
+${barrierInstruction}
 The script should:
 1. Be 30-45 seconds for the initial pitch
 2. Sound natural and conversational (not robotic)
@@ -91,7 +109,7 @@ CLOSING:
 
     case 'follow-up-email':
       return `You are a real estate agent following up with ${clientName || 'a lead/past client'}. Write a ${tone} follow-up email that ${topic || 'checks in and provides value without being pushy'}.
-
+${barrierInstruction}
 Length: ${lengthGuide[length as keyof typeof lengthGuide]}
 
 Include:
@@ -112,7 +130,7 @@ Email:
 
     case 'referral-request':
       return `You are a real estate agent who just closed a successful transaction with ${clientName || 'a happy client'}. Write a ${tone} request for referrals that feels natural and not pushy.
-
+${barrierInstruction}
 Length: ${lengthGuide[length as keyof typeof lengthGuide]}
 
 Include:
@@ -133,7 +151,7 @@ TEXT MESSAGE VERSION:
 
     case 'open-house-plan':
       return `You are a real estate agent planning an open house for ${listingAddress || 'a property'} in ${market || 'the area'}. Create a complete action plan and follow-up sequence.
-
+${barrierInstruction}
 Include:
 1. Pre-event marketing plan (3-5 tactics)
 2. Day-of checklist (what to bring, setup tasks)
@@ -151,7 +169,7 @@ OPEN HOUSE ACTION PLAN:
 
     default:
       return `You are a real estate business coach. Help with the following request for an agent in ${market || 'the market'}:
-
+${barrierInstruction}
 ${topic || 'Provide general real estate business advice'}
 
 Tone: ${tone}, actionable, specific
@@ -171,7 +189,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   try {
-    const { prompt, userId, contentType, inputs } = req.body;
+    const { prompt, userId, contentType, inputs, barrierInfo } = req.body;
 
     if (!prompt && !contentType) {
       return res.status(400).json({ error: 'Prompt or contentType is required' });
@@ -181,7 +199,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     let finalPrompt = prompt;
     
     if (contentType) {
-      finalPrompt = buildPromptForContentType(contentType, inputs);
+      finalPrompt = buildPromptForContentType(contentType, inputs, barrierInfo);
     }
 
     // Get OpenAI API key from environment variable

@@ -3,6 +3,105 @@
 export type ActivityStatus = 'doing-consistently' | 'doing-sometimes' | 'not-doing';
 export type ActivityCategory = 'prospecting' | 'relationship' | 'marketing' | 'systems' | 'development';
 
+// Psychological barriers that prevent action
+export type BarrierType = 'fear' | 'skill' | 'authenticity' | 'time' | 'technical' | 'motivation';
+
+// Universal psychological barriers (30 years psychology/coaching research)
+// These apply across ALL activities and map to specific coaching interventions
+export const UNIVERSAL_BARRIERS = [
+  { 
+    id: 'fear-judgment', 
+    label: 'Fear of judgment or rejection', 
+    subtext: '"What will they think of me?"',
+    type: 'fear' as BarrierType,
+    coachingTip: 'Rejection is information, not a reflection of your worth. Every "no" is data that refines your approach. Let\'s reframe this as curiosity instead of seeking approval.'
+  },
+  { 
+    id: 'perfectionism', 
+    label: 'Perfectionism or fear of failure', 
+    subtext: '"If I can\'t do it perfectly, why bother?"',
+    type: 'fear' as BarrierType,
+    coachingTip: 'Done is better than perfect. Your first version doesn\'t need to be your best version. Let\'s aim for "good enough to help someone" and iterate from there.'
+  },
+  { 
+    id: 'overwhelm', 
+    label: 'Overwhelm or don\'t know where to start', 
+    subtext: '"This feels too big"',
+    type: 'skill' as BarrierType,
+    coachingTip: 'Break it into the smallest possible first step. You don\'t need to see the whole staircase, just the first step. Let\'s make this so small it feels almost silly not to do it.'
+  },
+  { 
+    id: 'low-energy', 
+    label: 'Low energy, burnout, or exhaustion', 
+    subtext: '"I\'m just too tired right now"',
+    type: 'motivation' as BarrierType,
+    coachingTip: 'Energy follows action more than action follows energy. Can you commit to just 5 minutes? Often starting creates momentum. But also: are you taking care of yourself? Rest isn\'t optional.'
+  },
+  { 
+    id: 'discomfort-self-promotion', 
+    label: 'Discomfort with self-promotion', 
+    subtext: '"I don\'t want to be pushy or salesy"',
+    type: 'authenticity' as BarrierType,
+    coachingTip: 'You\'re not bragging - you\'re making it easy for people to find help when they need it. Shift from "promoting myself" to "being visible so I can serve." That\'s service, not sales.'
+  },
+  { 
+    id: 'present-bias', 
+    label: 'Immediate discomfort vs. delayed reward', 
+    subtext: '"I don\'t feel like it right now"',
+    type: 'motivation' as BarrierType,
+    coachingTip: 'Your future self is begging you to do this now. Can you do it FOR them? Imagine yourself 3 months from now thanking yourself for pushing through the discomfort today.'
+  },
+  { 
+    id: 'lack-confidence', 
+    label: 'Lack of confidence or skill', 
+    subtext: '"I don\'t know how to do this well"',
+    type: 'skill' as BarrierType,
+    coachingTip: 'You learn by doing, not by waiting until you\'re "ready." Let\'s use AI to scaffold the first version so you\'re not starting from scratch. Competence comes from repetition, not perfection.'
+  },
+  { 
+    id: 'past-negative', 
+    label: 'Past negative experience', 
+    subtext: '"I tried this before and it didn\'t work"',
+    type: 'fear' as BarrierType,
+    coachingTip: 'The past is data, not destiny. What\'s different now? What did you learn? Let\'s adjust the approach based on what you know now. This isn\'t the same situation - you\'re not the same person.'
+  },
+  { 
+    id: 'identity-conflict', 
+    label: 'Identity conflict', 
+    subtext: '"This isn\'t who I am"',
+    type: 'authenticity' as BarrierType,
+    coachingTip: 'Who you are is who you choose to become. You don\'t have to change your identity - just add a new skill to your toolbox. "I\'m not a cold caller" can become "I\'m someone who reaches out to help people."'
+  },
+  { 
+    id: 'distraction', 
+    label: 'Distraction or competing priorities', 
+    subtext: '"I have more urgent things to do"',
+    type: 'time' as BarrierType,
+    coachingTip: 'Urgent rarely equals important. What you avoid is often what would move the needle most. Can you time-block 15 minutes FIRST thing tomorrow, before distractions pile up? Protect this time like a client appointment.'
+  },
+  { 
+    id: 'fear-success', 
+    label: 'Fear of success or change', 
+    subtext: '"What if this actually works and my life changes?"',
+    type: 'fear' as BarrierType,
+    coachingTip: 'Your nervous system fears the unknown more than the familiar struggle. Success means new territory - that\'s scary! Let\'s name it: what specifically are you afraid will change? Often just naming it reduces its power.'
+  },
+  { 
+    id: 'need-certainty', 
+    label: 'Need for certainty or control', 
+    subtext: '"I can\'t predict the outcome"',
+    type: 'fear' as BarrierType,
+    coachingTip: 'No one has certainty - they just have willingness to try anyway. Can you get comfortable with "I don\'t know, let\'s find out"? The only way to know if something works is to test it. Small experiments, not big bets.'
+  }
+] as const;
+
+export interface Barrier {
+  id: string;
+  label: string; // Short label shown to user
+  type: BarrierType;
+  coachingTip: string; // What to tell them to help overcome this
+}
+
 export interface Activity {
   id: string;
   title: string;
@@ -11,7 +110,8 @@ export interface Activity {
   impactScore: number; // 1-10, how much this moves the needle
   frequency: string; // "Daily", "Weekly", "Monthly"
   timeEstimate: string; // "5 mins", "30 mins", etc.
-  avoidanceReasons: string[]; // Why agents skip this
+  avoidanceReasons: string[]; // Why agents skip this (legacy - for display)
+  barriers: Barrier[]; // Specific barriers users can select
   successMetric: string; // What "doing it" looks like
   aiCanHelp: boolean; // Can we generate content for this?
 }
@@ -30,6 +130,12 @@ export const CORE_ACTIVITIES: Activity[] = [
       'Don\'t know what to say',
       'Feels like pushy sales'
     ],
+    barriers: [
+      { id: 'fear-rejection', label: 'I\'m afraid of rejection or hearing "no"', type: 'fear', coachingTip: 'Rejection is data, not personal. Every "no" gets you closer to a "yes". Let\'s craft a softer, consultative approach that feels like helping, not selling.' },
+      { id: 'dont-know-what-say', label: 'I don\'t know what to say or how to start the conversation', type: 'skill', coachingTip: 'You don\'t need to be clever, just curious. Start with "Hey [name], quick question..." and ask about their plans. I\'ll give you the exact script.' },
+      { id: 'feels-pushy', label: 'It feels too "salesy" or pushy', type: 'authenticity', coachingTip: 'You\'re right - hard selling is gross. Let\'s shift to market education: "Saw inventory dropped 20% - curious if you\'re thinking about buying/selling?" Info first, pitch never.' },
+      { id: 'no-time', label: 'I don\'t have time / keep putting it off', type: 'time', coachingTip: 'Start with just 5 contacts in 15 minutes. That\'s it. Consistency beats volume. Set a phone timer and stop when it rings.' }
+    ],
     successMetric: '5+ meaningful contacts per day',
     aiCanHelp: true
   },
@@ -45,6 +151,11 @@ export const CORE_ACTIVITIES: Activity[] = [
       'Feel like I\'m bothering them',
       'They\'ll call me when ready',
       'Don\'t know what to say'
+    ],
+    barriers: [
+      { id: 'bothering', label: 'I feel like I\'m bothering them or being annoying', type: 'fear', coachingTip: 'You gave them the biggest financial transaction of their life. They WANT to hear from you. It\'s about staying top-of-mind, not hard selling. Let\'s send a market update or neighborhood news - pure value, zero ask.' },
+      { id: 'assume-theyll-call', label: 'They\'ll call me if they need something', type: 'motivation', coachingTip: 'They won\'t. 80% of referrals go to agents who stayed in touch. Out of sight = out of mind. A quick text every 30 days keeps you in the game when their friend asks "Know a realtor?"' },
+      { id: 'what-to-say-past', label: 'I don\'t know what to say after the transaction', type: 'skill', coachingTip: 'Keep it stupid simple: "Hey [name], just checking in! How\'s the house treating you?" That\'s it. Or send a market update: "Prices up 5% in your area - good news for equity!" I\'ll write it for you.' }
     ],
     successMetric: 'Contact each past client at least monthly',
     aiCanHelp: true
@@ -62,6 +173,11 @@ export const CORE_ACTIVITIES: Activity[] = [
       'Will call them later',
       'Overwhelmed by volume'
     ],
+    barriers: [
+      { id: 'not-monitoring', label: 'I\'m not set up to get real-time alerts', type: 'technical', coachingTip: 'Fix this TODAY. Turn on push notifications for your CRM/lead source. Speed to lead is THE #1 conversion factor. 5 minutes vs 30 minutes = 21x higher contact rate.' },
+      { id: 'call-later', label: 'I see it but think "I\'ll call them in an hour"', type: 'motivation', coachingTip: 'They already contacted 3 other agents. The first one to respond wins 80% of the time. Set a rule: see lead = respond within 60 seconds. It doesn\'t have to be perfect, just fast.' },
+      { id: 'overwhelmed-leads', label: 'Too many leads, can\'t keep up', type: 'time', coachingTip: 'This is a champagne problem! Either hire an ISA (inside sales assistant) or use a response template: "Got your inquiry! When\'s a good time to chat - mornings or afternoons?" Speed > perfection.' }
+    ],
     successMetric: 'Respond within 5 minutes, 100% of the time',
     aiCanHelp: true
   },
@@ -77,6 +193,11 @@ export const CORE_ACTIVITIES: Activity[] = [
       'Boring admin work',
       'Don\'t see immediate ROI',
       'CRM feels complicated'
+    ],
+    barriers: [
+      { id: 'boring', label: 'It\'s boring busywork / I hate admin tasks', type: 'motivation', coachingTip: 'Fair. But undocumented conversations = lost money. Do it immediately after each interaction (phone still in hand). 2 minutes now saves 30 minutes later trying to remember who said what.' },
+      { id: 'no-roi', label: 'I don\'t see how this helps me close deals', type: 'motivation', coachingTip: 'Your CRM is your second brain. Without it, you forget to follow up, miss hot leads, and lose referrals. Top producers treat their database like gold. You can\'t manage what you don\'t track.' },
+      { id: 'too-complicated', label: 'My CRM is too complicated / I don\'t know how to use it', type: 'technical', coachingTip: 'Ignore 90% of the features. You need 3 things: add contact, log note, set follow-up. That\'s it. Watch one 10-minute YouTube tutorial today and you\'re set.' }
     ],
     successMetric: 'Update after every interaction',
     aiCanHelp: false
@@ -94,6 +215,11 @@ export const CORE_ACTIVITIES: Activity[] = [
       'Camera shy',
       'Perfectionism paralysis'
     ],
+    barriers: [
+      { id: 'what-to-post', label: 'I don\'t know what to post / run out of ideas', type: 'skill', coachingTip: 'Use the 3-3-3 rule: 3 market updates (new listings, sold prices), 3 helpful tips (mortgage hacks, staging ideas), 3 personal (coffee shop, local event). Repeat forever. I\'ll generate the captions.' },
+      { id: 'camera-shy', label: 'I hate being on camera / I\'m not a "content creator"', type: 'authenticity', coachingTip: 'Good news: you don\'t need video. Start with text + stock photos. People buy from humans, not influencers. Authenticity > production value. Post like you\'re texting a friend.' },
+      { id: 'perfectionism', label: 'I overthink it and never actually post', type: 'motivation', coachingTip: 'Done > perfect. Set a 10-minute timer: pick topic, write caption, find image, post. If it takes longer, you\'re overthinking. Imperfect posts get more engagement anyway - people trust raw over polished.' }
+    ],
     successMetric: '3-5 posts per week minimum',
     aiCanHelp: true
   },
@@ -109,6 +235,11 @@ export const CORE_ACTIVITIES: Activity[] = [
       'No one reads emails anymore',
       'Don\'t know what to write',
       'Takes too long'
+    ],
+    barriers: [
+      { id: 'no-one-reads', label: 'Nobody reads emails anymore / waste of time', type: 'motivation', coachingTip: 'Wrong. Email has 40x higher conversion than social media. Your sphere checks email daily. They might not read every word, but they see YOUR NAME every month. That\'s the goal.' },
+      { id: 'what-to-write-newsletter', label: 'I don\'t know what to write about', type: 'skill', coachingTip: 'Same format every time: quick market update (3 bullet points), new listing or recent sale, upcoming open house or event, fun local news. I\'ll write the whole thing in 60 seconds.' },
+      { id: 'takes-too-long', label: 'Writing a newsletter takes forever', type: 'time', coachingTip: 'Because you\'re starting from scratch. Use a template + AI. Pull last month\'s email, change the stats, update the listings, hit send. 10 minutes max if you stop overthinking it.' }
     ],
     successMetric: 'Send at least monthly to entire sphere',
     aiCanHelp: true
@@ -126,6 +257,11 @@ export const CORE_ACTIVITIES: Activity[] = [
       'Not revenue-generating',
       'Prefer sitting at computer'
     ],
+    barriers: [
+      { id: 'time-consuming', label: 'It takes too much time / I\'m too busy', type: 'time', coachingTip: 'Block 2 hours every Tuesday morning. Non-negotiable. You can\'t sell what you don\'t know. Buyers will ghost you if you don\'t know inventory. This IS revenue-generating, just indirect.' },
+      { id: 'not-revenue', label: 'It doesn\'t directly make me money', type: 'motivation', coachingTip: 'Knowledge is your competitive advantage. Agents who preview weekly close 30% more deals because they match buyers faster and earn trust. "I actually toured that one yesterday - here\'s what you need to know" = instant credibility.' },
+      { id: 'prefer-computer', label: 'I\'d rather research online than drive around', type: 'motivation', coachingTip: 'Photos lie. MLS descriptions are written by listing agents trying to sell. You need to see: traffic noise, weird smells, neighbor drama, actual condition. 10 minutes in person > 30 minutes online.' }
+    ],
     successMetric: 'Preview 5+ properties per week',
     aiCanHelp: false
   },
@@ -141,6 +277,11 @@ export const CORE_ACTIVITIES: Activity[] = [
       'They don\'t work anymore',
       'Weekends are for family',
       'Lead quality concerns'
+    ],
+    barriers: [
+      { id: 'dont-work', label: 'Open houses don\'t work anymore', type: 'motivation', coachingTip: 'They work differently now. You\'re not selling the house - you\'re meeting future buyers/sellers. Capture emails, build relationships. 1 open house = 10-20 leads if you work the room. Follow up is where the magic happens.' },
+      { id: 'weekends-family', label: 'Weekends are for my family', type: 'time', coachingTip: 'Valid. Do 1 per month, 2 hours max. Saturday 1-3pm or Sunday 12-2pm. Family gets the rest. Or trade: you do open houses for other agents who hate them, they do something you hate. Win-win.' },
+      { id: 'lead-quality', label: 'The leads are tire-kickers and nosy neighbors', type: 'motivation', coachingTip: 'True. But 2-3 serious buyers show up at every one. Your job: qualify fast. "Are you actively looking or just browsing?" Get contact info from everyone. Follow up separates pros from amateurs.' }
     ],
     successMetric: '1-2 open houses per month minimum',
     aiCanHelp: true
@@ -158,6 +299,11 @@ export const CORE_ACTIVITIES: Activity[] = [
       'Don\'t want to seem pushy',
       'Assume people will volunteer'
     ],
+    barriers: [
+      { id: 'awkward', label: 'It feels really awkward to ask', type: 'fear', coachingTip: 'You just helped them with a $500K+ transaction. They\'re HAPPY. Asking for referrals at closing is expected. Try: "I grow my business through referrals. Who do you know thinking about buying or selling?" Direct and professional.' },
+      { id: 'seem-pushy', label: 'I don\'t want to seem pushy or desperate', type: 'authenticity', coachingTip: 'Pushy is following up 5 times. Asking ONCE at closing is professional. Frame it: "If you know anyone, I\'d love an introduction." That\'s not pushy - that\'s how business works. Happy clients WANT to refer you.' },
+      { id: 'assume-volunteer', label: 'If they know someone, they\'ll tell me', type: 'motivation', coachingTip: 'They won\'t. People are busy and forget. You have to ask explicitly. Data: agents who ask get 4x more referrals. Script: "Before we go, quick question - who in your life is thinking about real estate?"' }
+    ],
     successMetric: 'Ask every client at closing + quarterly check-ins',
     aiCanHelp: true
   },
@@ -174,6 +320,11 @@ export const CORE_ACTIVITIES: Activity[] = [
       'Feel like I already know it',
       'Will just wing it'
     ],
+    barriers: [
+      { id: 'uncomfortable-practice', label: 'Role-playing feels awkward and uncomfortable', type: 'authenticity', coachingTip: 'Because you\'re doing it in your head. Get on a Zoom with another agent or your broker. 15 minutes of awkward practice = confidence in real convos. Top producers practice weekly. Amateurs wing it and lose deals.' },
+      { id: 'already-know', label: 'I already know this stuff / I\'ve been doing this for years', type: 'motivation', coachingTip: 'Then why are you here looking for help? Even LeBron practices free throws. Scripts + objection handlers are muscle memory. You need to respond in 2 seconds, not fumble. Refresh = sharpen the saw.' },
+      { id: 'wing-it', label: 'I\'ll just figure it out in the moment', type: 'motivation', coachingTip: 'You can wing it... and lose deals. Or you can have a proven script for "Your price is too high" ready to go. Practice doesn\'t make perfect - it makes automatic. When a buyer says "We\'re waiting," you need a response NOW, not "uh..."' }
+    ],
     successMetric: '30 minutes of practice daily',
     aiCanHelp: true
   }
@@ -182,6 +333,7 @@ export const CORE_ACTIVITIES: Activity[] = [
 export interface UserActivity {
   activityId: string;
   status: ActivityStatus;
+  selectedBarrier?: string; // Barrier ID if they selected one
   lastCompleted?: string; // ISO date string
   streak: number; // consecutive days/weeks/months
   totalCompletions: number;

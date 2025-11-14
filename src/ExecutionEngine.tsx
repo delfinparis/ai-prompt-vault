@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { Activity, UserProfile, ContentType } from './activities';
+import { Activity, UserProfile, UserActivity, ContentType, UNIVERSAL_BARRIERS } from './activities';
 
 interface ExecutionEngineProps {
   activity: Activity;
+  userActivity?: UserActivity; // Optional - contains selectedBarrier
   profile: UserProfile;
   onComplete: (generatedContent?: string, notes?: string) => void;
   onBack: () => void;
@@ -10,6 +11,7 @@ interface ExecutionEngineProps {
 
 export const ExecutionEngine: React.FC<ExecutionEngineProps> = ({
   activity,
+  userActivity,
   profile,
   onComplete,
   onBack
@@ -49,6 +51,33 @@ export const ExecutionEngine: React.FC<ExecutionEngineProps> = ({
     try {
       const contentType = getContentTypeForActivity();
       
+      // Get barrier information if available
+      let barrierInfo = null;
+      if (userActivity?.selectedBarrier) {
+        const barrierId = userActivity.selectedBarrier;
+        
+        if (barrierId.startsWith('custom:')) {
+          // Custom barrier - just send the text
+          barrierInfo = {
+            barrierId: 'custom',
+            barrierLabel: barrierId.replace('custom:', ''),
+            barrierType: 'custom',
+            coachingTip: 'Address this specific concern in the content.'
+          };
+        } else {
+          // Look up from universal barriers
+          const barrier = UNIVERSAL_BARRIERS.find(b => b.id === barrierId);
+          if (barrier) {
+            barrierInfo = {
+              barrierId: barrier.id,
+              barrierLabel: barrier.label,
+              barrierType: barrier.type,
+              coachingTip: barrier.coachingTip
+            };
+          }
+        }
+      }
+      
       const response = await fetch('/api/generate', {
         method: 'POST',
         headers: {
@@ -57,6 +86,7 @@ export const ExecutionEngine: React.FC<ExecutionEngineProps> = ({
         body: JSON.stringify({
           contentType,
           inputs,
+          barrierInfo, // Include barrier context
           userId: profile.email || 'anonymous'
         }),
       });
@@ -409,6 +439,68 @@ export const ExecutionEngine: React.FC<ExecutionEngineProps> = ({
                 </div>
               </div>
             </div>
+
+            {/* Coaching Tip based on selected barrier */}
+            {userActivity?.selectedBarrier && (() => {
+              const barrierId = userActivity.selectedBarrier;
+              
+              // Check if it's a custom barrier
+              if (barrierId.startsWith('custom:')) {
+                const customReason = barrierId.replace('custom:', '');
+                return (
+                  <div style={{
+                    background: '#FFF9E6',
+                    border: '2px solid #FFB800',
+                    borderRadius: '12px',
+                    padding: '20px',
+                    marginTop: '20px'
+                  }}>
+                    <div style={{ display: 'flex', alignItems: 'start', gap: '12px' }}>
+                      <span style={{ fontSize: '28px', flexShrink: 0 }}>💡</span>
+                      <div>
+                        <h3 style={{ fontSize: '16px', fontWeight: 'bold', color: '#1a1a1a', marginBottom: '8px' }}>
+                          You said: "{customReason}"
+                        </h3>
+                        <p style={{ fontSize: '14px', color: '#333', lineHeight: '1.7', margin: 0 }}>
+                          That's a unique challenge. Let's tackle it head-on. The AI will help you create 
+                          something specific to work around this barrier. Remember: done is better than perfect, 
+                          and taking ANY action breaks the pattern of avoidance.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                );
+              }
+              
+              // Look up from universal barriers
+              const barrier = UNIVERSAL_BARRIERS.find(b => b.id === barrierId);
+              if (!barrier) return null;
+              
+              return (
+                <div style={{
+                  background: '#FFF9E6',
+                  border: '2px solid #FFB800',
+                  borderRadius: '12px',
+                  padding: '20px',
+                  marginTop: '20px'
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'start', gap: '12px' }}>
+                    <span style={{ fontSize: '28px', flexShrink: 0 }}>💡</span>
+                    <div>
+                      <h3 style={{ fontSize: '16px', fontWeight: 'bold', color: '#1a1a1a', marginBottom: '8px' }}>
+                        You said: {barrier.label}
+                      </h3>
+                      <p style={{ fontSize: '13px', color: '#666', fontStyle: 'italic', marginBottom: '12px' }}>
+                        {barrier.subtext}
+                      </p>
+                      <p style={{ fontSize: '14px', color: '#333', lineHeight: '1.7', margin: 0 }}>
+                        <strong>Coach's insight:</strong> {barrier.coachingTip}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              );
+            })()}
 
             {activity.aiCanHelp && !generatedContent && (
               <div style={{

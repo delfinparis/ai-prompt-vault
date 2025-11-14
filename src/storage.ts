@@ -11,6 +11,7 @@ const STORAGE_KEYS = {
   PROFILE: 'realtor_exec_profile',
   ACTIVITIES: 'realtor_exec_activities',
   COMPLETIONS: 'realtor_exec_completions',
+  BARRIERS: 'realtor_exec_barriers',
 };
 
 // Profile Management
@@ -51,6 +52,29 @@ export function loadActivityStatuses(): Map<string, ActivityStatus> {
     }
   } catch (error) {
     console.error('Failed to load activity statuses:', error);
+  }
+  return new Map();
+}
+
+// Barrier Management (activityId -> barrierId or custom:text)
+export function saveBarriers(barriers: Map<string, string>): void {
+  try {
+    const arr = Array.from(barriers.entries());
+    localStorage.setItem(STORAGE_KEYS.BARRIERS, JSON.stringify(arr));
+  } catch (error) {
+    console.error('Failed to save barriers:', error);
+  }
+}
+
+export function loadBarriers(): Map<string, string> {
+  try {
+    const data = localStorage.getItem(STORAGE_KEYS.BARRIERS);
+    if (data) {
+      const arr: [string, string][] = JSON.parse(data);
+      return new Map(arr);
+    }
+  } catch (error) {
+    console.error('Failed to load barriers:', error);
   }
   return new Map();
 }
@@ -96,12 +120,15 @@ export function addCompletion(
 // User Activity (combined status + tracking) Management
 export function initializeUserActivities(
   activityIds: string[],
-  statuses: Map<string, ActivityStatus>
+  statuses: Map<string, ActivityStatus>,
+  barriers?: Map<string, string> // activityId -> barrierId
 ): UserActivity[] {
   const completions = loadCompletions();
+  const barrierMap = barriers || loadBarriers();
   
   return activityIds.map(id => {
     const status = statuses.get(id) || 'not-doing';
+    const selectedBarrier = barrierMap.get(id); // Use provided or persisted barrier
     const activityCompletions = completions.filter(c => c.activityId === id);
     const lastCompletion = activityCompletions.length > 0 
       ? activityCompletions.sort((a, b) => 
@@ -116,6 +143,7 @@ export function initializeUserActivities(
     return {
       activityId: id,
       status,
+      selectedBarrier, // Store the barrier
       lastCompleted: lastCompletion?.completedAt,
       streak,
       totalCompletions: activityCompletions.length,
@@ -161,6 +189,7 @@ export function clearAllData(): void {
     localStorage.removeItem(STORAGE_KEYS.PROFILE);
     localStorage.removeItem(STORAGE_KEYS.ACTIVITIES);
     localStorage.removeItem(STORAGE_KEYS.COMPLETIONS);
+    localStorage.removeItem(STORAGE_KEYS.BARRIERS);
   } catch (error) {
     console.error('Failed to clear data:', error);
   }

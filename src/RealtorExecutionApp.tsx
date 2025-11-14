@@ -17,7 +17,9 @@ import {
   addCompletion,
   loadCompletions,
   initializeUserActivities,
-  hasCompletedOnboarding
+  hasCompletedOnboarding,
+  saveBarriers,
+  loadBarriers
 } from './storage';
 
 type AppView = 'diagnostic' | 'dashboard' | 'execution';
@@ -39,7 +41,8 @@ export const RealtorExecutionApp: React.FC = () => {
     if (savedProfile && hasCompletedOnboarding()) {
       setProfile(savedProfile);
       const statuses = loadActivityStatuses();
-      const activities = initializeUserActivities(savedProfile.priorityActivities, statuses);
+      const barriers = loadBarriers();
+      const activities = initializeUserActivities(savedProfile.priorityActivities, statuses, barriers);
       setUserActivities(activities);
       setView('dashboard');
     }
@@ -47,14 +50,22 @@ export const RealtorExecutionApp: React.FC = () => {
 
   const handleDiagnosticComplete = (
     newProfile: UserProfile,
-    statuses: Map<string, ActivityStatus>
+    selectedActivityId: string,
+    selectedBarrier: string
   ) => {
     // Save to localStorage
     saveProfile(newProfile);
+    
+    // Create single activity status
+    const statuses = new Map<string, ActivityStatus>([[selectedActivityId, 'not-doing']]);
     saveActivityStatuses(statuses);
+    
+    // Save single barrier
+    const barriers = new Map<string, string>([[selectedActivityId, selectedBarrier]]);
+    saveBarriers(barriers);
 
-    // Initialize user activities
-    const activities = initializeUserActivities(newProfile.priorityActivities, statuses);
+    // Initialize user activities WITH barriers
+    const activities = initializeUserActivities(newProfile.priorityActivities, statuses, barriers);
 
     // Update state
     setProfile(newProfile);
@@ -80,7 +91,8 @@ export const RealtorExecutionApp: React.FC = () => {
     // Recalculate user activities with new completion
     if (profile) {
       const statuses = loadActivityStatuses();
-      const activities = initializeUserActivities(profile.priorityActivities, statuses);
+      const barriers = loadBarriers();
+      const activities = initializeUserActivities(profile.priorityActivities, statuses, barriers);
       setUserActivities(activities);
     }
 
@@ -126,6 +138,8 @@ export const RealtorExecutionApp: React.FC = () => {
 
   if (view === 'execution' && selectedActivityId && profile) {
     const activity = getActivityById(selectedActivityId);
+    const userActivity = userActivities.find(ua => ua.activityId === selectedActivityId);
+    
     if (!activity) {
       // Fallback if activity not found
       setView('dashboard');
@@ -135,6 +149,7 @@ export const RealtorExecutionApp: React.FC = () => {
     return (
       <ExecutionEngine
         activity={activity}
+        userActivity={userActivity}
         profile={profile}
         onComplete={handleActivityComplete}
         onBack={handleBackToDashboard}
