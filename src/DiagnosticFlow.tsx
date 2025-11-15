@@ -42,17 +42,17 @@ export const DiagnosticFlow: React.FC<DiagnosticFlowProps> = ({ onComplete }) =>
   };
 
   const renderStep1 = () => (
-    <div style={{ maxWidth: '600px', margin: '0 auto', padding: '40px 20px' }}>
-      <h1 style={{ fontSize: '32px', fontWeight: 'bold', marginBottom: '16px', color: '#1a1a1a' }}>
+    <div style={{ maxWidth: '480px', margin: '0 auto', padding: '48px 0 0 0' }}>
+      <h1 style={{ fontSize: '2.5rem', fontWeight: 700, marginBottom: '18px', color: '#222', fontFamily: 'Inter, Helvetica Neue, Arial, sans-serif', letterSpacing: '-1px' }}>
         Let's get you unstuck
       </h1>
-      <p style={{ fontSize: '18px', color: '#666', marginBottom: '40px', lineHeight: '1.6' }}>
+      <p style={{ fontSize: '1.1rem', color: '#444', marginBottom: '36px', lineHeight: '1.7', fontFamily: 'Inter, Helvetica Neue, Arial, sans-serif' }}>
         Most agents know what they SHOULD be doing. The question is: what are you actually avoiding?
         Let's figure that out together.
       </p>
 
-      <div style={{ marginBottom: '24px' }}>
-        <label style={{ display: 'block', fontWeight: '600', marginBottom: '8px', color: '#333' }}>
+      <div style={{ marginBottom: '28px' }}>
+        <label style={{ display: 'block', fontWeight: 500, marginBottom: '7px', color: '#222', fontSize: '1rem', fontFamily: 'Inter, Helvetica Neue, Arial, sans-serif' }}>
           What's your name?
         </label>
         <input
@@ -62,20 +62,23 @@ export const DiagnosticFlow: React.FC<DiagnosticFlowProps> = ({ onComplete }) =>
           placeholder="First name"
           style={{
             width: '100%',
-            padding: '12px 16px',
-            fontSize: '16px',
-            border: '2px solid #e0e0e0',
-            borderRadius: '8px',
+            padding: '14px 16px',
+            fontSize: '1rem',
+            border: '1.5px solid #e5e7eb',
+            borderRadius: '10px',
             outline: 'none',
+            background: '#fafbfc',
+            fontFamily: 'Inter, Helvetica Neue, Arial, sans-serif',
+            boxShadow: '0 1px 2px rgba(0,0,0,0.03)',
             transition: 'border-color 0.2s'
           }}
-          onFocus={(e) => e.target.style.borderColor = '#4CAF50'}
-          onBlur={(e) => e.target.style.borderColor = '#e0e0e0'}
+          onFocus={(e) => e.target.style.borderColor = '#3B82F6'}
+          onBlur={(e) => e.target.style.borderColor = '#e5e7eb'}
         />
       </div>
 
-      <div style={{ marginBottom: '24px' }}>
-        <label style={{ display: 'block', fontWeight: '600', marginBottom: '8px', color: '#333' }}>
+      <div style={{ marginBottom: '28px' }}>
+        <label style={{ display: 'block', fontWeight: 500, marginBottom: '7px', color: '#222', fontSize: '1rem', fontFamily: 'Inter, Helvetica Neue, Arial, sans-serif' }}>
           What market do you work in?
         </label>
         <input
@@ -85,22 +88,26 @@ export const DiagnosticFlow: React.FC<DiagnosticFlowProps> = ({ onComplete }) =>
           placeholder="City, State (e.g., Austin, TX)"
           style={{
             width: '100%',
-            padding: '12px 16px',
-            fontSize: '16px',
-            border: '2px solid #e0e0e0',
-            borderRadius: '8px',
-            outline: 'none'
+            padding: '14px 16px',
+            fontSize: '1rem',
+            border: '1.5px solid #e5e7eb',
+            borderRadius: '10px',
+            outline: 'none',
+            background: '#fafbfc',
+            fontFamily: 'Inter, Helvetica Neue, Arial, sans-serif',
+            boxShadow: '0 1px 2px rgba(0,0,0,0.03)',
+            transition: 'border-color 0.2s'
           }}
-          onFocus={(e) => e.target.style.borderColor = '#4CAF50'}
-          onBlur={(e) => e.target.style.borderColor = '#e0e0e0'}
+          onFocus={(e) => e.target.style.borderColor = '#3B82F6'}
+          onBlur={(e) => e.target.style.borderColor = '#e5e7eb'}
         />
       </div>
 
-      <div style={{ marginBottom: '24px' }}>
-        <label style={{ display: 'block', fontWeight: '600', marginBottom: '12px', color: '#333' }}>
+      <div style={{ marginBottom: '28px' }}>
+        <label style={{ display: 'block', fontWeight: 500, marginBottom: '10px', color: '#222', fontSize: '1rem', fontFamily: 'Inter, Helvetica Neue, Arial, sans-serif' }}>
           How long have you been in real estate?
         </label>
-        <div style={{ display: 'flex', gap: '12px' }}>
+        <div style={{ display: 'flex', gap: '10px' }}>
           {[
             { value: 'new' as const, label: '0-2 years' },
             { value: 'intermediate' as const, label: '3-5 years' },
@@ -111,14 +118,15 @@ export const DiagnosticFlow: React.FC<DiagnosticFlowProps> = ({ onComplete }) =>
               onClick={() => setExperienceLevel(option.value)}
               style={{
                 flex: 1,
-                padding: '12px',
-                fontSize: '14px',
-                fontWeight: '600',
-                border: `2px solid ${experienceLevel === option.value ? '#4CAF50' : '#e0e0e0'}`,
-                borderRadius: '8px',
-                background: experienceLevel === option.value ? '#E8F5E9' : 'white',
-                color: experienceLevel === option.value ? '#2E7D32' : '#666',
+                padding: '13px',
+                fontSize: '0.95rem',
+                fontWeight: 600,
+                border: `1.5px solid ${experienceLevel === option.value ? '#3B82F6' : '#e5e7eb'}`,
+                borderRadius: '10px',
+                background: experienceLevel === option.value ? '#EFF6FF' : '#fff',
+                color: experienceLevel === option.value ? '#1D4ED8' : '#444',
                 cursor: 'pointer',
+                fontFamily: 'Inter, Helvetica Neue, Arial, sans-serif',
                 transition: 'all 0.2s'
               }}
             >
@@ -128,8 +136,8 @@ export const DiagnosticFlow: React.FC<DiagnosticFlowProps> = ({ onComplete }) =>
         </div>
       </div>
 
-      <div style={{ marginBottom: '40px' }}>
-        <label style={{ display: 'block', fontWeight: '600', marginBottom: '8px', color: '#333' }}>
+      <div style={{ marginBottom: '38px' }}>
+        <label style={{ display: 'block', fontWeight: 500, marginBottom: '7px', color: '#222', fontSize: '1rem', fontFamily: 'Inter, Helvetica Neue, Arial, sans-serif' }}>
           How many sales do you want to close in the next 12 months?
         </label>
         <input
@@ -139,14 +147,18 @@ export const DiagnosticFlow: React.FC<DiagnosticFlowProps> = ({ onComplete }) =>
           placeholder="Example: 24"
           style={{
             width: '100%',
-            padding: '12px 16px',
-            fontSize: '16px',
-            border: '2px solid #e0e0e0',
-            borderRadius: '8px',
-            outline: 'none'
+            padding: '14px 16px',
+            fontSize: '1rem',
+            border: '1.5px solid #e5e7eb',
+            borderRadius: '10px',
+            outline: 'none',
+            background: '#fafbfc',
+            fontFamily: 'Inter, Helvetica Neue, Arial, sans-serif',
+            boxShadow: '0 1px 2px rgba(0,0,0,0.03)',
+            transition: 'border-color 0.2s'
           }}
-          onFocus={(e) => e.target.style.borderColor = '#4CAF50'}
-          onBlur={(e) => e.target.style.borderColor = '#e0e0e0'}
+          onFocus={(e) => e.target.style.borderColor = '#3B82F6'}
+          onBlur={(e) => e.target.style.borderColor = '#e5e7eb'}
         />
       </div>
 
@@ -158,13 +170,14 @@ export const DiagnosticFlow: React.FC<DiagnosticFlowProps> = ({ onComplete }) =>
         disabled={!name || !market || !businessGoal}
         style={{
           width: '100%',
-          padding: '16px',
-          fontSize: '18px',
-          fontWeight: 'bold',
-          background: (!name || !market || !businessGoal) ? '#ccc' : '#4CAF50',
-          color: 'white',
+          padding: '15px',
+          fontSize: '1.1rem',
+          fontWeight: 600,
+          background: (!name || !market || !businessGoal) ? '#e5e7eb' : '#3B82F6',
+          color: (!name || !market || !businessGoal) ? '#aaa' : 'white',
           border: 'none',
-          borderRadius: '8px',
+          borderRadius: '10px',
+          boxShadow: (!name || !market || !businessGoal) ? 'none' : '0 2px 8px rgba(59,130,246,0.08)',
           cursor: (!name || !market || !businessGoal) ? 'not-allowed' : 'pointer',
           transition: 'background 0.2s'
         }}

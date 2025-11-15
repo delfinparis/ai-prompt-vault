@@ -1,6 +1,6 @@
 // api/prompt/[id].ts - Get a specific prompt by ID
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { buildFullPrompt } from '../../src/promptUtils';
+import { buildFullPrompt } from '../../lib/promptUtils';
 
 // Module metadata (same as prompts.ts)
 const MODULE_NAMES: Record<number, string> = {

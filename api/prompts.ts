@@ -51,8 +51,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const categoryLower = typeof category === 'string' ? category.toLowerCase() : null;
     const searchLower = typeof search === 'string' ? search.toLowerCase() : null;
 
-    // Dynamically import prompts (serverless compatible)
-    const { prompts: fullPrompts } = await import('../src/prompts');
+  // Dynamically import prompts from server-side lib to avoid importing frontend src/
+  const { prompts: fullPrompts } = await import('../lib/prompts');
 
     // Build full prompt list with metadata
     const allPrompts = fullPrompts.flatMap((modulePrompts: any[], moduleIdx: number) => {
