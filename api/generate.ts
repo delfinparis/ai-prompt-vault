@@ -26,13 +26,13 @@ import type { VercelRequest, VercelResponse } from '@vercel/node';
       const { prompt, userId, contentType, inputs = {}, barrierInfo } = req.body;
 
       // Extract variables from inputs
-      const market = inputs.market;
-      const tone = inputs.tone;
-      const targetAudience = inputs.targetAudience;
-      const length = inputs.length;
-      const topic = inputs.topic;
-      const listingAddress = inputs.listingAddress;
-      const clientName = inputs.clientName;
+  const market = inputs.market || '';
+  const tone = inputs.tone || '';
+  const targetAudience = inputs.targetAudience || '';
+  const length = inputs.length || 'short';
+  const topic = inputs.topic || '';
+  const listingAddress = inputs.listingAddress || '';
+  const clientName = inputs.clientName || '';
       const lengthGuide = {
         short: '50-80 words',
         medium: '100-150 words',
