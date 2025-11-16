@@ -563,7 +563,7 @@ function QuestionFlow({
               style={{
                 ...styles.selectOption,
                 borderColor: answers[currentQuestion.id] === option.value ? '#10b981' : '#334155',
-                background: answers[currentQuestion.id] === option.value ? 'rgba(16, 185, 129, 0.1)' : 'rgba(15, 23, 42, 0.6)'
+                background: answers[currentQuestion.id] === option.value ? 'rgba(16, 185, 129, 0.15)' : 'rgba(21, 27, 46, 0.8)' // Improved contrast
               }}
             >
               <div style={{ fontSize: '20px', marginBottom: '6px' }}>{option.emoji}</div>
@@ -578,8 +578,12 @@ function QuestionFlow({
         disabled={!canContinue}
         style={{
           ...styles.primaryButton,
-          opacity: canContinue ? 1 : 0.5,
-          cursor: canContinue ? 'pointer' : 'not-allowed'
+          background: canContinue
+            ? 'linear-gradient(135deg, #a78bfa 0%, #8b5cf6 100%)'
+            : '#475569', // Solid gray background when disabled for better contrast
+          opacity: canContinue ? 1 : 1, // Keep opacity at 1, change background instead
+          cursor: canContinue ? 'pointer' : 'not-allowed',
+          color: '#ffffff', // Ensure white text
         }}
       >
         {isLastQuestion ? '✨ Generate My Prompt' : 'Next →'}
