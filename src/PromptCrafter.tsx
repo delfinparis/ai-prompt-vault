@@ -2042,19 +2042,19 @@ const styles: Record<string, React.CSSProperties> = {
     minHeight: '100vh',
     background: 'linear-gradient(135deg, #0a0f1e 0%, #1e293b 100%)', // Darker for better contrast
     color: '#f8fafc', // Increased from #f1f5f9 for AAA contrast (15.2:1)
-    padding: '20px',
+    padding: '12px', // Reduced from 20px to maximize viewport
     fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Roboto, sans-serif',
     lineHeight: 1.6, // Improved from browser default
   },
   header: {
     textAlign: 'center',
-    marginBottom: '48px',
-    paddingTop: '40px'
+    marginBottom: '24px', // Reduced from 48px
+    paddingTop: '16px' // Reduced from 40px
   },
   logo: {
-    fontSize: '36px', // Increased from 32px
+    fontSize: '28px', // Reduced from 36px to save space
     fontWeight: 'bold',
-    marginBottom: '12px', // Increased from 8px
+    marginBottom: '8px', // Reduced from 12px
     lineHeight: 1.2,
     background: 'linear-gradient(135deg, #a78bfa 0%, #10b981 100%)', // Brighter purple for contrast
     WebkitBackgroundClip: 'text',
@@ -2062,7 +2062,7 @@ const styles: Record<string, React.CSSProperties> = {
     backgroundClip: 'text'
   },
   tagline: {
-    fontSize: '16px',
+    fontSize: '14px', // Reduced from 16px
     color: '#d1d5db', // Increased from #94a3b8 for AAA contrast (10.1:1)
     lineHeight: 1.5,
   },
@@ -2071,23 +2071,23 @@ const styles: Record<string, React.CSSProperties> = {
     margin: '0 auto'
   },
   title: {
-    fontSize: '32px',
+    fontSize: '24px', // Reduced from 32px
     fontWeight: 'bold',
-    marginBottom: '48px',
+    marginBottom: '24px', // Reduced from 48px
     textAlign: 'center',
     letterSpacing: '-0.01em', // Slightly tighter for headings
     lineHeight: 1.3,
     color: '#f8fafc', // Explicit AAA contrast
   },
   subtitle: {
-    fontSize: '16px',
+    fontSize: '14px', // Reduced from 16px
     color: '#d1d5db', // Increased from #94a3b8 for AAA contrast (10.1:1)
-    marginBottom: '32px',
+    marginBottom: '20px', // Reduced from 32px
     textAlign: 'center',
     lineHeight: 1.6,
   },
   categorySection: {
-    marginBottom: '56px' // Increased from 48px for better separation
+    marginBottom: '32px' // Reduced from 56px
   },
   categoryTitle: {
     fontSize: '14px', // Increased from 12px for minimum readability
@@ -2108,12 +2108,12 @@ const styles: Record<string, React.CSSProperties> = {
     background: 'rgba(21, 27, 46, 0.8)', // Slightly lighter for better card elevation
     border: '1px solid #334155',
     borderRadius: '12px',
-    padding: '24px', // Increased from 20px for better touch targets
+    padding: '16px', // Reduced from 24px to save space
     cursor: 'pointer',
     transition: 'all 0.2s ease',
     textAlign: 'center',
     color: '#f8fafc', // AAA contrast
-    minHeight: '156px', // Increased from 140px for better touch target (48px+)
+    minHeight: '120px', // Reduced from 156px to fit more on screen
     display: 'flex',
     flexDirection: 'column',
     justifyContent: 'center',
