@@ -417,10 +417,13 @@ function PromptCrafter() {
             <h3 style={styles.categoryTitle}>Content Creation</h3>
             <div style={styles.useCaseGrid}>
               {USE_CASES.filter(u => u.category === 'content').map(useCase => (
-                <div key={useCase.id} style={{ display: 'flex', flexDirection: 'column' }}>
+                <div key={useCase.id}>
                   <button
                     onClick={() => handleUseCaseSelect(useCase.id)}
-                    style={styles.useCaseCard}
+                    style={{
+                      ...styles.useCaseCard,
+                      position: 'relative' as const
+                    }}
                   >
                     <div style={{ fontSize: '32px', marginBottom: '8px' }}>
                       {useCase.emoji}
@@ -431,26 +434,41 @@ function PromptCrafter() {
                     <div style={{ fontSize: '12px', color: '#94a3b8', marginBottom: '8px' }}>
                       {useCase.description}
                     </div>
-                  </button>
-                  {useCase.exampleOutput && (
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setExpandedExample(expandedExample === useCase.id ? null : useCase.id);
-                      }}
-                      style={styles.exampleButton}
-                    >
-                      {expandedExample === useCase.id ? '✕ Close Example' : '👁️ See Example'}
-                    </button>
-                  )}
-                  {expandedExample === useCase.id && useCase.exampleOutput && (
-                    <div style={styles.exampleBox}>
-                      <div style={{ fontSize: '12px', fontWeight: 'bold', color: '#10b981', marginBottom: '8px' }}>
-                        Example Output:
+                    {useCase.exampleOutput && (
+                      <div
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setExpandedExample(expandedExample === useCase.id ? null : useCase.id);
+                        }}
+                        style={{
+                          position: 'absolute' as const,
+                          top: '10px',
+                          right: '10px',
+                          fontSize: '18px',
+                          cursor: 'pointer',
+                          background: 'rgba(16, 185, 129, 0.15)',
+                          borderRadius: '50%',
+                          width: '32px',
+                          height: '32px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          transition: 'all 0.2s',
+                          border: '1px solid rgba(16, 185, 129, 0.3)'
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.background = 'rgba(16, 185, 129, 0.25)';
+                          e.currentTarget.style.transform = 'scale(1.1)';
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.background = 'rgba(16, 185, 129, 0.15)';
+                          e.currentTarget.style.transform = 'scale(1)';
+                        }}
+                      >
+                        👁️
                       </div>
-                      <pre style={styles.exampleText}>{useCase.exampleOutput}</pre>
-                    </div>
-                  )}
+                    )}
+                  </button>
                 </div>
               ))}
             </div>
@@ -461,10 +479,13 @@ function PromptCrafter() {
             <h3 style={styles.categoryTitle}>Sales & Prospecting</h3>
             <div style={styles.useCaseGrid}>
               {USE_CASES.filter(u => u.category === 'sales').map(useCase => (
-                <div key={useCase.id} style={{ display: 'flex', flexDirection: 'column' }}>
+                <div key={useCase.id}>
                   <button
                     onClick={() => handleUseCaseSelect(useCase.id)}
-                    style={styles.useCaseCard}
+                    style={{
+                      ...styles.useCaseCard,
+                      position: 'relative' as const
+                    }}
                   >
                     <div style={{ fontSize: '32px', marginBottom: '8px' }}>
                       {useCase.emoji}
@@ -475,26 +496,41 @@ function PromptCrafter() {
                     <div style={{ fontSize: '12px', color: '#94a3b8', marginBottom: '8px' }}>
                       {useCase.description}
                     </div>
-                  </button>
-                  {useCase.exampleOutput && (
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setExpandedExample(expandedExample === useCase.id ? null : useCase.id);
-                      }}
-                      style={styles.exampleButton}
-                    >
-                      {expandedExample === useCase.id ? '✕ Close Example' : '👁️ See Example'}
-                    </button>
-                  )}
-                  {expandedExample === useCase.id && useCase.exampleOutput && (
-                    <div style={styles.exampleBox}>
-                      <div style={{ fontSize: '12px', fontWeight: 'bold', color: '#10b981', marginBottom: '8px' }}>
-                        Example Output:
+                    {useCase.exampleOutput && (
+                      <div
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setExpandedExample(expandedExample === useCase.id ? null : useCase.id);
+                        }}
+                        style={{
+                          position: 'absolute' as const,
+                          top: '10px',
+                          right: '10px',
+                          fontSize: '18px',
+                          cursor: 'pointer',
+                          background: 'rgba(16, 185, 129, 0.15)',
+                          borderRadius: '50%',
+                          width: '32px',
+                          height: '32px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          transition: 'all 0.2s',
+                          border: '1px solid rgba(16, 185, 129, 0.3)'
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.background = 'rgba(16, 185, 129, 0.25)';
+                          e.currentTarget.style.transform = 'scale(1.1)';
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.background = 'rgba(16, 185, 129, 0.15)';
+                          e.currentTarget.style.transform = 'scale(1)';
+                        }}
+                      >
+                        👁️
                       </div>
-                      <pre style={styles.exampleText}>{useCase.exampleOutput}</pre>
-                    </div>
-                  )}
+                    )}
+                  </button>
                 </div>
               ))}
             </div>
@@ -505,10 +541,13 @@ function PromptCrafter() {
             <h3 style={styles.categoryTitle}>Client Service</h3>
             <div style={styles.useCaseGrid}>
               {USE_CASES.filter(u => u.category === 'service').map(useCase => (
-                <div key={useCase.id} style={{ display: 'flex', flexDirection: 'column' }}>
+                <div key={useCase.id}>
                   <button
                     onClick={() => handleUseCaseSelect(useCase.id)}
-                    style={styles.useCaseCard}
+                    style={{
+                      ...styles.useCaseCard,
+                      position: 'relative' as const
+                    }}
                   >
                     <div style={{ fontSize: '32px', marginBottom: '8px' }}>
                       {useCase.emoji}
@@ -519,29 +558,128 @@ function PromptCrafter() {
                     <div style={{ fontSize: '12px', color: '#94a3b8', marginBottom: '8px' }}>
                       {useCase.description}
                     </div>
-                  </button>
-                  {useCase.exampleOutput && (
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setExpandedExample(expandedExample === useCase.id ? null : useCase.id);
-                      }}
-                      style={styles.exampleButton}
-                    >
-                      {expandedExample === useCase.id ? '✕ Close Example' : '👁️ See Example'}
-                    </button>
-                  )}
-                  {expandedExample === useCase.id && useCase.exampleOutput && (
-                    <div style={styles.exampleBox}>
-                      <div style={{ fontSize: '12px', fontWeight: 'bold', color: '#10b981', marginBottom: '8px' }}>
-                        Example Output:
+                    {useCase.exampleOutput && (
+                      <div
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setExpandedExample(expandedExample === useCase.id ? null : useCase.id);
+                        }}
+                        style={{
+                          position: 'absolute' as const,
+                          top: '10px',
+                          right: '10px',
+                          fontSize: '18px',
+                          cursor: 'pointer',
+                          background: 'rgba(16, 185, 129, 0.15)',
+                          borderRadius: '50%',
+                          width: '32px',
+                          height: '32px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          transition: 'all 0.2s',
+                          border: '1px solid rgba(16, 185, 129, 0.3)'
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.background = 'rgba(16, 185, 129, 0.25)';
+                          e.currentTarget.style.transform = 'scale(1.1)';
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.background = 'rgba(16, 185, 129, 0.15)';
+                          e.currentTarget.style.transform = 'scale(1)';
+                        }}
+                      >
+                        👁️
                       </div>
-                      <pre style={styles.exampleText}>{useCase.exampleOutput}</pre>
-                    </div>
-                  )}
+                    )}
+                  </button>
                 </div>
               ))}
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Example Modal Overlay */}
+      {expandedExample && (
+        <div
+          onClick={() => setExpandedExample(null)}
+          style={{
+            position: 'fixed' as const,
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: 'rgba(0, 0, 0, 0.8)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 1000,
+            padding: '20px'
+          }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              background: 'rgba(21, 27, 46, 0.98)',
+              border: '2px solid #10b981',
+              borderRadius: '16px',
+              padding: '24px',
+              maxWidth: '900px',
+              width: '100%',
+              maxHeight: '80vh',
+              overflowY: 'auto',
+              position: 'relative' as const
+            }}
+          >
+            <button
+              onClick={() => setExpandedExample(null)}
+              style={{
+                position: 'absolute' as const,
+                top: '16px',
+                right: '16px',
+                background: 'rgba(239, 68, 68, 0.15)',
+                border: '1px solid rgba(239, 68, 68, 0.3)',
+                borderRadius: '50%',
+                width: '36px',
+                height: '36px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: 'pointer',
+                fontSize: '20px',
+                color: '#f87171',
+                transition: 'all 0.2s'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = 'rgba(239, 68, 68, 0.25)';
+                e.currentTarget.style.transform = 'scale(1.1)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = 'rgba(239, 68, 68, 0.15)';
+                e.currentTarget.style.transform = 'scale(1)';
+              }}
+            >
+              ✕
+            </button>
+
+            <div style={{ fontSize: '18px', fontWeight: 'bold', color: '#10b981', marginBottom: '16px' }}>
+              📝 Example Output
+            </div>
+
+            {USE_CASES.find(uc => uc.id === expandedExample)?.exampleOutput && (
+              <pre style={{
+                fontSize: '14px',
+                lineHeight: '1.7',
+                color: '#e5e7eb',
+                margin: 0,
+                whiteSpace: 'pre-wrap',
+                fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Roboto, sans-serif',
+                letterSpacing: '0.01em',
+              }}>
+                {USE_CASES.find(uc => uc.id === expandedExample)?.exampleOutput}
+              </pre>
+            )}
           </div>
         </div>
       )}
@@ -2305,40 +2443,6 @@ const styles: Record<string, React.CSSProperties> = {
     color: '#e5e7eb', // Improved contrast
     lineHeight: 1.5, // Reduced from 1.6
   },
-  exampleButton: {
-    width: '100%',
-    padding: '8px', // Reduced from 10px
-    fontSize: '13px',
-    fontWeight: '600',
-    background: 'rgba(16, 185, 129, 0.12)',
-    border: '1px solid #10b981',
-    borderRadius: '8px',
-    color: '#10b981',
-    cursor: 'pointer',
-    marginTop: '6px', // Reduced from 8px
-    transition: 'all 0.2s',
-    minHeight: '36px', // Reduced from 40px
-    lineHeight: 1.4,
-    outline: 'none',
-  },
-  exampleBox: {
-    background: 'rgba(21, 27, 46, 0.9)',
-    border: '2px solid #10b981',
-    borderRadius: '12px',
-    padding: '12px', // Reduced from 16px
-    marginTop: '6px', // Reduced from 8px
-    maxHeight: '300px', // Reduced from 400px to save vertical space
-    overflowY: 'auto',
-  },
-  exampleText: {
-    fontSize: '13px',
-    lineHeight: '1.6',
-    color: '#e5e7eb',
-    margin: 0,
-    whiteSpace: 'pre-wrap',
-    fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Roboto, sans-serif',
-    letterSpacing: '0.01em',
-  }
 };
 
 // Export component
