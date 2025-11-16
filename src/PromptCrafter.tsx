@@ -55,15 +55,15 @@ const USE_CASES: UseCase[] = [
   // CONTENT CREATION
   {
     id: 'social-content',
-    name: 'Social Media Posts',
+    name: 'Social Media',
     emoji: '📱',
-    description: 'Instagram, Facebook, LinkedIn',
+    description: 'Insta, FB, LinkedIn',
     category: 'content',
     exampleOutput: `🏡 JUST LISTED in Boulder Heights!\n\nYour dream mountain retreat awaits. 4 bed, 3.5 bath contemporary masterpiece with:\n✨ Floor-to-ceiling windows framing Flatirons views\n✨ Chef's kitchen with Wolf & Sub-Zero appliances  \n✨ Primary suite sanctuary with spa bath\n✨ Smart home tech throughout\n\n$2.45M | 3,200 sq ft | Built 2019\n\nOpen house this Saturday 1-4pm. Link in bio for full details!\n\n#BoulderRealEstate #LuxuryHomes #MountainLiving #JustListed`
   },
   {
     id: 'video-script',
-    name: 'Video Scripts',
+    name: 'Videos',
     emoji: '🎥',
     description: 'Reels, TikTok, YouTube',
     category: 'content',
@@ -71,7 +71,7 @@ const USE_CASES: UseCase[] = [
   },
   {
     id: 'listing-description',
-    name: 'Listing Descriptions',
+    name: 'Listings',
     emoji: '🏡',
     description: 'MLS copy that sells',
     category: 'content',
@@ -79,7 +79,7 @@ const USE_CASES: UseCase[] = [
   },
   {
     id: 'email-sequence',
-    name: 'Email Campaigns',
+    name: 'Emails',
     emoji: '📧',
     description: 'Nurture sequences',
     category: 'content',
@@ -89,7 +89,7 @@ const USE_CASES: UseCase[] = [
   // SALES & PROSPECTING
   {
     id: 'sphere-script',
-    name: 'Call Scripts',
+    name: 'Calls',
     emoji: '📞',
     description: 'Sphere & lead calls',
     category: 'sales',
@@ -105,7 +105,7 @@ const USE_CASES: UseCase[] = [
   },
   {
     id: 'objection-handling',
-    name: 'Handle Objections',
+    name: 'Objections',
     emoji: '🛡️',
     description: 'Price, commission, timing',
     category: 'sales',
@@ -123,7 +123,7 @@ const USE_CASES: UseCase[] = [
   // CLIENT SERVICE
   {
     id: 'open-house-followup',
-    name: 'Open House Follow-Up',
+    name: 'Open House',
     emoji: '🚪',
     description: 'Text/email after visits',
     category: 'service',
@@ -131,7 +131,7 @@ const USE_CASES: UseCase[] = [
   },
   {
     id: 'market-report',
-    name: 'Market Updates',
+    name: 'Market',
     emoji: '📊',
     description: 'Client-friendly reports',
     category: 'service',
@@ -139,7 +139,7 @@ const USE_CASES: UseCase[] = [
   },
   {
     id: 'cma-narrative',
-    name: 'CMA Narrative',
+    name: 'CMA',
     emoji: '📈',
     description: 'Explain pricing strategy',
     category: 'service',
@@ -147,7 +147,7 @@ const USE_CASES: UseCase[] = [
   },
   {
     id: 'thank-you',
-    name: 'Thank You Notes',
+    name: 'THANK YOUS',
     emoji: '🙏',
     description: 'Personal & memorable',
     category: 'service',
@@ -182,6 +182,10 @@ function PromptCrafter() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [generatedOutput, setGeneratedOutput] = useState<string | null>(null);
   const [copiedOutput, setCopiedOutput] = useState(false);
+  const [showPrompt, setShowPrompt] = useState(false);
+  const [loadingMessage, setLoadingMessage] = useState(0);
+  const [copiedPromptFromViewer, setCopiedPromptFromViewer] = useState(false);
+  const [showCelebration, setShowCelebration] = useState(false);
 
   // Load history from localStorage on mount
   useEffect(() => {
@@ -206,6 +210,16 @@ function PromptCrafter() {
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }, [state.step, showHistory]);
+
+  // Cycle through funny loading messages
+  useEffect(() => {
+    if (isGenerating) {
+      const interval = setInterval(() => {
+        setLoadingMessage(prev => (prev + 1) % 8);
+      }, 2000); // Change message every 2 seconds
+      return () => clearInterval(interval);
+    }
+  }, [isGenerating]);
 
   const handleUseCaseSelect = (useCaseId: string) => {
     setState({ ...state, selectedUseCase: useCaseId, step: 1, answers: {} });
@@ -248,6 +262,8 @@ function PromptCrafter() {
   const handleGenerate = async () => {
     setIsGenerating(true);
     setGeneratedOutput(null);
+    setShowPrompt(false);
+    setLoadingMessage(0);
 
     try {
       const response = await fetch('/api/generate', {
@@ -266,6 +282,10 @@ function PromptCrafter() {
       const data = await response.json();
       setGeneratedOutput(data.output || data.result || 'No output received');
 
+      // 🎉 CELEBRATION TIME!
+      setShowCelebration(true);
+      setTimeout(() => setShowCelebration(false), 3000);
+
       // Update history with AI output
       const updatedHistory = history.map(item =>
         item.id === history[0]?.id
@@ -279,6 +299,12 @@ function PromptCrafter() {
     } finally {
       setIsGenerating(false);
     }
+  };
+
+  const handleCopyPromptFromViewer = () => {
+    navigator.clipboard.writeText(state.generatedPrompt);
+    setCopiedPromptFromViewer(true);
+    setTimeout(() => setCopiedPromptFromViewer(false), 2000);
   };
 
   const handleCopyOutput = () => {
@@ -334,6 +360,56 @@ function PromptCrafter() {
         a:active {
           transform: translateY(0);
         }
+
+        /* Fun Loading Animations */
+        @keyframes bounce {
+          0%, 100% {
+            transform: translateY(0);
+          }
+          50% {
+            transform: translateY(-20px);
+          }
+        }
+
+        @keyframes spin {
+          from {
+            transform: rotate(0deg);
+          }
+          to {
+            transform: rotate(360deg);
+          }
+        }
+
+        /* Celebration Confetti */
+        @keyframes confetti-fall {
+          0% {
+            transform: translateY(-100vh) rotate(0deg);
+            opacity: 1;
+          }
+          100% {
+            transform: translateY(100vh) rotate(720deg);
+            opacity: 0;
+          }
+        }
+
+        @keyframes pulse-celebration {
+          0%, 100% {
+            transform: scale(1);
+          }
+          50% {
+            transform: scale(1.1);
+          }
+        }
+
+        .confetti {
+          position: fixed;
+          width: 10px;
+          height: 10px;
+          background: #fbbf24;
+          animation: confetti-fall 3s linear forwards;
+          z-index: 9999;
+        }
+
         @media (prefers-reduced-motion: reduce) {
           * {
             animation: none !important;
@@ -341,6 +417,50 @@ function PromptCrafter() {
           }
         }
       `}</style>
+
+      {/* 🎉 CELEBRATION CONFETTI OVERLAY 🎉 */}
+      {showCelebration && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          pointerEvents: 'none',
+          zIndex: 9999,
+          overflow: 'hidden'
+        }}>
+          {/* Confetti pieces */}
+          {Array.from({ length: 50 }).map((_, i) => (
+            <div
+              key={i}
+              className="confetti"
+              style={{
+                left: `${Math.random() * 100}%`,
+                top: '-10px',
+                background: ['#fbbf24', '#f59e0b', '#8b5cf6', '#a78bfa', '#10b981', '#ec4899'][Math.floor(Math.random() * 6)],
+                animationDelay: `${Math.random() * 0.5}s`,
+                width: `${Math.random() * 10 + 5}px`,
+                height: `${Math.random() * 10 + 5}px`,
+                borderRadius: Math.random() > 0.5 ? '50%' : '0'
+              }}
+            />
+          ))}
+          {/* Big celebration emoji */}
+          <div style={{
+            position: 'absolute',
+            top: '50%',
+            left: '50%',
+            transform: 'translate(-50%, -50%)',
+            fontSize: '120px',
+            animation: 'pulse-celebration 0.6s ease-in-out 3',
+            filter: 'drop-shadow(0 8px 24px rgba(139, 92, 246, 0.5))'
+          }}>
+            🎉
+          </div>
+        </div>
+      )}
+
       <div style={styles.container}>
         {/* Header */}
         <div style={styles.header}>
@@ -449,13 +569,13 @@ function PromptCrafter() {
                       💡
                     </div>
                   )}
-                  <div style={{ fontSize: '32px', marginBottom: '8px' }}>
+                  <div style={{ fontSize: '32px', marginBottom: '10px' }}>
                     {useCase.emoji}
                   </div>
-                  <div style={{ fontSize: '15px', fontWeight: '600', marginBottom: '4px', color: '#f1f5f9', textTransform: 'uppercase' as const }}>
+                  <div style={{ fontSize: '13px', fontWeight: '600', marginBottom: '6px', color: '#f1f5f9', textTransform: 'uppercase' as const, lineHeight: '1.3', whiteSpace: 'nowrap' as const }}>
                     {useCase.name}
                   </div>
-                  <div style={{ fontSize: '12px', color: '#94a3b8', marginBottom: '8px', textTransform: 'lowercase' as const }}>
+                  <div style={{ fontSize: '12px', color: '#94a3b8', lineHeight: '1.4', textTransform: 'lowercase' as const }}>
                     {useCase.description}
                   </div>
                 </button>
@@ -500,13 +620,13 @@ function PromptCrafter() {
                       💡
                     </div>
                   )}
-                  <div style={{ fontSize: '32px', marginBottom: '8px' }}>
+                  <div style={{ fontSize: '32px', marginBottom: '10px' }}>
                     {useCase.emoji}
                   </div>
-                  <div style={{ fontSize: '15px', fontWeight: '600', marginBottom: '4px', color: '#f1f5f9', textTransform: 'uppercase' as const }}>
+                  <div style={{ fontSize: '13px', fontWeight: '600', marginBottom: '6px', color: '#f1f5f9', textTransform: 'uppercase' as const, lineHeight: '1.3', whiteSpace: 'nowrap' as const }}>
                     {useCase.name}
                   </div>
-                  <div style={{ fontSize: '12px', color: '#94a3b8', marginBottom: '8px', textTransform: 'lowercase' as const }}>
+                  <div style={{ fontSize: '12px', color: '#94a3b8', lineHeight: '1.4', textTransform: 'lowercase' as const }}>
                     {useCase.description}
                   </div>
                 </button>
@@ -551,13 +671,13 @@ function PromptCrafter() {
                       💡
                     </div>
                   )}
-                  <div style={{ fontSize: '32px', marginBottom: '8px' }}>
+                  <div style={{ fontSize: '32px', marginBottom: '10px' }}>
                     {useCase.emoji}
                   </div>
-                  <div style={{ fontSize: '15px', fontWeight: '600', marginBottom: '4px', color: '#f1f5f9', textTransform: 'uppercase' as const }}>
+                  <div style={{ fontSize: '13px', fontWeight: '600', marginBottom: '6px', color: '#f1f5f9', textTransform: 'uppercase' as const, lineHeight: '1.3', whiteSpace: 'nowrap' as const }}>
                     {useCase.name}
                   </div>
-                  <div style={{ fontSize: '12px', color: '#94a3b8', marginBottom: '8px', textTransform: 'lowercase' as const }}>
+                  <div style={{ fontSize: '12px', color: '#94a3b8', lineHeight: '1.4', textTransform: 'lowercase' as const }}>
                     {useCase.description}
                   </div>
                 </button>
@@ -701,29 +821,140 @@ function PromptCrafter() {
           {!generatedOutput ? (
             // Before AI generation
             <>
-              <div style={styles.explainerBox}>
-                <div style={{ fontSize: '14px', marginBottom: '8px' }}>
-                  <strong>✨ Generate with AI (Recommended)</strong>
-                </div>
-                <div style={{ fontSize: '13px', color: '#cbd5e1', lineHeight: '1.6' }}>
-                  Click below to instantly generate your content using AI. No copy-pasting needed!
-                </div>
-              </div>
+              {isGenerating ? (
+                // 🎉 FUN LOADING SCREEN 🎉
+                <div style={{
+                  background: 'linear-gradient(135deg, rgba(139, 92, 246, 0.1) 0%, rgba(167, 139, 250, 0.1) 100%)',
+                  border: '2px solid #8b5cf6',
+                  borderRadius: '20px',
+                  padding: '40px 24px',
+                  marginBottom: '24px',
+                  textAlign: 'center',
+                  minHeight: '300px',
+                  display: 'flex',
+                  flexDirection: 'column' as const,
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                  gap: '24px'
+                }}>
+                  {/* Bouncing House Animation */}
+                  <div style={{
+                    fontSize: '80px',
+                    animation: 'bounce 1s ease-in-out infinite',
+                    filter: 'drop-shadow(0 4px 12px rgba(139, 92, 246, 0.3))'
+                  }}>
+                    🏡
+                  </div>
 
-              {/* Primary Action: Generate with AI */}
-              <button
-                onClick={handleGenerate}
-                disabled={isGenerating}
-                style={{
-                  ...styles.primaryButton,
-                  background: isGenerating ? '#64748b' : 'linear-gradient(135deg, #a78bfa 0%, #8b5cf6 100%)',
-                  marginBottom: '16px',
-                  cursor: isGenerating ? 'not-allowed' : 'pointer',
-                  opacity: isGenerating ? 0.7 : 1
-                }}
-              >
-                {isGenerating ? '⏳ Generating...' : '✨ Generate with AI'}
-              </button>
+                  {/* Funny Loading Messages */}
+                  <div style={{
+                    fontSize: '20px',
+                    fontWeight: '600',
+                    color: '#f8fafc',
+                    minHeight: '60px',
+                    display: 'flex',
+                    alignItems: 'center'
+                  }}>
+                    {[
+                      "Teaching AI about curb appeal... 🌳",
+                      "Sprinkling in some real estate magic... ✨",
+                      "Consulting with virtual staging experts... 🎨",
+                      "Checking comps in the AI neighborhood... 📊",
+                      "Polishing those power words... 💎",
+                      "Making sure it's commission-worthy... 💰",
+                      "Adding that 'location, location, location' vibe... 📍",
+                      "Almost done! Just staging the content... 🪴"
+                    ][loadingMessage]}
+                  </div>
+
+                  {/* Spinning Progress Indicators */}
+                  <div style={{ display: 'flex', gap: '12px', fontSize: '24px' }}>
+                    <span style={{ animation: 'spin 2s linear infinite' }}>📝</span>
+                    <span style={{ animation: 'spin 2.5s linear infinite' }}>🤖</span>
+                    <span style={{ animation: 'spin 3s linear infinite' }}>✨</span>
+                  </div>
+
+                  {/* Show Prompt Toggle */}
+                  <button
+                    onClick={() => setShowPrompt(!showPrompt)}
+                    style={{
+                      background: 'rgba(139, 92, 246, 0.2)',
+                      border: '1px solid #8b5cf6',
+                      borderRadius: '8px',
+                      padding: '8px 16px',
+                      color: '#d1d5db',
+                      fontSize: '13px',
+                      cursor: 'pointer',
+                      transition: 'all 0.2s'
+                    }}
+                  >
+                    {showPrompt ? '👁️ Hide' : '🤓 Show'} what we sent to AI
+                  </button>
+
+                  {/* Show the actual prompt if toggled */}
+                  {showPrompt && (
+                    <div style={{ width: '100%' }}>
+                      <div style={{
+                        background: 'rgba(15, 23, 42, 0.8)',
+                        border: '1px solid #334155',
+                        borderRadius: '12px',
+                        padding: '16px',
+                        marginTop: '8px',
+                        maxHeight: '200px',
+                        overflow: 'auto',
+                        width: '100%',
+                        textAlign: 'left',
+                        fontSize: '12px',
+                        color: '#cbd5e1',
+                        fontFamily: 'monospace',
+                        lineHeight: '1.6'
+                      }}>
+                        {state.generatedPrompt}
+                      </div>
+                      <button
+                        onClick={handleCopyPromptFromViewer}
+                        style={{
+                          marginTop: '8px',
+                          background: copiedPromptFromViewer ? '#10b981' : 'rgba(139, 92, 246, 0.2)',
+                          border: '1px solid ' + (copiedPromptFromViewer ? '#10b981' : '#8b5cf6'),
+                          borderRadius: '8px',
+                          padding: '8px 16px',
+                          color: copiedPromptFromViewer ? '#ffffff' : '#d1d5db',
+                          fontSize: '13px',
+                          cursor: 'pointer',
+                          transition: 'all 0.2s',
+                          width: '100%'
+                        }}
+                      >
+                        {copiedPromptFromViewer ? '✓ Copied to clipboard!' : '📋 Copy prompt to clipboard'}
+                      </button>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <>
+                  <div style={styles.explainerBox}>
+                    <div style={{ fontSize: '14px', marginBottom: '8px' }}>
+                      <strong>✨ Generate with AI (Recommended)</strong>
+                    </div>
+                    <div style={{ fontSize: '13px', color: '#cbd5e1', lineHeight: '1.6' }}>
+                      Click below to instantly generate your content using AI. No copy-pasting needed!
+                    </div>
+                  </div>
+
+                  {/* Primary Action: Generate with AI */}
+                  <button
+                    onClick={handleGenerate}
+                    style={{
+                      ...styles.primaryButton,
+                      background: 'linear-gradient(135deg, #a78bfa 0%, #8b5cf6 100%)',
+                      marginBottom: '16px'
+                    }}
+                  >
+                    ✨ Generate with AI
+                  </button>
+                </>
+              )}
 
               {/* Collapsible: Advanced Options */}
               <details style={{ marginBottom: '24px' }}>
@@ -2258,7 +2489,7 @@ const styles: Record<string, React.CSSProperties> = {
   },
   useCaseGrid: {
     display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))',
+    gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
     gap: '16px' // Increased from 12px for better touch spacing
   },
   useCaseCard: {
@@ -2270,7 +2501,7 @@ const styles: Record<string, React.CSSProperties> = {
     transition: 'all 0.2s ease',
     textAlign: 'center',
     color: '#f8fafc', // AAA contrast
-    height: '120px', // Fixed height for consistent alignment
+    height: '150px', // Increased from 120px to accommodate text wrapping
     display: 'flex',
     flexDirection: 'column',
     justifyContent: 'flex-start', // Align from top for consistency
