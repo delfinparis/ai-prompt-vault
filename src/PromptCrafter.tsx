@@ -176,7 +176,12 @@ function PromptCrafter() {
   const [copiedPrompt, setCopiedPrompt] = useState(false);
   const [history, setHistory] = useState<PromptHistory[]>([]);
   const [showHistory, setShowHistory] = useState(false);
-  const [expandedExample, setExpandedExample] = useState<string | null>(null); // NEW: Track which example is showing
+  const [expandedExample, setExpandedExample] = useState<string | null>(null); // Track which example is showing
+
+  // AI Generation state
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [generatedOutput, setGeneratedOutput] = useState<string | null>(null);
+  const [copiedOutput, setCopiedOutput] = useState(false);
 
   // Load history from localStorage on mount
   useEffect(() => {
@@ -238,6 +243,50 @@ function PromptCrafter() {
     navigator.clipboard.writeText(state.generatedPrompt);
     setCopiedPrompt(true);
     setTimeout(() => setCopiedPrompt(false), 2000);
+  };
+
+  const handleGenerate = async () => {
+    setIsGenerating(true);
+    setGeneratedOutput(null);
+
+    try {
+      const response = await fetch('/api/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          prompt: state.generatedPrompt,
+          userInput: JSON.stringify(state.answers)
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error('Generation failed');
+      }
+
+      const data = await response.json();
+      setGeneratedOutput(data.output || data.result || 'No output received');
+
+      // Update history with AI output
+      const updatedHistory = history.map(item =>
+        item.id === history[0]?.id
+          ? { ...item, aiOutput: data.output || data.result }
+          : item
+      );
+      setHistory(updatedHistory);
+    } catch (error) {
+      console.error('AI Generation error:', error);
+      setGeneratedOutput('Unable to generate content. Please try copying the prompt to ChatGPT manually.');
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  const handleCopyOutput = () => {
+    if (generatedOutput) {
+      navigator.clipboard.writeText(generatedOutput);
+      setCopiedOutput(true);
+      setTimeout(() => setCopiedOutput(false), 2000);
+    }
   };
 
   const handleRestorePrompt = (item: PromptHistory) => {
@@ -510,72 +559,180 @@ function PromptCrafter() {
         />
       )}
 
-      {/* Step 4: Generated Prompt */}
+      {/* Step 4: Generated Content (AI-First) */}
       {!showHistory && state.step === 4 && (
         <div style={styles.stepContainer}>
-          <h2 style={styles.title}>Your Perfect AI Prompt</h2>
-          <div style={styles.explainerBox}>
-            <div style={{ fontSize: '14px', marginBottom: '8px' }}>
-              <strong>How this works:</strong>
-            </div>
-            <div style={{ fontSize: '13px', color: '#cbd5e1', lineHeight: '1.6' }}>
-              1. Click "Copy to Clipboard" below<br />
-              2. Open ChatGPT, Claude, or your AI assistant<br />
-              3. Paste the prompt and hit send<br />
-              4. The AI will generate your content using advanced techniques
-            </div>
-          </div>
+          <h2 style={styles.title}>Your Content is Ready!</h2>
 
-          <div style={styles.promptBox}>
-            <div style={{ fontSize: '12px', color: '#94a3b8', marginBottom: '8px', fontStyle: 'italic' }}>
-              ✏️ Click to edit before copying
-            </div>
-            <textarea
-              value={state.generatedPrompt}
-              onChange={(e) => setState({ ...state, generatedPrompt: e.target.value })}
-              style={{
-                ...styles.promptText,
-                width: '100%',
-                minHeight: '300px',
-                resize: 'vertical',
-                background: 'transparent',
-                border: 'none',
-                outline: 'none',
-                fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Roboto, sans-serif',
-              }}
-            />
-          </div>
+          {!generatedOutput ? (
+            // Before AI generation
+            <>
+              <div style={styles.explainerBox}>
+                <div style={{ fontSize: '14px', marginBottom: '8px' }}>
+                  <strong>✨ Generate with AI (Recommended)</strong>
+                </div>
+                <div style={{ fontSize: '13px', color: '#cbd5e1', lineHeight: '1.6' }}>
+                  Click below to instantly generate your content using AI. No copy-pasting needed!
+                </div>
+              </div>
 
-          <div style={{ display: 'flex', gap: '12px', marginBottom: '24px', flexWrap: 'wrap' }}>
-            <button
-              onClick={handleCopyPrompt}
-              style={{
-                ...styles.primaryButton,
-                background: copiedPrompt ? '#10b981' : 'linear-gradient(135deg, #a78bfa 0%, #8b5cf6 100%)',
-                flex: '1 1 200px'
-              }}
-              aria-label={copiedPrompt ? 'Prompt copied to clipboard' : 'Copy prompt to clipboard'}
-              aria-live="polite"
-            >
-              {copiedPrompt ? '✓ Copied!' : '📋 Copy to Clipboard'}
-            </button>
-            <a
-              href={`https://chat.openai.com/?q=${encodeURIComponent(state.generatedPrompt)}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              style={{
-                ...styles.primaryButton,
-                background: '#10a37f',
-                textDecoration: 'none',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                flex: '1 1 200px'
-              }}
-            >
-              Test in ChatGPT →
-            </a>
-          </div>
+              {/* Primary Action: Generate with AI */}
+              <button
+                onClick={handleGenerate}
+                disabled={isGenerating}
+                style={{
+                  ...styles.primaryButton,
+                  background: isGenerating ? '#64748b' : 'linear-gradient(135deg, #a78bfa 0%, #8b5cf6 100%)',
+                  marginBottom: '16px',
+                  cursor: isGenerating ? 'not-allowed' : 'pointer',
+                  opacity: isGenerating ? 0.7 : 1
+                }}
+              >
+                {isGenerating ? '⏳ Generating...' : '✨ Generate with AI'}
+              </button>
+
+              {/* Collapsible: Advanced Options */}
+              <details style={{ marginBottom: '24px' }}>
+                <summary style={{
+                  fontSize: '13px',
+                  color: '#94a3b8',
+                  cursor: 'pointer',
+                  marginBottom: '12px',
+                  listStyle: 'none',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px'
+                }}>
+                  <span>▼</span> Advanced: Edit prompt or copy manually
+                </summary>
+
+                <div style={styles.promptBox}>
+                  <div style={{ fontSize: '12px', color: '#94a3b8', marginBottom: '8px', fontStyle: 'italic' }}>
+                    ✏️ Click to edit before using
+                  </div>
+                  <textarea
+                    value={state.generatedPrompt}
+                    onChange={(e) => setState({ ...state, generatedPrompt: e.target.value })}
+                    style={{
+                      ...styles.promptText,
+                      width: '100%',
+                      minHeight: '200px',
+                      resize: 'vertical',
+                      background: 'transparent',
+                      border: 'none',
+                      outline: 'none',
+                      fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Roboto, sans-serif',
+                    }}
+                  />
+                </div>
+
+                <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', marginTop: '12px' }}>
+                  <button
+                    onClick={handleCopyPrompt}
+                    style={{
+                      ...styles.secondaryButton,
+                      marginTop: 0,
+                      background: copiedPrompt ? '#10b981' : 'transparent',
+                      borderColor: copiedPrompt ? '#10b981' : '#475569',
+                      color: copiedPrompt ? '#ffffff' : '#d1d5db',
+                      flex: '1 1 200px'
+                    }}
+                  >
+                    {copiedPrompt ? '✓ Copied!' : '📋 Copy Prompt'}
+                  </button>
+                  <a
+                    href={`https://chat.openai.com/?q=${encodeURIComponent(state.generatedPrompt)}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{
+                      ...styles.secondaryButton,
+                      marginTop: 0,
+                      textDecoration: 'none',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      flex: '1 1 200px'
+                    }}
+                  >
+                    Open in ChatGPT →
+                  </a>
+                </div>
+              </details>
+            </>
+          ) : (
+            // After AI generation - show output
+            <>
+              <div style={{
+                background: 'rgba(16, 185, 129, 0.12)',
+                border: '2px solid #10b981',
+                borderRadius: '16px',
+                padding: '20px',
+                marginBottom: '24px'
+              }}>
+                <div style={{ fontSize: '14px', fontWeight: 'bold', color: '#10b981', marginBottom: '12px' }}>
+                  ✨ AI Generated Output:
+                </div>
+                <div style={{
+                  fontSize: '14px',
+                  lineHeight: '1.7',
+                  color: '#e5e7eb',
+                  whiteSpace: 'pre-wrap',
+                  maxHeight: '400px',
+                  overflowY: 'auto'
+                }}>
+                  {generatedOutput}
+                </div>
+              </div>
+
+              {/* Actions after generation */}
+              <div style={{ display: 'flex', gap: '12px', marginBottom: '24px', flexWrap: 'wrap' }}>
+                <button
+                  onClick={handleCopyOutput}
+                  style={{
+                    ...styles.primaryButton,
+                    background: copiedOutput ? '#10b981' : 'linear-gradient(135deg, #a78bfa 0%, #8b5cf6 100%)',
+                    flex: '1 1 200px'
+                  }}
+                >
+                  {copiedOutput ? '✓ Copied!' : '📋 Copy Output'}
+                </button>
+                <button
+                  onClick={() => {
+                    setGeneratedOutput(null);
+                    setIsGenerating(false);
+                  }}
+                  style={{
+                    ...styles.secondaryButton,
+                    marginTop: 0,
+                    flex: '1 1 200px'
+                  }}
+                >
+                  🔄 Generate Again
+                </button>
+              </div>
+
+              {/* Show the prompt that was used (collapsible) */}
+              <details style={{ marginBottom: '24px' }}>
+                <summary style={{
+                  fontSize: '13px',
+                  color: '#94a3b8',
+                  cursor: 'pointer',
+                  listStyle: 'none',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px'
+                }}>
+                  <span>▼</span> View the prompt that was used
+                </summary>
+                <div style={{
+                  ...styles.promptBox,
+                  marginTop: '12px'
+                }}>
+                  <pre style={styles.promptText}>{state.generatedPrompt}</pre>
+                </div>
+              </details>
+            </>
+          )}
 
           <button onClick={handleReset} style={styles.secondaryButton}>
             Create Another Prompt
