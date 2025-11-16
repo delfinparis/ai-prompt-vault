@@ -2062,19 +2062,19 @@ const styles: Record<string, React.CSSProperties> = {
     minHeight: '100vh',
     background: 'linear-gradient(135deg, #0a0f1e 0%, #1e293b 100%)', // Darker for better contrast
     color: '#f8fafc', // Increased from #f1f5f9 for AAA contrast (15.2:1)
-    padding: '12px', // Reduced from 20px to maximize viewport
+    padding: '8px', // Reduced from 12px for MacBook Air 13"
     fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Roboto, sans-serif',
-    lineHeight: 1.6, // Improved from browser default
+    lineHeight: 1.5, // Reduced from 1.6
   },
   header: {
     textAlign: 'center',
-    marginBottom: '24px', // Reduced from 48px
-    paddingTop: '16px' // Reduced from 40px
+    marginBottom: '12px', // Reduced from 24px
+    paddingTop: '8px' // Reduced from 16px
   },
   logo: {
-    fontSize: '28px', // Reduced from 36px to save space
+    fontSize: '24px', // Reduced from 28px
     fontWeight: 'bold',
-    marginBottom: '8px', // Reduced from 12px
+    marginBottom: '4px', // Reduced from 8px
     lineHeight: 1.2,
     background: 'linear-gradient(135deg, #a78bfa 0%, #10b981 100%)', // Brighter purple for contrast
     WebkitBackgroundClip: 'text',
@@ -2082,32 +2082,32 @@ const styles: Record<string, React.CSSProperties> = {
     backgroundClip: 'text'
   },
   tagline: {
-    fontSize: '14px', // Reduced from 16px
+    fontSize: '13px', // Reduced from 14px
     color: '#d1d5db', // Increased from #94a3b8 for AAA contrast (10.1:1)
-    lineHeight: 1.5,
+    lineHeight: 1.4,
   },
   stepContainer: {
     maxWidth: '800px',
     margin: '0 auto'
   },
   title: {
-    fontSize: '24px', // Reduced from 32px
+    fontSize: '20px', // Reduced from 24px
     fontWeight: 'bold',
-    marginBottom: '24px', // Reduced from 48px
+    marginBottom: '12px', // Reduced from 24px
     textAlign: 'center',
     letterSpacing: '-0.01em', // Slightly tighter for headings
     lineHeight: 1.3,
     color: '#f8fafc', // Explicit AAA contrast
   },
   subtitle: {
-    fontSize: '14px', // Reduced from 16px
+    fontSize: '13px', // Reduced from 14px
     color: '#d1d5db', // Increased from #94a3b8 for AAA contrast (10.1:1)
-    marginBottom: '20px', // Reduced from 32px
+    marginBottom: '12px', // Reduced from 20px
     textAlign: 'center',
-    lineHeight: 1.6,
+    lineHeight: 1.5,
   },
   categorySection: {
-    marginBottom: '32px' // Reduced from 56px
+    marginBottom: '20px' // Reduced from 32px for MacBook Air 13"
   },
   categoryTitle: {
     fontSize: '14px', // Increased from 12px for minimum readability
@@ -2146,56 +2146,56 @@ const styles: Record<string, React.CSSProperties> = {
     background: 'transparent',
     border: 'none',
     color: '#d1d5db', // Increased from #94a3b8 for AAA contrast
-    fontSize: '16px',
+    fontSize: '14px',
     fontWeight: '600',
     cursor: 'pointer',
-    padding: '12px 0', // Increased from 8px for 48px touch target
-    marginBottom: '24px',
-    minHeight: '48px', // Explicit touch target
+    padding: '8px 0',
+    marginBottom: '12px', // Reduced from 24px
+    minHeight: '40px',
     display: 'flex',
     alignItems: 'center',
     outline: 'none', // Will add custom focus state
   },
   input: {
     width: '100%',
-    padding: '16px',
+    padding: '12px 14px', // Reduced from 16px
     fontSize: '16px',
     background: 'rgba(21, 27, 46, 0.8)',
     border: '2px solid #334155',
     borderRadius: '12px',
     color: '#f8fafc', // AAA contrast
-    marginBottom: '24px',
+    marginBottom: '16px', // Reduced from 24px
     boxSizing: 'border-box',
-    lineHeight: 1.5,
-    minHeight: '56px', // Improved touch target
+    lineHeight: 1.4,
+    minHeight: '48px', // Reduced from 56px
     outline: 'none', // Will add custom focus state
   },
   textarea: {
     width: '100%',
-    padding: '16px',
+    padding: '12px 14px', // Reduced from 16px
     fontSize: '16px',
     background: 'rgba(21, 27, 46, 0.8)',
     border: '2px solid #334155',
     borderRadius: '12px',
     color: '#f8fafc', // AAA contrast
-    marginBottom: '24px',
+    marginBottom: '16px', // Reduced from 24px
     resize: 'vertical',
     fontFamily: 'inherit',
     boxSizing: 'border-box',
-    lineHeight: 1.6,
-    minHeight: '120px',
+    lineHeight: 1.5,
+    minHeight: '100px', // Reduced from 120px
     outline: 'none', // Will add custom focus state
   },
   selectOption: {
     background: 'rgba(21, 27, 46, 0.8)',
     border: '2px solid #334155',
     borderRadius: '12px',
-    padding: '20px', // Increased from 16px for better touch target
+    padding: '14px', // Reduced from 20px
     cursor: 'pointer',
     transition: 'all 0.2s',
     textAlign: 'center',
     color: '#f8fafc', // AAA contrast
-    minHeight: '56px', // Explicit touch target
+    minHeight: '48px', // Reduced from 56px
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'center',
@@ -2222,55 +2222,55 @@ const styles: Record<string, React.CSSProperties> = {
   },
   primaryButton: {
     width: '100%',
-    padding: '18px 24px',
-    fontSize: '17px', // Optimized for mobile readability
+    padding: '14px 20px', // Reduced from 18px 24px
+    fontSize: '16px', // Reduced from 17px
     fontWeight: '600', // Slightly reduced from bold for better readability
     borderRadius: '12px',
     border: 'none',
     color: '#ffffff',
     cursor: 'pointer',
-    minHeight: '56px',
+    minHeight: '48px', // Reduced from 56px
     transition: 'all 0.2s',
-    lineHeight: 1.4,
+    lineHeight: 1.3,
     letterSpacing: '0.01em',
     outline: 'none', // Will add custom focus state
     boxShadow: '0 2px 12px rgba(139, 92, 246, 0.3)', // Adds depth
   },
   secondaryButton: {
     width: '100%',
-    padding: '18px', // Increased from 16px for better touch target
-    fontSize: '16px',
+    padding: '14px', // Reduced from 18px
+    fontSize: '15px', // Reduced from 16px
     fontWeight: '600',
     borderRadius: '12px',
     border: '2px solid #475569',
     background: 'transparent',
     color: '#d1d5db', // Improved from #cbd5e1 for better contrast
     cursor: 'pointer',
-    marginTop: '16px',
-    minHeight: '56px',
-    lineHeight: 1.4,
+    marginTop: '12px', // Reduced from 16px
+    minHeight: '48px', // Reduced from 56px
+    lineHeight: 1.3,
     outline: 'none', // Will add custom focus state
   },
   ctaBox: {
     background: 'rgba(16, 185, 129, 0.1)',
     border: '2px solid #10b981',
-    borderRadius: '16px',
-    padding: '24px',
-    marginBottom: '24px',
+    borderRadius: '12px', // Reduced from 16px
+    padding: '16px', // Reduced from 24px
+    marginBottom: '16px', // Reduced from 24px
     textAlign: 'center'
   },
   historyButton: {
     background: 'rgba(139, 92, 246, 0.15)',
     border: '2px solid #a78bfa', // Increased border visibility
     borderRadius: '10px',
-    padding: '12px 20px', // Increased for 48px touch target
-    fontSize: '15px', // Increased from 14px
+    padding: '10px 16px', // Reduced from 12px 20px
+    fontSize: '14px', // Reduced from 15px
     fontWeight: '600',
     color: '#c4b5fd', // Brighter for better contrast
     cursor: 'pointer',
-    marginTop: '16px',
+    marginTop: '12px', // Reduced from 16px
     transition: 'all 0.2s',
-    minHeight: '48px',
+    minHeight: '44px', // Reduced from 48px
     lineHeight: 1.4,
     outline: 'none', // Will add custom focus state
   },
@@ -2278,20 +2278,20 @@ const styles: Record<string, React.CSSProperties> = {
     background: 'rgba(21, 27, 46, 0.8)',
     border: '1px solid #334155',
     borderRadius: '12px',
-    padding: '20px', // Increased from 16px
+    padding: '14px', // Reduced from 20px
     boxShadow: '0 2px 8px rgba(0, 0, 0, 0.12)',
   },
   historyRestoreButton: {
     background: 'linear-gradient(135deg, #a78bfa 0%, #8b5cf6 100%)', // Brighter gradient
     border: 'none',
     borderRadius: '8px',
-    padding: '12px 20px', // Increased for 48px touch target
-    fontSize: '15px', // Increased from 14px
+    padding: '10px 16px', // Reduced from 12px 20px
+    fontSize: '14px', // Reduced from 15px
     fontWeight: '600',
     color: '#ffffff',
     cursor: 'pointer',
     transition: 'all 0.2s',
-    minHeight: '48px',
+    minHeight: '44px', // Reduced from 48px
     lineHeight: 1.4,
     outline: 'none', // Will add custom focus state
     boxShadow: '0 2px 8px rgba(139, 92, 246, 0.3)',
@@ -2300,14 +2300,14 @@ const styles: Record<string, React.CSSProperties> = {
     background: 'rgba(59, 130, 246, 0.12)',
     border: '2px solid #60a5fa', // Brighter blue for better visibility
     borderRadius: '12px',
-    padding: '20px', // Increased from 16px
-    marginBottom: '24px',
+    padding: '14px', // Reduced from 20px
+    marginBottom: '16px', // Reduced from 24px
     color: '#e5e7eb', // Improved contrast
-    lineHeight: 1.6,
+    lineHeight: 1.5, // Reduced from 1.6
   },
   exampleButton: {
     width: '100%',
-    padding: '10px',
+    padding: '8px', // Reduced from 10px
     fontSize: '13px',
     fontWeight: '600',
     background: 'rgba(16, 185, 129, 0.12)',
@@ -2315,9 +2315,9 @@ const styles: Record<string, React.CSSProperties> = {
     borderRadius: '8px',
     color: '#10b981',
     cursor: 'pointer',
-    marginTop: '8px',
+    marginTop: '6px', // Reduced from 8px
     transition: 'all 0.2s',
-    minHeight: '40px',
+    minHeight: '36px', // Reduced from 40px
     lineHeight: 1.4,
     outline: 'none',
   },
@@ -2325,9 +2325,9 @@ const styles: Record<string, React.CSSProperties> = {
     background: 'rgba(21, 27, 46, 0.9)',
     border: '2px solid #10b981',
     borderRadius: '12px',
-    padding: '16px',
-    marginTop: '8px',
-    maxHeight: '400px',
+    padding: '12px', // Reduced from 16px
+    marginTop: '6px', // Reduced from 8px
+    maxHeight: '300px', // Reduced from 400px to save vertical space
     overflowY: 'auto',
   },
   exampleText: {
