@@ -434,25 +434,15 @@ function PromptCrafter() {
                         position: 'absolute' as const,
                         top: '8px',
                         right: '8px',
-                        fontSize: '16px',
+                        fontSize: '18px',
                         cursor: 'pointer',
-                        background: 'rgba(251, 191, 36, 0.15)',
-                        borderRadius: '50%',
-                        width: '28px',
-                        height: '28px',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
                         transition: 'all 0.2s',
-                        border: '1px solid rgba(251, 191, 36, 0.3)',
                         zIndex: 10
                       }}
                       onMouseEnter={(e) => {
-                        e.currentTarget.style.background = 'rgba(251, 191, 36, 0.3)';
-                        e.currentTarget.style.transform = 'scale(1.1)';
+                        e.currentTarget.style.transform = 'scale(1.15)';
                       }}
                       onMouseLeave={(e) => {
-                        e.currentTarget.style.background = 'rgba(251, 191, 36, 0.15)';
                         e.currentTarget.style.transform = 'scale(1)';
                       }}
                     >
@@ -462,10 +452,10 @@ function PromptCrafter() {
                   <div style={{ fontSize: '32px', marginBottom: '8px' }}>
                     {useCase.emoji}
                   </div>
-                  <div style={{ fontSize: '15px', fontWeight: '600', marginBottom: '4px', color: '#f1f5f9' }}>
+                  <div style={{ fontSize: '15px', fontWeight: '600', marginBottom: '4px', color: '#f1f5f9', textTransform: 'uppercase' as const }}>
                     {useCase.name}
                   </div>
-                  <div style={{ fontSize: '12px', color: '#94a3b8', marginBottom: '8px' }}>
+                  <div style={{ fontSize: '12px', color: '#94a3b8', marginBottom: '8px', textTransform: 'lowercase' as const }}>
                     {useCase.description}
                   </div>
                 </button>
@@ -495,25 +485,15 @@ function PromptCrafter() {
                         position: 'absolute' as const,
                         top: '8px',
                         right: '8px',
-                        fontSize: '16px',
+                        fontSize: '18px',
                         cursor: 'pointer',
-                        background: 'rgba(251, 191, 36, 0.15)',
-                        borderRadius: '50%',
-                        width: '28px',
-                        height: '28px',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
                         transition: 'all 0.2s',
-                        border: '1px solid rgba(251, 191, 36, 0.3)',
                         zIndex: 10
                       }}
                       onMouseEnter={(e) => {
-                        e.currentTarget.style.background = 'rgba(251, 191, 36, 0.3)';
-                        e.currentTarget.style.transform = 'scale(1.1)';
+                        e.currentTarget.style.transform = 'scale(1.15)';
                       }}
                       onMouseLeave={(e) => {
-                        e.currentTarget.style.background = 'rgba(251, 191, 36, 0.15)';
                         e.currentTarget.style.transform = 'scale(1)';
                       }}
                     >
@@ -523,10 +503,10 @@ function PromptCrafter() {
                   <div style={{ fontSize: '32px', marginBottom: '8px' }}>
                     {useCase.emoji}
                   </div>
-                  <div style={{ fontSize: '15px', fontWeight: '600', marginBottom: '4px', color: '#f1f5f9' }}>
+                  <div style={{ fontSize: '15px', fontWeight: '600', marginBottom: '4px', color: '#f1f5f9', textTransform: 'uppercase' as const }}>
                     {useCase.name}
                   </div>
-                  <div style={{ fontSize: '12px', color: '#94a3b8', marginBottom: '8px' }}>
+                  <div style={{ fontSize: '12px', color: '#94a3b8', marginBottom: '8px', textTransform: 'lowercase' as const }}>
                     {useCase.description}
                   </div>
                 </button>
@@ -556,25 +536,15 @@ function PromptCrafter() {
                         position: 'absolute' as const,
                         top: '8px',
                         right: '8px',
-                        fontSize: '16px',
+                        fontSize: '18px',
                         cursor: 'pointer',
-                        background: 'rgba(251, 191, 36, 0.15)',
-                        borderRadius: '50%',
-                        width: '28px',
-                        height: '28px',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
                         transition: 'all 0.2s',
-                        border: '1px solid rgba(251, 191, 36, 0.3)',
                         zIndex: 10
                       }}
                       onMouseEnter={(e) => {
-                        e.currentTarget.style.background = 'rgba(251, 191, 36, 0.3)';
-                        e.currentTarget.style.transform = 'scale(1.1)';
+                        e.currentTarget.style.transform = 'scale(1.15)';
                       }}
                       onMouseLeave={(e) => {
-                        e.currentTarget.style.background = 'rgba(251, 191, 36, 0.15)';
                         e.currentTarget.style.transform = 'scale(1)';
                       }}
                     >
@@ -584,10 +554,10 @@ function PromptCrafter() {
                   <div style={{ fontSize: '32px', marginBottom: '8px' }}>
                     {useCase.emoji}
                   </div>
-                  <div style={{ fontSize: '15px', fontWeight: '600', marginBottom: '4px', color: '#f1f5f9' }}>
+                  <div style={{ fontSize: '15px', fontWeight: '600', marginBottom: '4px', color: '#f1f5f9', textTransform: 'uppercase' as const }}>
                     {useCase.name}
                   </div>
-                  <div style={{ fontSize: '12px', color: '#94a3b8', marginBottom: '8px' }}>
+                  <div style={{ fontSize: '12px', color: '#94a3b8', marginBottom: '8px', textTransform: 'lowercase' as const }}>
                     {useCase.description}
                   </div>
                 </button>
