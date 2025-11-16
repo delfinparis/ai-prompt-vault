@@ -414,186 +414,174 @@ function PromptCrafter() {
 
           {/* CONTENT CREATION */}
           <div style={styles.categorySection}>
-            <h3 style={styles.categoryTitle}>Content Creation</h3>
+            <div style={{ ...styles.categoryHeader, position: 'relative' as const }}>
+              <h3 style={styles.categoryTitle}>Content Creation</h3>
+              <div
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setExpandedExample('content');
+                }}
+                style={{
+                  position: 'absolute' as const,
+                  top: '0',
+                  right: '0',
+                  fontSize: '18px',
+                  cursor: 'pointer',
+                  background: 'rgba(16, 185, 129, 0.15)',
+                  borderRadius: '50%',
+                  width: '32px',
+                  height: '32px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  transition: 'all 0.2s',
+                  border: '1px solid rgba(16, 185, 129, 0.3)'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = 'rgba(16, 185, 129, 0.25)';
+                  e.currentTarget.style.transform = 'scale(1.1)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = 'rgba(16, 185, 129, 0.15)';
+                  e.currentTarget.style.transform = 'scale(1)';
+                }}
+              >
+                👁️
+              </div>
+            </div>
             <div style={styles.useCaseGrid}>
               {USE_CASES.filter(u => u.category === 'content').map(useCase => (
-                <div key={useCase.id}>
-                  <button
-                    onClick={() => handleUseCaseSelect(useCase.id)}
-                    style={{
-                      ...styles.useCaseCard,
-                      position: 'relative' as const
-                    }}
-                  >
-                    <div style={{ fontSize: '32px', marginBottom: '8px' }}>
-                      {useCase.emoji}
-                    </div>
-                    <div style={{ fontSize: '15px', fontWeight: '600', marginBottom: '4px', color: '#f1f5f9' }}>
-                      {useCase.name}
-                    </div>
-                    <div style={{ fontSize: '12px', color: '#94a3b8', marginBottom: '8px' }}>
-                      {useCase.description}
-                    </div>
-                    {useCase.exampleOutput && (
-                      <div
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setExpandedExample(expandedExample === useCase.id ? null : useCase.id);
-                        }}
-                        style={{
-                          position: 'absolute' as const,
-                          top: '10px',
-                          right: '10px',
-                          fontSize: '18px',
-                          cursor: 'pointer',
-                          background: 'rgba(16, 185, 129, 0.15)',
-                          borderRadius: '50%',
-                          width: '32px',
-                          height: '32px',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          transition: 'all 0.2s',
-                          border: '1px solid rgba(16, 185, 129, 0.3)'
-                        }}
-                        onMouseEnter={(e) => {
-                          e.currentTarget.style.background = 'rgba(16, 185, 129, 0.25)';
-                          e.currentTarget.style.transform = 'scale(1.1)';
-                        }}
-                        onMouseLeave={(e) => {
-                          e.currentTarget.style.background = 'rgba(16, 185, 129, 0.15)';
-                          e.currentTarget.style.transform = 'scale(1)';
-                        }}
-                      >
-                        👁️
-                      </div>
-                    )}
-                  </button>
-                </div>
+                <button
+                  key={useCase.id}
+                  onClick={() => handleUseCaseSelect(useCase.id)}
+                  style={styles.useCaseCard}
+                >
+                  <div style={{ fontSize: '32px', marginBottom: '8px' }}>
+                    {useCase.emoji}
+                  </div>
+                  <div style={{ fontSize: '15px', fontWeight: '600', marginBottom: '4px', color: '#f1f5f9' }}>
+                    {useCase.name}
+                  </div>
+                  <div style={{ fontSize: '12px', color: '#94a3b8', marginBottom: '8px' }}>
+                    {useCase.description}
+                  </div>
+                </button>
               ))}
             </div>
           </div>
 
           {/* SALES & PROSPECTING */}
           <div style={styles.categorySection}>
-            <h3 style={styles.categoryTitle}>Sales & Prospecting</h3>
+            <div style={{ ...styles.categoryHeader, position: 'relative' as const }}>
+              <h3 style={styles.categoryTitle}>Sales & Prospecting</h3>
+              <div
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setExpandedExample('sales');
+                }}
+                style={{
+                  position: 'absolute' as const,
+                  top: '0',
+                  right: '0',
+                  fontSize: '18px',
+                  cursor: 'pointer',
+                  background: 'rgba(16, 185, 129, 0.15)',
+                  borderRadius: '50%',
+                  width: '32px',
+                  height: '32px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  transition: 'all 0.2s',
+                  border: '1px solid rgba(16, 185, 129, 0.3)'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = 'rgba(16, 185, 129, 0.25)';
+                  e.currentTarget.style.transform = 'scale(1.1)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = 'rgba(16, 185, 129, 0.15)';
+                  e.currentTarget.style.transform = 'scale(1)';
+                }}
+              >
+                👁️
+              </div>
+            </div>
             <div style={styles.useCaseGrid}>
               {USE_CASES.filter(u => u.category === 'sales').map(useCase => (
-                <div key={useCase.id}>
-                  <button
-                    onClick={() => handleUseCaseSelect(useCase.id)}
-                    style={{
-                      ...styles.useCaseCard,
-                      position: 'relative' as const
-                    }}
-                  >
-                    <div style={{ fontSize: '32px', marginBottom: '8px' }}>
-                      {useCase.emoji}
-                    </div>
-                    <div style={{ fontSize: '15px', fontWeight: '600', marginBottom: '4px', color: '#f1f5f9' }}>
-                      {useCase.name}
-                    </div>
-                    <div style={{ fontSize: '12px', color: '#94a3b8', marginBottom: '8px' }}>
-                      {useCase.description}
-                    </div>
-                    {useCase.exampleOutput && (
-                      <div
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setExpandedExample(expandedExample === useCase.id ? null : useCase.id);
-                        }}
-                        style={{
-                          position: 'absolute' as const,
-                          top: '10px',
-                          right: '10px',
-                          fontSize: '18px',
-                          cursor: 'pointer',
-                          background: 'rgba(16, 185, 129, 0.15)',
-                          borderRadius: '50%',
-                          width: '32px',
-                          height: '32px',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          transition: 'all 0.2s',
-                          border: '1px solid rgba(16, 185, 129, 0.3)'
-                        }}
-                        onMouseEnter={(e) => {
-                          e.currentTarget.style.background = 'rgba(16, 185, 129, 0.25)';
-                          e.currentTarget.style.transform = 'scale(1.1)';
-                        }}
-                        onMouseLeave={(e) => {
-                          e.currentTarget.style.background = 'rgba(16, 185, 129, 0.15)';
-                          e.currentTarget.style.transform = 'scale(1)';
-                        }}
-                      >
-                        👁️
-                      </div>
-                    )}
-                  </button>
-                </div>
+                <button
+                  key={useCase.id}
+                  onClick={() => handleUseCaseSelect(useCase.id)}
+                  style={styles.useCaseCard}
+                >
+                  <div style={{ fontSize: '32px', marginBottom: '8px' }}>
+                    {useCase.emoji}
+                  </div>
+                  <div style={{ fontSize: '15px', fontWeight: '600', marginBottom: '4px', color: '#f1f5f9' }}>
+                    {useCase.name}
+                  </div>
+                  <div style={{ fontSize: '12px', color: '#94a3b8', marginBottom: '8px' }}>
+                    {useCase.description}
+                  </div>
+                </button>
               ))}
             </div>
           </div>
 
           {/* CLIENT SERVICE */}
           <div style={styles.categorySection}>
-            <h3 style={styles.categoryTitle}>Client Service</h3>
+            <div style={{ ...styles.categoryHeader, position: 'relative' as const }}>
+              <h3 style={styles.categoryTitle}>Client Service</h3>
+              <div
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setExpandedExample('service');
+                }}
+                style={{
+                  position: 'absolute' as const,
+                  top: '0',
+                  right: '0',
+                  fontSize: '18px',
+                  cursor: 'pointer',
+                  background: 'rgba(16, 185, 129, 0.15)',
+                  borderRadius: '50%',
+                  width: '32px',
+                  height: '32px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  transition: 'all 0.2s',
+                  border: '1px solid rgba(16, 185, 129, 0.3)'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = 'rgba(16, 185, 129, 0.25)';
+                  e.currentTarget.style.transform = 'scale(1.1)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = 'rgba(16, 185, 129, 0.15)';
+                  e.currentTarget.style.transform = 'scale(1)';
+                }}
+              >
+                👁️
+              </div>
+            </div>
             <div style={styles.useCaseGrid}>
               {USE_CASES.filter(u => u.category === 'service').map(useCase => (
-                <div key={useCase.id}>
-                  <button
-                    onClick={() => handleUseCaseSelect(useCase.id)}
-                    style={{
-                      ...styles.useCaseCard,
-                      position: 'relative' as const
-                    }}
-                  >
-                    <div style={{ fontSize: '32px', marginBottom: '8px' }}>
-                      {useCase.emoji}
-                    </div>
-                    <div style={{ fontSize: '15px', fontWeight: '600', marginBottom: '4px', color: '#f1f5f9' }}>
-                      {useCase.name}
-                    </div>
-                    <div style={{ fontSize: '12px', color: '#94a3b8', marginBottom: '8px' }}>
-                      {useCase.description}
-                    </div>
-                    {useCase.exampleOutput && (
-                      <div
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setExpandedExample(expandedExample === useCase.id ? null : useCase.id);
-                        }}
-                        style={{
-                          position: 'absolute' as const,
-                          top: '10px',
-                          right: '10px',
-                          fontSize: '18px',
-                          cursor: 'pointer',
-                          background: 'rgba(16, 185, 129, 0.15)',
-                          borderRadius: '50%',
-                          width: '32px',
-                          height: '32px',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          transition: 'all 0.2s',
-                          border: '1px solid rgba(16, 185, 129, 0.3)'
-                        }}
-                        onMouseEnter={(e) => {
-                          e.currentTarget.style.background = 'rgba(16, 185, 129, 0.25)';
-                          e.currentTarget.style.transform = 'scale(1.1)';
-                        }}
-                        onMouseLeave={(e) => {
-                          e.currentTarget.style.background = 'rgba(16, 185, 129, 0.15)';
-                          e.currentTarget.style.transform = 'scale(1)';
-                        }}
-                      >
-                        👁️
-                      </div>
-                    )}
-                  </button>
-                </div>
+                <button
+                  key={useCase.id}
+                  onClick={() => handleUseCaseSelect(useCase.id)}
+                  style={styles.useCaseCard}
+                >
+                  <div style={{ fontSize: '32px', marginBottom: '8px' }}>
+                    {useCase.emoji}
+                  </div>
+                  <div style={{ fontSize: '15px', fontWeight: '600', marginBottom: '4px', color: '#f1f5f9' }}>
+                    {useCase.name}
+                  </div>
+                  <div style={{ fontSize: '12px', color: '#94a3b8', marginBottom: '8px' }}>
+                    {useCase.description}
+                  </div>
+                </button>
               ))}
             </div>
           </div>
@@ -667,19 +655,48 @@ function PromptCrafter() {
               📝 Example Output
             </div>
 
-            {USE_CASES.find(uc => uc.id === expandedExample)?.exampleOutput && (
-              <pre style={{
-                fontSize: '14px',
-                lineHeight: '1.7',
-                color: '#e5e7eb',
-                margin: 0,
-                whiteSpace: 'pre-wrap',
-                fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Roboto, sans-serif',
-                letterSpacing: '0.01em',
-              }}>
-                {USE_CASES.find(uc => uc.id === expandedExample)?.exampleOutput}
-              </pre>
-            )}
+            {(() => {
+              // If expandedExample is a category, show first use case with example from that category
+              const categoryMap: Record<string, string> = { content: 'content', sales: 'sales', service: 'service' };
+              if (categoryMap[expandedExample as string]) {
+                const firstWithExample = USE_CASES.find(uc =>
+                  uc.category === expandedExample && uc.exampleOutput
+                );
+                if (firstWithExample?.exampleOutput) {
+                  return (
+                    <pre style={{
+                      fontSize: '14px',
+                      lineHeight: '1.7',
+                      color: '#e5e7eb',
+                      margin: 0,
+                      whiteSpace: 'pre-wrap',
+                      fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Roboto, sans-serif',
+                      letterSpacing: '0.01em',
+                    }}>
+                      {firstWithExample.exampleOutput}
+                    </pre>
+                  );
+                }
+              }
+              // Otherwise show individual use case example
+              const useCase = USE_CASES.find(uc => uc.id === expandedExample);
+              if (useCase?.exampleOutput) {
+                return (
+                  <pre style={{
+                    fontSize: '14px',
+                    lineHeight: '1.7',
+                    color: '#e5e7eb',
+                    margin: 0,
+                    whiteSpace: 'pre-wrap',
+                    fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Roboto, sans-serif',
+                    letterSpacing: '0.01em',
+                  }}>
+                    {useCase.exampleOutput}
+                  </pre>
+                );
+              }
+              return null;
+            })()}
           </div>
         </div>
       )}
@@ -2247,13 +2264,16 @@ const styles: Record<string, React.CSSProperties> = {
   categorySection: {
     marginBottom: '20px' // Reduced from 32px for MacBook Air 13"
   },
+  categoryHeader: {
+    marginBottom: '16px',
+  },
   categoryTitle: {
     fontSize: '14px', // Increased from 12px for minimum readability
     fontWeight: '600',
     textTransform: 'uppercase',
     letterSpacing: '0.05em', // Improved from 1px for better readability
     color: '#9ca3af', // Increased from #64748b for AA contrast (7.8:1)
-    marginBottom: '16px',
+    marginBottom: '0', // Remove margin since header handles spacing
     paddingLeft: '4px',
     lineHeight: 1.4,
   },
