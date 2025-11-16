@@ -791,6 +791,12 @@ function QuestionFlow({
           type="text"
           value={answers[currentQuestion.id] || ''}
           onChange={(e) => onAnswer(currentQuestion.id, e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' && canContinue) {
+              e.preventDefault();
+              isLastQuestion ? onGenerate() : onNext();
+            }
+          }}
           placeholder={'placeholder' in currentQuestion ? currentQuestion.placeholder : ''}
           style={styles.input}
           autoFocus
@@ -801,6 +807,13 @@ function QuestionFlow({
         <textarea
           value={answers[currentQuestion.id] || ''}
           onChange={(e) => onAnswer(currentQuestion.id, e.target.value)}
+          onKeyDown={(e) => {
+            // Ctrl+Enter or Cmd+Enter to submit
+            if ((e.ctrlKey || e.metaKey) && e.key === 'Enter' && canContinue) {
+              e.preventDefault();
+              isLastQuestion ? onGenerate() : onNext();
+            }
+          }}
           placeholder={'placeholder' in currentQuestion ? currentQuestion.placeholder : ''}
           style={styles.textarea}
           rows={4}
@@ -810,10 +823,17 @@ function QuestionFlow({
 
       {currentQuestion.type === 'select' && 'options' in currentQuestion && currentQuestion.options && (
         <div style={{ display: 'grid', gap: '12px' }}>
-          {currentQuestion.options.map(option => (
+          {currentQuestion.options.map((option, index) => (
             <button
               key={option.value}
               onClick={() => onAnswer(currentQuestion.id, option.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  onAnswer(currentQuestion.id, option.value);
+                }
+              }}
+              autoFocus={index === 0}
               style={{
                 ...styles.selectOption,
                 borderColor: answers[currentQuestion.id] === option.value ? '#10b981' : '#334155',
