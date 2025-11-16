@@ -414,48 +414,51 @@ function PromptCrafter() {
 
           {/* CONTENT CREATION */}
           <div style={styles.categorySection}>
-            <div style={{ ...styles.categoryHeader, position: 'relative' as const }}>
+            <div style={styles.categoryHeader}>
               <h3 style={styles.categoryTitle}>Content Creation</h3>
-              <div
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setExpandedExample('content');
-                }}
-                style={{
-                  position: 'absolute' as const,
-                  top: '0',
-                  right: '0',
-                  fontSize: '18px',
-                  cursor: 'pointer',
-                  background: 'rgba(251, 191, 36, 0.15)',
-                  borderRadius: '50%',
-                  width: '32px',
-                  height: '32px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  transition: 'all 0.2s',
-                  border: '1px solid rgba(251, 191, 36, 0.3)'
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.background = 'rgba(251, 191, 36, 0.25)';
-                  e.currentTarget.style.transform = 'scale(1.1)';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.background = 'rgba(251, 191, 36, 0.15)';
-                  e.currentTarget.style.transform = 'scale(1)';
-                }}
-              >
-                💡
-              </div>
             </div>
             <div style={styles.useCaseGrid}>
               {USE_CASES.filter(u => u.category === 'content').map(useCase => (
                 <button
                   key={useCase.id}
                   onClick={() => handleUseCaseSelect(useCase.id)}
-                  style={styles.useCaseCard}
+                  style={{ ...styles.useCaseCard, position: 'relative' as const }}
                 >
+                  {useCase.exampleOutput && (
+                    <div
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setExpandedExample(useCase.id);
+                      }}
+                      style={{
+                        position: 'absolute' as const,
+                        top: '8px',
+                        right: '8px',
+                        fontSize: '16px',
+                        cursor: 'pointer',
+                        background: 'rgba(251, 191, 36, 0.15)',
+                        borderRadius: '50%',
+                        width: '28px',
+                        height: '28px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        transition: 'all 0.2s',
+                        border: '1px solid rgba(251, 191, 36, 0.3)',
+                        zIndex: 10
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.background = 'rgba(251, 191, 36, 0.3)';
+                        e.currentTarget.style.transform = 'scale(1.1)';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.background = 'rgba(251, 191, 36, 0.15)';
+                        e.currentTarget.style.transform = 'scale(1)';
+                      }}
+                    >
+                      💡
+                    </div>
+                  )}
                   <div style={{ fontSize: '32px', marginBottom: '8px' }}>
                     {useCase.emoji}
                   </div>
@@ -472,48 +475,51 @@ function PromptCrafter() {
 
           {/* SALES & PROSPECTING */}
           <div style={styles.categorySection}>
-            <div style={{ ...styles.categoryHeader, position: 'relative' as const }}>
+            <div style={styles.categoryHeader}>
               <h3 style={styles.categoryTitle}>Sales & Prospecting</h3>
-              <div
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setExpandedExample('sales');
-                }}
-                style={{
-                  position: 'absolute' as const,
-                  top: '0',
-                  right: '0',
-                  fontSize: '18px',
-                  cursor: 'pointer',
-                  background: 'rgba(251, 191, 36, 0.15)',
-                  borderRadius: '50%',
-                  width: '32px',
-                  height: '32px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  transition: 'all 0.2s',
-                  border: '1px solid rgba(251, 191, 36, 0.3)'
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.background = 'rgba(251, 191, 36, 0.25)';
-                  e.currentTarget.style.transform = 'scale(1.1)';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.background = 'rgba(251, 191, 36, 0.15)';
-                  e.currentTarget.style.transform = 'scale(1)';
-                }}
-              >
-                💡
-              </div>
             </div>
             <div style={styles.useCaseGrid}>
               {USE_CASES.filter(u => u.category === 'sales').map(useCase => (
                 <button
                   key={useCase.id}
                   onClick={() => handleUseCaseSelect(useCase.id)}
-                  style={styles.useCaseCard}
+                  style={{ ...styles.useCaseCard, position: 'relative' as const }}
                 >
+                  {useCase.exampleOutput && (
+                    <div
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setExpandedExample(useCase.id);
+                      }}
+                      style={{
+                        position: 'absolute' as const,
+                        top: '8px',
+                        right: '8px',
+                        fontSize: '16px',
+                        cursor: 'pointer',
+                        background: 'rgba(251, 191, 36, 0.15)',
+                        borderRadius: '50%',
+                        width: '28px',
+                        height: '28px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        transition: 'all 0.2s',
+                        border: '1px solid rgba(251, 191, 36, 0.3)',
+                        zIndex: 10
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.background = 'rgba(251, 191, 36, 0.3)';
+                        e.currentTarget.style.transform = 'scale(1.1)';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.background = 'rgba(251, 191, 36, 0.15)';
+                        e.currentTarget.style.transform = 'scale(1)';
+                      }}
+                    >
+                      💡
+                    </div>
+                  )}
                   <div style={{ fontSize: '32px', marginBottom: '8px' }}>
                     {useCase.emoji}
                   </div>
@@ -530,48 +536,51 @@ function PromptCrafter() {
 
           {/* CLIENT SERVICE */}
           <div style={styles.categorySection}>
-            <div style={{ ...styles.categoryHeader, position: 'relative' as const }}>
+            <div style={styles.categoryHeader}>
               <h3 style={styles.categoryTitle}>Client Service</h3>
-              <div
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setExpandedExample('service');
-                }}
-                style={{
-                  position: 'absolute' as const,
-                  top: '0',
-                  right: '0',
-                  fontSize: '18px',
-                  cursor: 'pointer',
-                  background: 'rgba(251, 191, 36, 0.15)',
-                  borderRadius: '50%',
-                  width: '32px',
-                  height: '32px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  transition: 'all 0.2s',
-                  border: '1px solid rgba(251, 191, 36, 0.3)'
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.background = 'rgba(251, 191, 36, 0.25)';
-                  e.currentTarget.style.transform = 'scale(1.1)';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.background = 'rgba(251, 191, 36, 0.15)';
-                  e.currentTarget.style.transform = 'scale(1)';
-                }}
-              >
-                💡
-              </div>
             </div>
             <div style={styles.useCaseGrid}>
               {USE_CASES.filter(u => u.category === 'service').map(useCase => (
                 <button
                   key={useCase.id}
                   onClick={() => handleUseCaseSelect(useCase.id)}
-                  style={styles.useCaseCard}
+                  style={{ ...styles.useCaseCard, position: 'relative' as const }}
                 >
+                  {useCase.exampleOutput && (
+                    <div
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setExpandedExample(useCase.id);
+                      }}
+                      style={{
+                        position: 'absolute' as const,
+                        top: '8px',
+                        right: '8px',
+                        fontSize: '16px',
+                        cursor: 'pointer',
+                        background: 'rgba(251, 191, 36, 0.15)',
+                        borderRadius: '50%',
+                        width: '28px',
+                        height: '28px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        transition: 'all 0.2s',
+                        border: '1px solid rgba(251, 191, 36, 0.3)',
+                        zIndex: 10
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.background = 'rgba(251, 191, 36, 0.3)';
+                        e.currentTarget.style.transform = 'scale(1.1)';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.background = 'rgba(251, 191, 36, 0.15)';
+                        e.currentTarget.style.transform = 'scale(1)';
+                      }}
+                    >
+                      💡
+                    </div>
+                  )}
                   <div style={{ fontSize: '32px', marginBottom: '8px' }}>
                     {useCase.emoji}
                   </div>
