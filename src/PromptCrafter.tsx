@@ -427,7 +427,7 @@ function PromptCrafter() {
                   right: '0',
                   fontSize: '18px',
                   cursor: 'pointer',
-                  background: 'rgba(16, 185, 129, 0.15)',
+                  background: 'rgba(251, 191, 36, 0.15)',
                   borderRadius: '50%',
                   width: '32px',
                   height: '32px',
@@ -435,18 +435,18 @@ function PromptCrafter() {
                   alignItems: 'center',
                   justifyContent: 'center',
                   transition: 'all 0.2s',
-                  border: '1px solid rgba(16, 185, 129, 0.3)'
+                  border: '1px solid rgba(251, 191, 36, 0.3)'
                 }}
                 onMouseEnter={(e) => {
-                  e.currentTarget.style.background = 'rgba(16, 185, 129, 0.25)';
+                  e.currentTarget.style.background = 'rgba(251, 191, 36, 0.25)';
                   e.currentTarget.style.transform = 'scale(1.1)';
                 }}
                 onMouseLeave={(e) => {
-                  e.currentTarget.style.background = 'rgba(16, 185, 129, 0.15)';
+                  e.currentTarget.style.background = 'rgba(251, 191, 36, 0.15)';
                   e.currentTarget.style.transform = 'scale(1)';
                 }}
               >
-                👁️
+                💡
               </div>
             </div>
             <div style={styles.useCaseGrid}>
@@ -485,7 +485,7 @@ function PromptCrafter() {
                   right: '0',
                   fontSize: '18px',
                   cursor: 'pointer',
-                  background: 'rgba(16, 185, 129, 0.15)',
+                  background: 'rgba(251, 191, 36, 0.15)',
                   borderRadius: '50%',
                   width: '32px',
                   height: '32px',
@@ -493,18 +493,18 @@ function PromptCrafter() {
                   alignItems: 'center',
                   justifyContent: 'center',
                   transition: 'all 0.2s',
-                  border: '1px solid rgba(16, 185, 129, 0.3)'
+                  border: '1px solid rgba(251, 191, 36, 0.3)'
                 }}
                 onMouseEnter={(e) => {
-                  e.currentTarget.style.background = 'rgba(16, 185, 129, 0.25)';
+                  e.currentTarget.style.background = 'rgba(251, 191, 36, 0.25)';
                   e.currentTarget.style.transform = 'scale(1.1)';
                 }}
                 onMouseLeave={(e) => {
-                  e.currentTarget.style.background = 'rgba(16, 185, 129, 0.15)';
+                  e.currentTarget.style.background = 'rgba(251, 191, 36, 0.15)';
                   e.currentTarget.style.transform = 'scale(1)';
                 }}
               >
-                👁️
+                💡
               </div>
             </div>
             <div style={styles.useCaseGrid}>
@@ -543,7 +543,7 @@ function PromptCrafter() {
                   right: '0',
                   fontSize: '18px',
                   cursor: 'pointer',
-                  background: 'rgba(16, 185, 129, 0.15)',
+                  background: 'rgba(251, 191, 36, 0.15)',
                   borderRadius: '50%',
                   width: '32px',
                   height: '32px',
@@ -551,18 +551,18 @@ function PromptCrafter() {
                   alignItems: 'center',
                   justifyContent: 'center',
                   transition: 'all 0.2s',
-                  border: '1px solid rgba(16, 185, 129, 0.3)'
+                  border: '1px solid rgba(251, 191, 36, 0.3)'
                 }}
                 onMouseEnter={(e) => {
-                  e.currentTarget.style.background = 'rgba(16, 185, 129, 0.25)';
+                  e.currentTarget.style.background = 'rgba(251, 191, 36, 0.25)';
                   e.currentTarget.style.transform = 'scale(1.1)';
                 }}
                 onMouseLeave={(e) => {
-                  e.currentTarget.style.background = 'rgba(16, 185, 129, 0.15)';
+                  e.currentTarget.style.background = 'rgba(251, 191, 36, 0.15)';
                   e.currentTarget.style.transform = 'scale(1)';
                 }}
               >
-                👁️
+                💡
               </div>
             </div>
             <div style={styles.useCaseGrid}>
