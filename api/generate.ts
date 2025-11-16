@@ -7,6 +7,34 @@ import type { VercelRequest, VercelResponse } from '@vercel/node';
     // Fix for Vercel: ensure body is parsed as JSON
     if (typeof req.body === 'string') {
       try {
+          // Final audit and refinement for AI prompt
+          function auditAndRefinePrompt(prompt: string, inputs: any): string {
+            // 1. Ensure all required fields are present
+            if (!prompt.includes('role')) {
+              prompt = `Role: ${inputs.role || 'real estate agent'}\n` + prompt;
+            }
+            if (!prompt.includes('deliverable')) {
+              prompt += `\nDeliverable: ${inputs.deliverable || 'See above.'}`;
+            }
+            // 2. Enforce clarity and specificity
+            prompt = prompt.replace(/(just|some|a bit|maybe|sort of)/gi, '');
+            // 3. Personalize
+            if (inputs.market && !prompt.includes(inputs.market)) {
+              prompt += `\nMarket: ${inputs.market}`;
+            }
+            if (inputs.tone && !prompt.includes(inputs.tone)) {
+              prompt += `\nTone: ${inputs.tone}`;
+            }
+            if (inputs.targetAudience && !prompt.includes(inputs.targetAudience)) {
+              prompt += `\nAudience: ${inputs.targetAudience}`;
+            }
+            // 4. Remove ambiguity
+            prompt = prompt.replace(/(thing|stuff|something|anything)/gi, '');
+            // 5. Format for OpenAI
+            prompt = prompt.replace(/\n{2,}/g, '\n');
+            prompt = prompt.trim();
+            return prompt;
+          }
         req.body = JSON.parse(req.body);
       } catch (err) {
         return res.status(400).json({ error: 'Invalid JSON in request body' });

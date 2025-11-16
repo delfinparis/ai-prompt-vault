@@ -11,15 +11,15 @@ Quick guide to enable event tracking for the AI Prompt Vault wizard and library.
 ### Setup (5 minutes)
 
 1. **Create account:** https://plausible.io
-2. **Add site:** `app.ai-prompt-vault.vercel.app`
+2. **Add site:** `ai-prompt-vault-two.vercel.app`
 3. **Uncomment script** in `public/index.html`:
 
 ```html
 <!-- Change this line: -->
-<!-- <script defer data-domain="app.ai-prompt-vault.vercel.app" src="https://plausible.io/js/script.js"></script> -->
+<!-- <script defer data-domain="ai-prompt-vault-two.vercel.app" src="https://plausible.io/js/script.js"></script> -->
 
 <!-- To: -->
-<script defer data-domain="app.ai-prompt-vault.vercel.app" src="https://plausible.io/js/script.js"></script>
+<script defer data-domain="ai-prompt-vault-two.vercel.app" src="https://plausible.io/js/script.js"></script>
 ```
 
 4. **Deploy** and events auto-send via `trackEvent()` helper

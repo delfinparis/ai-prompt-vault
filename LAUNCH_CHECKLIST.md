@@ -30,7 +30,7 @@ Your step-by-step playbook to launch both the web app and GPT in the ChatGPT sto
   **Option A: Plausible (recommended)**
   ```bash
   # 1. Sign up at https://plausible.io
-  # 2. Add site: app.ai-prompt-vault.vercel.app
+  # 2. Add site: ai-prompt-vault-two.vercel.app
   # 3. Uncomment line 17 in public/index.html
   # 4. Commit and push
   ```
@@ -43,12 +43,12 @@ Your step-by-step playbook to launch both the web app and GPT in the ChatGPT sto
 
 - [ ] **Assign subdomain** in Vercel
   - Go to: Project Settings → Domains
-  - Add: `app.ai-prompt-vault.vercel.app` (or your custom domain)
+  - Add: `ai-prompt-vault-two.vercel.app` (or your custom domain)
   - Wait for DNS propagation (~5 min)
 
 - [ ] **Test wizard flow** (incognito window)
   ```
-  1. Visit app.ai-prompt-vault.vercel.app
+  1. Visit ai-prompt-vault-two.vercel.app
   2. Wizard opens by default (first-time user)
   3. Select "Lead Generation" challenge
   4. Fill in: Market = "Austin, TX", Channel = "Instagram"

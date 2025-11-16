@@ -265,7 +265,7 @@ export default function AIPromptVault() {
   const [activeCollection, setActiveCollection] = useState<string | null>(null);
   const [customPrompts, setCustomPrompts] = useState<PromptItem[]>([]);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
-  
+
   // Wizard state (lightweight 3-step flow)
   const [wizardOpen, setWizardOpen] = useState<boolean>(() => {
     try {

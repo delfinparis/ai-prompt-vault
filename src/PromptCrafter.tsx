@@ -181,6 +181,11 @@ function PromptCrafter() {
     }
   }, [history]);
 
+  // Scroll to top whenever step changes or history view toggles
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, [state.step, showHistory]);
+
   const handleUseCaseSelect = (useCaseId: string) => {
     setState({ ...state, selectedUseCase: useCaseId, step: 1, answers: {} });
   };
