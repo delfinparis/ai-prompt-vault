@@ -344,9 +344,9 @@ function PromptCrafter() {
       <div style={styles.container}>
         {/* Header */}
         <div style={styles.header}>
-        <h1 style={styles.logo}>AI Prompt Vault</h1>
+        <h1 style={styles.logo}>AI PROMPT VAULT</h1>
         <p style={styles.tagline}>
-          Creates optimized prompts for ChatGPT, Claude & other AI assistants
+          creates optimized prompts for chatgpt, claude & other ai assistants
         </p>
         {history.length > 0 && !showHistory && (
           <button
@@ -410,7 +410,7 @@ function PromptCrafter() {
       {/* Step 0: Use Case Selection - Categorized */}
       {!showHistory && state.step === 0 && (
         <div style={styles.stepContainer}>
-          <h2 style={styles.title}>What do you need help with?</h2>
+          <h2 style={styles.title}>WHAT DO YOU NEED HELP WITH?</h2>
 
           {/* CONTENT CREATION */}
           <div style={styles.categorySection}>
@@ -2270,10 +2270,10 @@ const styles: Record<string, React.CSSProperties> = {
     transition: 'all 0.2s ease',
     textAlign: 'center',
     color: '#f8fafc', // AAA contrast
-    minHeight: '120px', // Reduced from 156px to fit more on screen
+    height: '120px', // Fixed height for consistent alignment
     display: 'flex',
     flexDirection: 'column',
-    justifyContent: 'center',
+    justifyContent: 'flex-start', // Align from top for consistency
     alignItems: 'center',
     WebkitTapHighlightColor: 'transparent',
     boxShadow: '0 2px 8px rgba(0, 0, 0, 0.12)', // Adds depth perception
