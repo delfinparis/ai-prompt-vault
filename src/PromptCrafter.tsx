@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { analytics } from './utils/analytics';
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // TYPES
@@ -236,6 +237,16 @@ function PromptCrafter() {
 
   const handleUseCaseSelect = (useCaseId: string) => {
     setState({ ...state, selectedUseCase: useCaseId, step: 1, answers: {} });
+
+    // Track when user starts
+    analytics.track('PromptCrafter_Started', {
+      useCase: useCaseId,
+      timestamp: Date.now()
+    });
+
+    // Store start time for duration tracking
+    analytics.setSessionData(`${useCaseId}_startTime`, Date.now());
+    analytics.setSessionData(`${useCaseId}_initialDefaults`, {});
   };
 
   const handleAnswer = (questionId: string, value: string) => {
@@ -243,6 +254,21 @@ function PromptCrafter() {
       ...state,
       answers: { ...state.answers, [questionId]: value }
     });
+
+    // Track if user modified a default value
+    if (state.selectedUseCase) {
+      const questions = getQuestionsForUseCase(state.selectedUseCase);
+      const question = questions.find(q => q.id === questionId);
+
+      if (question?.defaultValue && value !== question.defaultValue) {
+        analytics.track('Default_Modified', {
+          useCase: state.selectedUseCase,
+          questionId: questionId,
+          defaultValue: question.defaultValue,
+          userValue: value
+        });
+      }
+    }
   };
 
   const handleGeneratePrompt = () => {
@@ -299,6 +325,26 @@ function PromptCrafter() {
       setShowCelebration(true);
       setTimeout(() => setShowCelebration(false), 3000);
 
+      // Track completion
+      const startTime = analytics.getSessionData(`${state.selectedUseCase}_startTime`);
+      const duration = startTime ? Date.now() - startTime : 0;
+      const defaultsChanged = countDefaultsChanged();
+
+      analytics.track('PromptCrafter_Completed', {
+        useCase: state.selectedUseCase!,
+        duration: duration,
+        defaultsChanged: defaultsChanged,
+        timestamp: Date.now()
+      });
+
+      analytics.track('AI_Generated', {
+        useCase: state.selectedUseCase!,
+        success: true
+      });
+
+      // Clear session data
+      analytics.clearSessionData(`${state.selectedUseCase}_startTime`);
+
       // Update history with AI output
       const updatedHistory = history.map(item =>
         item.id === history[0]?.id
@@ -309,9 +355,30 @@ function PromptCrafter() {
     } catch (error) {
       console.error('AI Generation error:', error);
       setGeneratedOutput('Unable to generate content. Please try copying the prompt to ChatGPT manually.');
+
+      analytics.track('AI_Generated', {
+        useCase: state.selectedUseCase!,
+        success: false
+      });
     } finally {
       setIsGenerating(false);
     }
+  };
+
+  // Helper function to count how many defaults were changed
+  const countDefaultsChanged = (): number => {
+    if (!state.selectedUseCase) return 0;
+
+    const questions = getQuestionsForUseCase(state.selectedUseCase);
+    let changed = 0;
+
+    questions.forEach(q => {
+      if (q.defaultValue && state.answers[q.id] && state.answers[q.id] !== q.defaultValue) {
+        changed++;
+      }
+    });
+
+    return changed;
   };
 
   const handleCopyPromptFromViewer = () => {
@@ -339,6 +406,19 @@ function PromptCrafter() {
   };
 
   const handleReset = () => {
+    // Track abandon if user resets before completing
+    if (state.selectedUseCase && state.step > 0 && state.step < 4 && !generatedOutput) {
+      const questions = getQuestionsForUseCase(state.selectedUseCase);
+      analytics.track('PromptCrafter_Abandoned', {
+        useCase: state.selectedUseCase,
+        stepReached: state.step,
+        totalSteps: questions.length + 1 // +1 for final generate step
+      });
+
+      // Clear session data
+      analytics.clearSessionData(`${state.selectedUseCase}_startTime`);
+    }
+
     setState({
       step: 0,
       selectedUseCase: null,
@@ -346,6 +426,7 @@ function PromptCrafter() {
       generatedPrompt: ''
     });
     setShowHistory(false);
+    setGeneratedOutput(null);
   };
 
   // ═══════════════════════════════════════════════════════════════════════════════
