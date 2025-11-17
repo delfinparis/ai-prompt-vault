@@ -315,11 +315,12 @@ function PromptCrafter() {
         })
       });
 
+      const data = await response.json();
+
       if (!response.ok) {
-        throw new Error('Generation failed');
+        throw new Error(data.error || 'Generation failed');
       }
 
-      const data = await response.json();
       setGeneratedOutput(data.output || data.result || 'No output received');
 
       // 🎉 CELEBRATION TIME!
