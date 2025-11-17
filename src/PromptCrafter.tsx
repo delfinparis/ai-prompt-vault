@@ -45,6 +45,7 @@ type Question = {
   subtitle?: string;
   placeholder?: string;
   options?: QuestionOption[];
+  defaultValue?: string; // NEW: Smart defaults for better UX
 };
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -186,6 +187,18 @@ function PromptCrafter() {
   const [loadingMessage, setLoadingMessage] = useState(0);
   const [copiedPromptFromViewer, setCopiedPromptFromViewer] = useState(false);
   const [showCelebration, setShowCelebration] = useState(false);
+
+  // Quick Mode state (NEW)
+  const [quickMode, setQuickMode] = useState(() => {
+    // Load Quick Mode preference from localStorage
+    const saved = localStorage.getItem('promptCrafterQuickMode');
+    return saved === null ? true : saved === 'true'; // Default to true
+  });
+
+  // Save Quick Mode preference
+  useEffect(() => {
+    localStorage.setItem('promptCrafterQuickMode', String(quickMode));
+  }, [quickMode]);
 
   // Load history from localStorage on mount
   useEffect(() => {
@@ -1133,6 +1146,15 @@ function QuestionFlow({
   const questions = getQuestionsForUseCase(useCaseId);
   const currentQuestion = questions[currentStep - 1];
 
+  // Auto-fill smart defaults when use case loads
+  useEffect(() => {
+    questions.forEach(q => {
+      if (q.defaultValue && !answers[q.id]) {
+        onAnswer(q.id, q.defaultValue);
+      }
+    });
+  }, [useCaseId]); // Only run when use case changes
+
   if (!currentQuestion) {
     return null;
   }
@@ -1235,26 +1257,64 @@ function QuestionFlow({
 // QUESTION DEFINITIONS
 // ═══════════════════════════════════════════════════════════════════════════════
 
+// Define which question IDs are "essential" for Quick Mode
+const ESSENTIAL_QUESTIONS: Record<string, string[]> = {
+  'market-report': ['market-location', 'audience', 'actionable-insight', 'specific-data'],
+  'social-content': ['topic', 'market-location', 'cta'],
+  'sphere-script': ['who', 'goal', 'relationship'],
+  'listing-description': ['property-type', 'basic-specs', 'location', 'price', 'key-features'],
+  'email-sequence': ['audience', 'problem', 'goal'],
+  'consultation-script': ['type', 'client-background', 'motivation'],
+  'objection-handling': ['objection', 'exact-wording', 'when-in-process'],
+  'open-house-followup': ['visitor-name', 'visitor-type', 'what-they-liked', 'channel'],
+  'video-script': ['platform', 'length', 'topic', 'specific-content'],
+  'expired-fsbo': ['type', 'property-address', 'your-edge', 'format'],
+  'cma-narrative': ['property-address', 'property-details', 'your-opinion', 'comparable-sales'],
+  'thank-you': ['occasion', 'client-names', 'memorable-moment']
+};
+
+// Helper function to mark questions as essential or optional
+function markQuestionPriority(question: Question, useCaseId: string, quickMode: boolean): Question & { isEssential: boolean } {
+  const essentialIds = ESSENTIAL_QUESTIONS[useCaseId] || [];
+  const isEssential = essentialIds.includes(question.id);
+
+  return {
+    ...question,
+    isEssential,
+    // In Quick Mode, hide non-essential questions
+    // In Advanced Mode, show all questions
+  };
+}
+
 function getQuestionsForUseCase(useCaseId: string): Question[] {
-  // Sphere calling scripts
+  // Sphere calling scripts - ENHANCED with 6 questions
   if (useCaseId === 'sphere-script') {
     return [
       {
         id: 'who',
         type: 'select' as const,
         question: 'Who are you calling?',
+        defaultValue: 'past-client', // Most sphere calls are to past clients
         options: [
           { value: 'past-client', label: 'Past Client', emoji: '🤝' },
-          { value: 'cold-lead', label: 'Cold Lead', emoji: '❄️' },
+          { value: 'friend-family', label: 'Friend/Family', emoji: '❤️' },
           { value: 'warm-lead', label: 'Warm Lead', emoji: '🔥' },
-          { value: 'fsbo', label: 'FSBO', emoji: '🏠' },
-          { value: 'expired', label: 'Expired Listing', emoji: '⏰' }
+          { value: 'cold-lead', label: 'Cold Lead', emoji: '❄️' },
+          { value: 'professional-contact', label: 'Professional Contact', emoji: '💼' }
         ]
+      },
+      {
+        id: 'relationship',
+        type: 'textarea' as const,
+        question: 'How do you know them?',
+        subtitle: 'When did you last talk? What\'s your history?',
+        placeholder: 'Example: Sold them a home 2 years ago, we grab coffee every few months, they have 2 kids...'
       },
       {
         id: 'goal',
         type: 'select' as const,
         question: "What's your goal for this call?",
+        defaultValue: 'top-of-mind', // Most common goal for sphere calls
         options: [
           { value: 'referral', label: 'Get Referral', emoji: '🎯' },
           { value: 'appointment', label: 'Book Appointment', emoji: '📅' },
@@ -1263,22 +1323,37 @@ function getQuestionsForUseCase(useCaseId: string): Question[] {
         ]
       },
       {
-        id: 'context',
+        id: 'market-hook',
+        type: 'text' as const,
+        question: 'Any recent market changes to mention?',
+        subtitle: '(Optional) Make your call more relevant',
+        placeholder: 'Example: "3 homes just sold on your street" or "Prices up 5% this month" or leave blank'
+      },
+      {
+        id: 'home-details',
+        type: 'text' as const,
+        question: 'Know their home details?',
+        subtitle: '(Optional) Helps personalize the script',
+        placeholder: 'Example: "Live in Riverside, bought in 2021 for $450K" or leave blank'
+      },
+      {
+        id: 'personal-notes',
         type: 'textarea' as const,
-        question: 'Any specific context?',
-        subtitle: 'What do you know about them? What makes this call unique?',
-        placeholder: 'Example: They bought a home 2 years ago, have 2 kids, mentioned wanting a bigger yard last time we talked...'
+        question: 'Any personal details to reference?',
+        subtitle: 'Life updates, hobbies, family, career - make it personal!',
+        placeholder: 'Example: Just had a baby, mentioned needing more space, loves to entertain, works from home...'
       }
     ];
   }
 
-  // Social media content
+  // Social media content - ENHANCED with conditional questions
   if (useCaseId === 'social-content') {
     return [
       {
         id: 'platform',
         type: 'select' as const,
         question: 'Which platform?',
+        defaultValue: 'instagram', // Most popular platform for realtors
         options: [
           { value: 'instagram', label: 'Instagram', emoji: '📸' },
           { value: 'facebook', label: 'Facebook', emoji: '👥' },
@@ -1299,16 +1374,57 @@ function getQuestionsForUseCase(useCaseId: string): Question[] {
         ]
       },
       {
-        id: 'context',
+        id: 'market-location',
+        type: 'text' as const,
+        question: 'What market/location?',
+        subtitle: 'City, neighborhood, or zip code',
+        placeholder: 'Example: Austin TX, Riverside neighborhood, 78704, Travis County...'
+      },
+      {
+        id: 'property-type',
+        type: 'select' as const,
+        question: 'Property type focus?',
+        defaultValue: 'all', // Works for most general posts
+        options: [
+          { value: 'all', label: 'All Property Types', emoji: '🏘️' },
+          { value: 'single-family', label: 'Single-Family Homes', emoji: '🏡' },
+          { value: 'condos', label: 'Condos', emoji: '🏢' },
+          { value: 'townhomes', label: 'Townhomes', emoji: '🏘️' },
+          { value: 'luxury', label: 'Luxury ($1M+)', emoji: '💎' },
+          { value: 'multi-family', label: 'Multi-Family/Investment', emoji: '🏬' }
+        ]
+      },
+      {
+        id: 'specific-data',
         type: 'textarea' as const,
-        question: 'Tell me about the post',
-        subtitle: 'What specific angle or hook do you want?',
-        placeholder: 'Example: Interest rates dropped 0.5% this week and I want to explain what it means for buyers...'
+        question: 'Got specific numbers or facts?',
+        subtitle: '(Optional) Leave blank and AI will add relevant stats',
+        placeholder: 'Example: "Median price $487K, up 3.2% from last month" or leave blank for AI to research'
+      },
+      {
+        id: 'tone',
+        type: 'select' as const,
+        question: 'Tone & style?',
+        defaultValue: 'professional', // Most common professional tone
+        options: [
+          { value: 'professional', label: 'Professional', emoji: '💼' },
+          { value: 'casual-friendly', label: 'Casual & Friendly', emoji: '😊' },
+          { value: 'luxury-upscale', label: 'Luxury & Upscale', emoji: '✨' },
+          { value: 'educational', label: 'Educational', emoji: '📚' },
+          { value: 'humorous', label: 'Humorous', emoji: '😄' }
+        ]
+      },
+      {
+        id: 'cta',
+        type: 'text' as const,
+        question: 'Call-to-action?',
+        subtitle: 'What do you want them to do?',
+        placeholder: 'Example: DM me for a free market analysis, Link in bio, Comment "INFO" below...'
       }
     ];
   }
 
-  // Email sequence
+  // Email sequence - ENHANCED with 7 questions
   if (useCaseId === 'email-sequence') {
     return [
       {
@@ -1323,9 +1439,42 @@ function getQuestionsForUseCase(useCaseId: string): Question[] {
         ]
       },
       {
+        id: 'lead-source',
+        type: 'text' as const,
+        question: 'Where did these leads come from?',
+        subtitle: 'Important for context and trust-building',
+        placeholder: 'Example: Zillow inquiry, Facebook ad, open house sign-in, referral from past client...'
+      },
+      {
+        id: 'timeline',
+        type: 'select' as const,
+        question: 'Their buying/selling timeline?',
+        defaultValue: '3-6-months', // Most common middle-funnel timeline
+        options: [
+          { value: '0-3-months', label: '0-3 Months (HOT)', emoji: '🔥' },
+          { value: '3-6-months', label: '3-6 Months', emoji: '📅' },
+          { value: '6-12-months', label: '6-12 Months', emoji: '🗓️' },
+          { value: 'exploring', label: 'Just Exploring', emoji: '🤔' }
+        ]
+      },
+      {
+        id: 'location-pricerange',
+        type: 'text' as const,
+        question: 'Their location & price range (if known)',
+        placeholder: 'Example: Looking in Austin, $400-500K range...'
+      },
+      {
+        id: 'pain-point',
+        type: 'textarea' as const,
+        question: 'What problem are they trying to solve?',
+        subtitle: 'First-time buyer, downsizing, investment, relocation, etc.',
+        placeholder: 'Example: First-time buyers, overwhelmed by the process, worried about overpaying...'
+      },
+      {
         id: 'emails',
         type: 'select' as const,
         question: 'How many emails?',
+        defaultValue: '5', // Middle option - most common sequence length
         options: [
           { value: '3', label: '3 emails', emoji: '📧' },
           { value: '5', label: '5 emails', emoji: '📨' },
@@ -1333,22 +1482,28 @@ function getQuestionsForUseCase(useCaseId: string): Question[] {
         ]
       },
       {
-        id: 'context',
-        type: 'textarea' as const,
-        question: 'What should this sequence accomplish?',
-        subtitle: 'Goal, unique value, tone preferences',
-        placeholder: 'Example: Nurture new buyer leads from Zillow - share helpful first-time buyer tips, build trust, get them to book a call...'
+        id: 'goal',
+        type: 'select' as const,
+        question: 'What should the sequence accomplish?',
+        defaultValue: 'book-call', // Most common goal for email sequences
+        options: [
+          { value: 'book-call', label: 'Book Consultation Call', emoji: '📞' },
+          { value: 'download-guide', label: 'Download Guide/Resource', emoji: '📚' },
+          { value: 'schedule-showing', label: 'Schedule Showing', emoji: '🏡' },
+          { value: 'build-trust', label: 'Build Trust (Long Nurture)', emoji: '🤝' }
+        ]
       }
     ];
   }
 
-  // Listing description
+  // Listing description - ENHANCED with 8 questions
   if (useCaseId === 'listing-description') {
     return [
       {
         id: 'property-type',
         type: 'select' as const,
         question: 'Property type?',
+        defaultValue: 'single-family', // Most common listing type
         options: [
           { value: 'single-family', label: 'Single Family', emoji: '🏡' },
           { value: 'condo', label: 'Condo', emoji: '🏢' },
@@ -1358,18 +1513,65 @@ function getQuestionsForUseCase(useCaseId: string): Question[] {
         ]
       },
       {
-        id: 'details',
+        id: 'basic-specs',
+        type: 'text' as const,
+        question: 'Beds, baths, sq ft, year built',
+        placeholder: 'Example: 4 bed, 3 bath, 2,400 sqft, built 2015...'
+      },
+      {
+        id: 'location',
+        type: 'text' as const,
+        question: 'Location & neighborhood',
+        subtitle: 'City, neighborhood, school district, notable features',
+        placeholder: 'Example: Riverside, Austin TX, top-rated schools, walk to coffee shops...'
+      },
+      {
+        id: 'price',
+        type: 'text' as const,
+        question: 'List price',
+        placeholder: 'Example: $495,000...'
+      },
+      {
+        id: 'key-features',
         type: 'textarea' as const,
-        question: 'Key property details',
-        subtitle: 'Beds, baths, sq ft, unique features, upgrades',
-        placeholder: 'Example: 4 bed 3 bath, 2400 sq ft, updated kitchen with quartz counters, new HVAC 2023, huge backyard with mature trees...'
+        question: 'Top 5-7 features to highlight',
+        subtitle: 'Updates, unique features, what makes it special',
+        placeholder: 'Example: Updated kitchen (2023), quartz counters, Wolf appliances, primary suite w/ spa bath, huge backyard, smart home, 2-car garage...'
+      },
+      {
+        id: 'lifestyle-appeal',
+        type: 'select' as const,
+        question: 'Who is this perfect for?',
+        defaultValue: 'family', // Most common target buyer
+        options: [
+          { value: 'family', label: 'Growing Family', emoji: '👨‍👩‍👧‍👦' },
+          { value: 'professionals', label: 'Young Professionals', emoji: '💼' },
+          { value: 'downsizer', label: 'Downsizers/Empty Nesters', emoji: '🏡' },
+          { value: 'entertainer', label: 'Entertainers', emoji: '🎉' },
+          { value: 'remote-worker', label: 'Remote Workers', emoji: '💻' },
+          { value: 'investor', label: 'Investors', emoji: '💰' }
+        ]
+      },
+      {
+        id: 'urgency',
+        type: 'select' as const,
+        question: 'Any urgency factors?',
+        defaultValue: 'new-listing', // Most listings are new to market
+        options: [
+          { value: 'none', label: 'None', emoji: '📅' },
+          { value: 'new-listing', label: 'New to Market', emoji: '🆕' },
+          { value: 'price-reduction', label: 'Price Reduction', emoji: '💰' },
+          { value: 'open-house', label: 'Open House This Weekend', emoji: '🚪' },
+          { value: 'multiple-offers', label: 'Expecting Multiple Offers', emoji: '🔥' }
+        ]
       },
       {
         id: 'vibe',
         type: 'select' as const,
-        question: 'What vibe?',
+        question: 'Writing style?',
+        defaultValue: 'professional', // Most common MLS style
         options: [
-          { value: 'professional', label: 'Professional', emoji: '💼' },
+          { value: 'professional', label: 'Professional MLS', emoji: '💼' },
           { value: 'storytelling', label: 'Storytelling', emoji: '📖' },
           { value: 'luxury', label: 'Luxury/Upscale', emoji: '✨' },
           { value: 'casual', label: 'Casual/Friendly', emoji: '😊' }
@@ -1378,13 +1580,14 @@ function getQuestionsForUseCase(useCaseId: string): Question[] {
     ];
   }
 
-  // Consultation script
+  // Consultation script - ENHANCED with 9 questions
   if (useCaseId === 'consultation-script') {
     return [
       {
         id: 'type',
         type: 'select' as const,
         question: 'What type of consultation?',
+        defaultValue: 'buyer', // Buyer consultations most common
         options: [
           { value: 'buyer', label: 'Buyer Consultation', emoji: '🔍' },
           { value: 'seller', label: 'Seller Consultation', emoji: '🏠' },
@@ -1392,32 +1595,92 @@ function getQuestionsForUseCase(useCaseId: string): Question[] {
         ]
       },
       {
-        id: 'stage',
+        id: 'client-background',
         type: 'select' as const,
-        question: 'What stage?',
+        question: 'Client background?',
+        defaultValue: 'first-time', // First-time buyers/sellers most common
         options: [
-          { value: 'discovery', label: 'Discovery Questions', emoji: '❓' },
-          { value: 'presentation', label: 'Value Presentation', emoji: '💼' },
-          { value: 'closing', label: 'Closing Script', emoji: '✍️' }
+          { value: 'first-time', label: 'First-Time Buyer/Seller', emoji: '👋' },
+          { value: 'experienced', label: 'Experienced', emoji: '🎯' },
+          { value: 'investor', label: 'Investor', emoji: '💰' },
+          { value: 'relocating', label: 'Relocating', emoji: '📦' },
+          { value: 'downsizing', label: 'Downsizing', emoji: '🏡' },
+          { value: 'upsizing', label: 'Upsizing/Growing Family', emoji: '👨‍👩‍👧‍👦' }
         ]
       },
       {
-        id: 'context',
+        id: 'motivation',
         type: 'textarea' as const,
-        question: 'Any specific context?',
-        subtitle: 'What you know about the client, their situation, concerns',
-        placeholder: 'Example: First-time sellers, worried about pricing too high or too low, considering interviewing 3 agents...'
+        question: 'Why are they buying/selling NOW?',
+        subtitle: 'Motivation drives urgency and objections',
+        placeholder: 'Example: New job starting in 3 months, outgrew current home with 3rd baby, retiring and moving closer to grandkids...'
+      },
+      {
+        id: 'timeline',
+        type: 'select' as const,
+        question: 'Their timeline?',
+        defaultValue: 'soon', // Most common timeline
+        options: [
+          { value: 'urgent', label: 'Urgent (0-30 days)', emoji: '🔥' },
+          { value: 'soon', label: 'Soon (1-3 months)', emoji: '📅' },
+          { value: 'flexible', label: 'Flexible (3-6 months)', emoji: '🗓️' },
+          { value: 'exploring', label: 'Just Exploring', emoji: '🤔' }
+        ]
+      },
+      {
+        id: 'competition',
+        type: 'select' as const,
+        question: 'Are they interviewing other agents?',
+        defaultValue: 'unknown', // Most realistic default
+        options: [
+          { value: 'yes-2', label: 'Yes, 1-2 Others', emoji: '👥' },
+          { value: 'yes-3plus', label: 'Yes, 3+ Others', emoji: '🏆' },
+          { value: 'no', label: 'No, Just You', emoji: '🎯' },
+          { value: 'unknown', label: 'Unknown', emoji: '❓' }
+        ]
+      },
+      {
+        id: 'pricerange-property',
+        type: 'text' as const,
+        question: 'Price range or property value?',
+        placeholder: 'Example: Looking at $400-500K homes, or their home worth ~$495K...'
+      },
+      {
+        id: 'concerns',
+        type: 'textarea' as const,
+        question: 'What are they worried about?',
+        subtitle: 'Objections you expect or have heard',
+        placeholder: 'Example: Worried about pricing too high/low, afraid of commission costs, unsure about market timing, overwhelmed by process...'
+      },
+      {
+        id: 'your-edge',
+        type: 'textarea' as const,
+        question: 'What\'s YOUR unique advantage?',
+        subtitle: 'Why should they choose you?',
+        placeholder: 'Example: Sold 12 homes in their neighborhood last year, have buyer lined up, unique pricing strategy, concierge service...'
+      },
+      {
+        id: 'meeting-length',
+        type: 'select' as const,
+        question: 'How long is the meeting?',
+        defaultValue: '60min', // Standard consultation length
+        options: [
+          { value: '30min', label: '30 minutes', emoji: '⏱️' },
+          { value: '60min', label: '60 minutes', emoji: '⏰' },
+          { value: '90min', label: '90 minutes', emoji: '🕐' }
+        ]
       }
     ];
   }
 
-  // Objection handling
+  // Objection handling - ENHANCED with 6 questions
   if (useCaseId === 'objection-handling') {
     return [
       {
         id: 'objection',
         type: 'select' as const,
         question: 'What objection?',
+        defaultValue: 'commission', // Most common objection
         options: [
           { value: 'commission', label: 'Commission Too High', emoji: '💰' },
           { value: 'timing', label: 'Wrong Time to Buy/Sell', emoji: '⏰' },
@@ -1427,90 +1690,280 @@ function getQuestionsForUseCase(useCaseId: string): Question[] {
         ]
       },
       {
-        id: 'context',
+        id: 'exact-wording',
         type: 'textarea' as const,
-        question: 'Specific situation?',
-        subtitle: 'How did this objection come up? Any context?',
-        placeholder: 'Example: Listing presentation - they said 6% is too high and their neighbor sold for 4%...'
+        question: 'What did they say exactly?',
+        subtitle: 'Verbatim if possible - word choice matters',
+        placeholder: 'Example: "Your commission is way too high. My neighbor sold with a discount broker for 4% total..."'
+      },
+      {
+        id: 'when-in-process',
+        type: 'select' as const,
+        question: 'When did this come up?',
+        defaultValue: 'listing-presentation', // Most common time for objections
+        options: [
+          { value: 'initial-call', label: 'Initial Phone Call', emoji: '📞' },
+          { value: 'listing-presentation', label: 'Listing Presentation', emoji: '📊' },
+          { value: 'offer-negotiation', label: 'Offer Negotiation', emoji: '💼' },
+          { value: 'inspection-period', label: 'Inspection Period', emoji: '🔍' },
+          { value: 'closing', label: 'Near Closing', emoji: '✍️' }
+        ]
+      },
+      {
+        id: 'emotional-state',
+        type: 'select' as const,
+        question: 'Their emotional tone?',
+        defaultValue: 'skeptical', // Most common emotional state
+        options: [
+          { value: 'curious', label: 'Genuinely Curious', emoji: '🤔' },
+          { value: 'skeptical', label: 'Skeptical', emoji: '🧐' },
+          { value: 'frustrated', label: 'Frustrated/Upset', emoji: '😤' },
+          { value: 'defensive', label: 'Defensive', emoji: '🛡️' },
+          { value: 'testing', label: 'Testing You', emoji: '🎯' }
+        ]
+      },
+      {
+        id: 'relationship-status',
+        type: 'select' as const,
+        question: 'Your relationship status?',
+        defaultValue: 'first-contact', // Most objections come early
+        options: [
+          { value: 'first-contact', label: 'First Conversation', emoji: '👋' },
+          { value: 'few-weeks', label: 'Working Together (Weeks)', emoji: '📅' },
+          { value: 'warm-relationship', label: 'Warm Relationship', emoji: '🤝' },
+          { value: 'past-client', label: 'Past Client', emoji: '💼' }
+        ]
+      },
+      {
+        id: 'proof-available',
+        type: 'textarea' as const,
+        question: 'What proof/stats do you have to counter?',
+        subtitle: 'Past results, testimonials, data, comparisons',
+        placeholder: 'Example: I sold 15 homes last year at avg 102% of list price, avg DOM 18 days. Discount brokers in area average 95% and 45 DOM...'
       }
     ];
   }
 
-  // Open house follow-up
+  // Open house follow-up - ENHANCED with 7 questions
   if (useCaseId === 'open-house-followup') {
     return [
       {
+        id: 'visitor-name',
+        type: 'text' as const,
+        question: 'Visitor name(s)?',
+        placeholder: 'Example: Jennifer & Mark...'
+      },
+      {
         id: 'visitor-type',
         type: 'select' as const,
-        question: 'Who visited?',
+        question: 'How serious were they?',
+        defaultValue: 'serious-buyer', // Most common open house visitor
         options: [
-          { value: 'serious-buyer', label: 'Serious Buyer', emoji: '🎯' },
+          { value: 'very-serious', label: 'Very Serious (Ready to Buy)', emoji: '🔥' },
+          { value: 'serious-buyer', label: 'Serious (Actively Looking)', emoji: '🎯' },
           { value: 'just-looking', label: 'Just Looking', emoji: '👀' },
-          { value: 'neighbor', label: 'Neighbor', emoji: '🏘️' },
-          { value: 'no-show', label: 'Interested but No-Show', emoji: '❓' }
+          { value: 'neighbor', label: 'Neighbor (Curious)', emoji: '🏘️' },
+          { value: 'investor', label: 'Investor/Flipper', emoji: '💰' }
+        ]
+      },
+      {
+        id: 'what-they-liked',
+        type: 'textarea' as const,
+        question: 'What did they love?',
+        subtitle: 'Specific rooms, features they commented on',
+        placeholder: 'Example: Raved about the kitchen, loved the backyard, excited about the master suite, took tons of photos...'
+      },
+      {
+        id: 'concerns',
+        type: 'textarea' as const,
+        question: 'What concerns did they mention?',
+        placeholder: 'Example: Worried about school district, price feels high, need 4th bedroom, commute to work might be too long...'
+      },
+      {
+        id: 'timeline',
+        type: 'select' as const,
+        question: 'Their buying timeline?',
+        defaultValue: 'soon', // Most common timeline
+        options: [
+          { value: 'urgent', label: 'ASAP (0-30 days)', emoji: '🔥' },
+          { value: 'soon', label: 'Soon (1-3 months)', emoji: '📅' },
+          { value: 'flexible', label: 'Flexible (3-6 months)', emoji: '🗓️' },
+          { value: 'unknown', label: 'Didn\'t Say', emoji: '❓' }
+        ]
+      },
+      {
+        id: 'pre-approval',
+        type: 'select' as const,
+        question: 'Pre-approval status?',
+        defaultValue: 'unknown', // Most realistic default
+        options: [
+          { value: 'pre-approved', label: 'Pre-Approved', emoji: '✅' },
+          { value: 'working-on-it', label: 'Working on It', emoji: '📝' },
+          { value: 'not-yet', label: 'Not Yet', emoji: '❌' },
+          { value: 'cash-buyer', label: 'Cash Buyer', emoji: '💰' },
+          { value: 'unknown', label: 'Didn\'t Ask', emoji: '❓' }
         ]
       },
       {
         id: 'channel',
         type: 'select' as const,
         question: 'Follow-up method?',
+        defaultValue: 'text', // Text is most effective for open house follow-up
         options: [
           { value: 'text', label: 'Text Message', emoji: '💬' },
-          { value: 'email', label: 'Email', emoji: '📧' }
+          { value: 'email', label: 'Email', emoji: '📧' },
+          { value: 'call', label: 'Phone Call', emoji: '📞' }
         ]
-      },
-      {
-        id: 'context',
-        type: 'textarea' as const,
-        question: 'What happened at the open house?',
-        subtitle: 'What did they say? What were they interested in?',
-        placeholder: 'Example: Young couple, loved the backyard, concerned about the school district, said they need 4 beds...'
       }
     ];
   }
 
-  // Market report
+  // Market report - ENHANCED with 10 questions (YOUR KEY EXAMPLE!)
   if (useCaseId === 'market-report') {
     return [
       {
-        id: 'audience',
+        id: 'market-location',
+        type: 'text' as const,
+        question: "Where's your market?",
+        subtitle: 'City, neighborhood, zip code, or county',
+        placeholder: 'Example: Austin TX, Riverside neighborhood, 78704, Travis County...'
+      },
+      {
+        id: 'property-type',
         type: 'select' as const,
-        question: 'Who is this for?',
+        question: 'Property type focus?',
+        defaultValue: 'all', // SMART DEFAULT
         options: [
-          { value: 'buyers', label: 'Buyers', emoji: '🔍' },
-          { value: 'sellers', label: 'Sellers', emoji: '🏠' },
-          { value: 'general', label: 'General Sphere', emoji: '👥' }
+          { value: 'all', label: 'All Property Types', emoji: '🏘️' },
+          { value: 'single-family', label: 'Single-Family Homes', emoji: '🏡' },
+          { value: 'condos', label: 'Condos', emoji: '🏢' },
+          { value: 'townhomes', label: 'Townhomes', emoji: '🏘️' },
+          { value: 'luxury', label: 'Luxury ($1M+)', emoji: '💎' },
+          { value: 'apartments', label: 'Apartments/Multi-Family', emoji: '🏬' }
         ]
       },
       {
-        id: 'data',
-        type: 'textarea' as const,
-        question: 'What market data do you have?',
-        subtitle: 'Stats, trends, changes',
-        placeholder: 'Example: Inventory up 15% this quarter, median price down 3%, days on market increased from 22 to 31 days...'
+        id: 'time-frame',
+        type: 'select' as const,
+        question: 'What time frame?',
+        defaultValue: 'last-30-days', // SMART DEFAULT - Most common
+        options: [
+          { value: 'last-7-days', label: 'Last 7 Days', emoji: '📅' },
+          { value: 'last-30-days', label: 'Last 30 Days', emoji: '📆' },
+          { value: 'last-quarter', label: 'Last Quarter (Q1/Q2/Q3/Q4)', emoji: '📊' },
+          { value: 'last-year', label: 'Last 12 Months', emoji: '🗓️' },
+          { value: 'year-over-year', label: 'Year-Over-Year Comparison', emoji: '📈' }
+        ]
       },
       {
-        id: 'so-what',
+        id: 'price-range',
+        type: 'select' as const,
+        question: 'Price range focus?',
+        defaultValue: 'all', // SMART DEFAULT
+        options: [
+          { value: 'all', label: 'All Price Ranges', emoji: '💰' },
+          { value: 'under-300k', label: 'Under $300K', emoji: '🏠' },
+          { value: '300-500k', label: '$300K-$500K', emoji: '🏡' },
+          { value: '500k-1m', label: '$500K-$1M', emoji: '🏘️' },
+          { value: 'over-1m', label: '$1M+', emoji: '💎' }
+        ]
+      },
+      {
+        id: 'key-metrics',
+        type: 'select' as const,
+        question: 'Which metrics do you want to highlight?',
+        subtitle: 'Select primary focus',
+        defaultValue: 'all-metrics', // SMART DEFAULT
+        options: [
+          { value: 'all-metrics', label: 'All Key Metrics', emoji: '📊' },
+          { value: 'price-trends', label: 'Price Trends', emoji: '💰' },
+          { value: 'inventory-supply', label: 'Inventory & Supply', emoji: '🏘️' },
+          { value: 'days-on-market', label: 'Days on Market', emoji: '⏰' },
+          { value: 'sale-to-list-ratio', label: 'Sale-to-List Ratio', emoji: '📈' }
+        ]
+      },
+      {
+        id: 'specific-data',
         type: 'textarea' as const,
-        question: 'What does it mean for them?',
-        subtitle: 'Your interpretation and advice',
-        placeholder: 'Example: Great news for buyers - more options and less competition. Sellers need to price right and stage well...'
+        question: 'Do you have specific market data?',
+        subtitle: 'Leave blank if you want AI to research current stats',
+        placeholder: 'Example: Median price $487K (up 3.2%), inventory 2.8 months, avg DOM 34 days, list-to-sale 101.2%...'
+      },
+      {
+        id: 'audience',
+        type: 'select' as const,
+        question: 'Who is this report for?',
+        defaultValue: 'general', // SMART DEFAULT
+        options: [
+          { value: 'buyers', label: 'Buyers', emoji: '🔍' },
+          { value: 'sellers', label: 'Sellers', emoji: '🏠' },
+          { value: 'general', label: 'General Sphere/Clients', emoji: '👥' },
+          { value: 'investors', label: 'Investors', emoji: '💼' }
+        ]
+      },
+      {
+        id: 'trend-direction',
+        type: 'select' as const,
+        question: 'Overall market trend?',
+        defaultValue: 'unknown', // SMART DEFAULT - 95% want this!
+        options: [
+          { value: 'unknown', label: 'Let AI Determine', emoji: '🤔' },
+          { value: 'hot-sellers', label: 'Hot/Seller\'s Market', emoji: '🔥' },
+          { value: 'balanced', label: 'Balanced Market', emoji: '⚖️' },
+          { value: 'cooling-buyers', label: 'Cooling/Buyer\'s Market', emoji: '❄️' },
+          { value: 'mixed', label: 'Mixed Signals', emoji: '🌤️' }
+        ]
+      },
+      {
+        id: 'comparison',
+        type: 'select' as const,
+        question: 'Compare to what period?',
+        defaultValue: 'last-year', // SMART DEFAULT
+        options: [
+          { value: 'last-month', label: 'vs. Last Month', emoji: '📅' },
+          { value: 'last-quarter', label: 'vs. Last Quarter', emoji: '📊' },
+          { value: 'last-year', label: 'vs. Last Year', emoji: '📆' },
+          { value: 'peak-2021', label: 'vs. Peak Market (2021)', emoji: '🏔️' },
+          { value: 'none', label: 'No Comparison', emoji: '➖' }
+        ]
+      },
+      {
+        id: 'actionable-insight',
+        type: 'textarea' as const,
+        question: 'What should they DO with this info?',
+        subtitle: 'Your recommendation based on the data',
+        placeholder: 'Example: Great time for buyers - more inventory, less competition. Sellers should price aggressively and market heavily...'
       }
     ];
   }
 
-  // Video script
+  // Video script - ENHANCED with 7 questions
   if (useCaseId === 'video-script') {
     return [
       {
         id: 'platform',
         type: 'select' as const,
         question: 'What platform?',
+        defaultValue: 'reels', // Instagram Reels most popular for realtors
         options: [
           { value: 'reels', label: 'Instagram Reels', emoji: '📸' },
           { value: 'tiktok', label: 'TikTok', emoji: '🎵' },
           { value: 'youtube', label: 'YouTube', emoji: '📹' },
-          { value: 'stories', label: 'Stories', emoji: '⚡' }
+          { value: 'youtube-shorts', label: 'YouTube Shorts', emoji: '⚡' },
+          { value: 'stories', label: 'Stories (IG/FB)', emoji: '📱' }
+        ]
+      },
+      {
+        id: 'length',
+        type: 'select' as const,
+        question: 'Video length?',
+        defaultValue: '60sec', // Sweet spot for engagement
+        options: [
+          { value: '15sec', label: '15 seconds', emoji: '⚡' },
+          { value: '30sec', label: '30 seconds', emoji: '⏱️' },
+          { value: '60sec', label: '60 seconds', emoji: '⏰' },
+          { value: '3min', label: '3 minutes', emoji: '🕐' },
+          { value: '5min-plus', label: '5+ minutes', emoji: '🎬' }
         ]
       },
       {
@@ -1522,26 +1975,66 @@ function getQuestionsForUseCase(useCaseId: string): Question[] {
           { value: 'listing-tour', label: 'Listing Tour', emoji: '🏡' },
           { value: 'neighborhood', label: 'Neighborhood Spotlight', emoji: '🏘️' },
           { value: 'market-update', label: 'Market Update', emoji: '📊' },
-          { value: 'personal', label: 'Personal/BTS', emoji: '✨' }
+          { value: 'personal-story', label: 'Personal/Behind-the-Scenes', emoji: '✨' },
+          { value: 'myth-busting', label: 'Myth Busting', emoji: '🚫' }
         ]
       },
       {
-        id: 'context',
+        id: 'hook-style',
+        type: 'select' as const,
+        question: 'Hook style (first 3 seconds)?',
+        defaultValue: 'question', // Questions perform best for engagement
+        options: [
+          { value: 'question', label: 'Ask a Question', emoji: '❓' },
+          { value: 'shocking-stat', label: 'Shocking Stat', emoji: '🤯' },
+          { value: 'problem', label: 'State a Problem', emoji: '⚠️' },
+          { value: 'bold-claim', label: 'Bold Claim/Statement', emoji: '💥' },
+          { value: 'storytelling', label: 'Start a Story', emoji: '📖' }
+        ]
+      },
+      {
+        id: 'specific-content',
         type: 'textarea' as const,
-        question: 'Describe the video',
-        subtitle: 'Hook, main points, call to action',
-        placeholder: 'Example: 60-second Reel showing 3 things first-time buyers always forget. Hook: "Stop! Before you buy..." End with DM me for full checklist...'
+        question: 'Specific content or topic details?',
+        subtitle: 'What exact tip, property, or story?',
+        placeholder: 'Example: 3 things first-time buyers forget, tour of 123 Oak St ($495K), why Riverside is hottest neighborhood, how I negotiated $30K off...'
+      },
+      {
+        id: 'cta',
+        type: 'select' as const,
+        question: 'Call-to-action?',
+        defaultValue: 'dm', // Direct engagement most effective
+        options: [
+          { value: 'dm', label: 'DM me', emoji: '💬' },
+          { value: 'link-bio', label: 'Link in bio', emoji: '🔗' },
+          { value: 'comment', label: 'Comment below', emoji: '💭' },
+          { value: 'follow', label: 'Follow for more', emoji: '➕' },
+          { value: 'save', label: 'Save this video', emoji: '🔖' }
+        ]
+      },
+      {
+        id: 'on-screen-text',
+        type: 'select' as const,
+        question: 'Text emphasis?',
+        defaultValue: 'heavy', // Heavy text overlays perform best on social
+        options: [
+          { value: 'heavy', label: 'Heavy text overlays', emoji: '📝' },
+          { value: 'minimal', label: 'Minimal text', emoji: '✍️' },
+          { value: 'captions-only', label: 'Just captions', emoji: '💬' },
+          { value: 'voiceover', label: 'Voiceover focus', emoji: '🎤' }
+        ]
       }
     ];
   }
 
-  // Expired/FSBO letters
+  // Expired/FSBO letters - ENHANCED with 8 questions
   if (useCaseId === 'expired-fsbo') {
     return [
       {
         id: 'type',
         type: 'select' as const,
         question: 'Which one?',
+        defaultValue: 'expired', // Expired listings most common
         options: [
           { value: 'expired', label: 'Expired Listing', emoji: '⏰' },
           { value: 'fsbo', label: 'FSBO', emoji: '🏠' },
@@ -1549,68 +2042,199 @@ function getQuestionsForUseCase(useCaseId: string): Question[] {
         ]
       },
       {
+        id: 'property-address',
+        type: 'text' as const,
+        question: 'Property address?',
+        placeholder: 'Example: 123 Oak Street, Austin TX...'
+      },
+      {
+        id: 'expired-details',
+        type: 'textarea' as const,
+        question: 'What happened? (Expired/FSBO specifics)',
+        subtitle: 'Days on market, price, why it didn\'t sell',
+        placeholder: 'Example: Listed for 90 days at $525K, overpriced by ~8%, bad photos, little marketing, agent didn\'t communicate...'
+      },
+      {
+        id: 'seller-pain-level',
+        type: 'select' as const,
+        question: 'How motivated is the seller?',
+        defaultValue: 'unknown', // Most realistic default
+        options: [
+          { value: 'extremely', label: 'Extremely (1-10: 9-10)', emoji: '🔥' },
+          { value: 'very', label: 'Very Motivated (7-8)', emoji: '📈' },
+          { value: 'moderate', label: 'Moderately (5-6)', emoji: '📊' },
+          { value: 'low', label: 'Low (Testing Market)', emoji: '🤷' },
+          { value: 'unknown', label: 'Unknown', emoji: '❓' }
+        ]
+      },
+      {
+        id: 'competition',
+        type: 'select' as const,
+        question: 'Are other agents calling too?',
+        defaultValue: 'yes-many', // Most realistic for expired listings
+        options: [
+          { value: 'yes-many', label: 'Yes, Many Agents', emoji: '📞' },
+          { value: 'yes-few', label: 'Yes, A Few', emoji: '👥' },
+          { value: 'no', label: 'No / You\'re First', emoji: '🎯' },
+          { value: 'unknown', label: 'Unknown', emoji: '❓' }
+        ]
+      },
+      {
+        id: 'your-edge',
+        type: 'textarea' as const,
+        question: 'What\'s your unique angle?',
+        subtitle: 'Why should they choose YOU to relist?',
+        placeholder: 'Example: Have a buyer interested in that neighborhood, sold 8 homes on their street last year, unique pricing strategy, 30-day guarantee...'
+      },
+      {
         id: 'format',
         type: 'select' as const,
         question: 'Format?',
+        defaultValue: 'letter', // Physical letters stand out most
         options: [
           { value: 'letter', label: 'Physical Letter', emoji: '✉️' },
           { value: 'email', label: 'Email', emoji: '📧' },
-          { value: 'script', label: 'Phone Script', emoji: '📞' }
+          { value: 'script', label: 'Phone Script', emoji: '📞' },
+          { value: 'door-knock', label: 'Door Knock Script', emoji: '🚪' }
         ]
       },
       {
-        id: 'context',
-        type: 'textarea' as const,
-        question: 'Any specific details?',
-        subtitle: 'Why it expired/FSBO, your unique approach',
-        placeholder: 'Example: Expired after 90 days, overpriced by 10%, I have a buyer looking in that neighborhood...'
+        id: 'tone',
+        type: 'select' as const,
+        question: 'Tone approach?',
+        defaultValue: 'empathetic', // Empathy works best for expired/FSBO
+        options: [
+          { value: 'empathetic', label: 'Empathetic (I feel your pain)', emoji: '🤝' },
+          { value: 'direct-blunt', label: 'Direct & Blunt (Here\'s the truth)', emoji: '💥' },
+          { value: 'consultative', label: 'Consultative (Let me help)', emoji: '💼' },
+          { value: 'urgent', label: 'Urgent (Act now)', emoji: '⏰' }
+        ]
       }
     ];
   }
 
-  // CMA narrative
+  // CMA narrative - ENHANCED with 9 questions
   if (useCaseId === 'cma-narrative') {
     return [
       {
-        id: 'situation',
+        id: 'property-address',
+        type: 'text' as const,
+        question: 'Subject property address?',
+        placeholder: 'Example: 123 Oak Street, Austin TX...'
+      },
+      {
+        id: 'property-details',
+        type: 'textarea' as const,
+        question: 'Property specs & condition',
+        subtitle: 'Beds, baths, sqft, lot, year built, updates',
+        placeholder: 'Example: 3 bed, 2 bath, 1,820 sqft, 0.25 acre lot, built 1995, updated kitchen (2022), new HVAC (2021)...'
+      },
+      {
+        id: 'seller-desired-price',
+        type: 'text' as const,
+        question: 'What does the seller WANT?',
+        subtitle: 'Their target price (even if unrealistic)',
+        placeholder: 'Example: $525,000...'
+      },
+      {
+        id: 'your-opinion',
+        type: 'text' as const,
+        question: 'What\'s it actually worth? (Your opinion)',
+        placeholder: 'Example: $489,000...'
+      },
+      {
+        id: 'comparable-sales',
+        type: 'textarea' as const,
+        question: 'List 3-5 comparable sales',
+        subtitle: 'Address, specs, sale price, days on market',
+        placeholder: 'Example:\n456 Elm: 3/2, 1,820sf, sold $492K, 18 DOM\n789 Maple: 3/2, 1,900sf, sold $505K, 24 DOM\n321 Pine: 3/2, 1,750sf, sold $478K, 14 DOM'
+      },
+      {
+        id: 'active-competition',
+        type: 'textarea' as const,
+        question: 'Active listings (competition)',
+        subtitle: 'What\'s currently on market that competes?',
+        placeholder: 'Example:\n654 Oak: 3/2, 1,880sf, listed $509K, 42 DOM (sitting)\n987 Cedar: 3/2.5, 1,950sf, listed $495K, 12 DOM (no offers)'
+      },
+      {
+        id: 'market-conditions',
         type: 'select' as const,
-        question: 'What is the pricing situation?',
+        question: 'Current market conditions?',
+        defaultValue: 'balanced', // Most common market state
         options: [
-          { value: 'market-value', label: 'At Market Value', emoji: '✅' },
-          { value: 'overpriced', label: 'They Want More', emoji: '⬆️' },
-          { value: 'underpriced', label: 'Quick Sale Needed', emoji: '⬇️' },
-          { value: 'competitive', label: 'Competitive Market', emoji: '🔥' }
+          { value: 'hot-sellers', label: 'Hot Seller\'s Market', emoji: '🔥' },
+          { value: 'balanced', label: 'Balanced', emoji: '⚖️' },
+          { value: 'slow-buyers', label: 'Slow/Buyer\'s Market', emoji: '❄️' }
         ]
       },
       {
-        id: 'data',
-        type: 'textarea' as const,
-        question: 'CMA data summary',
-        subtitle: 'Comps, price range, key differences',
-        placeholder: 'Example: 3 recent sales in neighborhood: $485k, $502k, $478k. Subject property has updated kitchen but smaller lot than $502k comp...'
+        id: 'situation',
+        type: 'select' as const,
+        question: 'Pricing situation?',
+        defaultValue: 'want-more', // Most sellers want more than market value
+        options: [
+          { value: 'agree-market-value', label: 'They Agree with Market Value', emoji: '✅' },
+          { value: 'want-more', label: 'They Want 5-10% More', emoji: '⬆️' },
+          { value: 'way-overpriced', label: 'They Want 10%+ More', emoji: '🚀' },
+          { value: 'quick-sale', label: 'Need Quick Sale (Price Under)', emoji: '⬇️' }
+        ]
       },
       {
-        id: 'recommendation',
-        type: 'text' as const,
-        question: 'Your recommended list price',
-        placeholder: 'Example: $495,000'
+        id: 'pricing-strategy',
+        type: 'select' as const,
+        question: 'Recommended pricing strategy?',
+        defaultValue: 'at-market', // Most common recommendation
+        options: [
+          { value: 'at-market', label: 'Price at Market Value', emoji: '🎯' },
+          { value: 'slightly-under', label: 'Slightly Under (Bidding War)', emoji: '🔥' },
+          { value: 'aggressive-under', label: 'Aggressively Under (Fast Sale)', emoji: '⚡' },
+          { value: 'test-market', label: 'Slightly Over (Test Market)', emoji: '📈' }
+        ]
       }
     ];
   }
 
-  // Thank you notes
+  // Thank you notes - ENHANCED with 6 questions
   if (useCaseId === 'thank-you') {
     return [
       {
         id: 'occasion',
         type: 'select' as const,
         question: 'What is the occasion?',
+        defaultValue: 'closing', // Most common thank you occasion
         options: [
           { value: 'closing', label: 'After Closing', emoji: '🎉' },
           { value: 'referral', label: 'For Referral', emoji: '🙏' },
-          { value: 'review', label: 'For Review', emoji: '⭐' },
+          { value: 'review', label: 'For Review/Testimonial', emoji: '⭐' },
           { value: 'anniversary', label: 'Home Anniversary', emoji: '🏡' }
         ]
+      },
+      {
+        id: 'client-names',
+        type: 'text' as const,
+        question: 'Client name(s)?',
+        placeholder: 'Example: Jennifer & Mark...'
+      },
+      {
+        id: 'property-address',
+        type: 'text' as const,
+        question: 'Property address?',
+        subtitle: 'Where they bought/sold',
+        placeholder: 'Example: 123 Oak Street...'
+      },
+      {
+        id: 'memorable-moment',
+        type: 'textarea' as const,
+        question: 'Most memorable moment?',
+        subtitle: 'Funny, sweet, or stressful - what stands out?',
+        placeholder: 'Example: Their dog ran around the backyard at every showing, they cried when we got the offer, that crazy bidding war, the inspection issues we overcame...'
+      },
+      {
+        id: 'specific-win',
+        type: 'textarea' as const,
+        question: 'What did you help them with specifically?',
+        subtitle: 'Negotiation win, problem solved, challenge overcome',
+        placeholder: 'Example: Negotiated $15K off price, got seller to fix HVAC, closed in 18 days for their job relocation...'
       },
       {
         id: 'format',
@@ -1619,15 +2243,9 @@ function getQuestionsForUseCase(useCaseId: string): Question[] {
         options: [
           { value: 'handwritten', label: 'Handwritten Note', emoji: '✍️' },
           { value: 'email', label: 'Email', emoji: '📧' },
-          { value: 'gift-card', label: 'Gift Card Message', emoji: '🎁' }
+          { value: 'gift-card', label: 'Gift Card Message', emoji: '🎁' },
+          { value: 'video', label: 'Video Message', emoji: '🎥' }
         ]
-      },
-      {
-        id: 'context',
-        type: 'textarea' as const,
-        question: 'Personal details',
-        subtitle: 'What made this transaction special? What do you remember?',
-        placeholder: 'Example: First-time buyers, super sweet couple, their dog ran around the backyard at every showing, they were so excited...'
       }
     ];
   }
@@ -2111,43 +2729,142 @@ Write this as if you're genuinely trying to help them, not just get a client.`;
 }
 
 function generateMarketReportPrompt(answers: Record<string, string>): string {
+  const marketLocation = answers['market-location'] || 'your market';
+  const propertyType = answers['property-type'] || 'all';
+  const timeFrame = answers['time-frame'] || 'last-30-days';
+  const priceRange = answers['price-range'] || 'all';
+  const keyMetrics = answers['key-metrics'] || 'all-metrics';
+  const specificData = answers['specific-data'] || '';
   const audience = answers.audience || 'general';
-  const data = answers.data || '';
-  const soWhat = answers['so-what'] || '';
+  const trendDirection = answers['trend-direction'] || 'unknown';
+  const comparison = answers.comparison || 'none';
+  const actionableInsight = answers['actionable-insight'] || '';
+
+  // Map property types to readable labels
+  const propertyTypeLabels: Record<string, string> = {
+    'all': 'all property types',
+    'single-family': 'single-family homes',
+    'condos': 'condos',
+    'townhomes': 'townhomes',
+    'luxury': 'luxury properties ($1M+)',
+    'apartments': 'apartments and multi-family properties'
+  };
+
+  const timeFrameLabels: Record<string, string> = {
+    'last-7-days': 'the last 7 days',
+    'last-30-days': 'the last 30 days',
+    'last-quarter': 'the last quarter',
+    'last-year': 'the last 12 months',
+    'year-over-year': 'year-over-year'
+  };
+
+  const needsDataResearch = !specificData || specificData.trim() === '';
 
   return `You are a real estate market analyst who translates complex data into clear, actionable insights for ${audience}.
 
-TASK: Write a market report that educates and positions you as the local expert.
+# TASK
+Create a comprehensive market report for ${marketLocation} focused on ${propertyTypeLabels[propertyType] || propertyType} ${timeFrameLabels[timeFrame] || timeFrame}.
 
-MARKET DATA:
-${data}
+# MARKET PARAMETERS
+- Location: ${marketLocation}
+- Property Type: ${propertyTypeLabels[propertyType] || propertyType}
+- Time Frame: ${timeFrameLabels[timeFrame] || timeFrame}
+- Price Range: ${priceRange === 'all' ? 'All price ranges' : priceRange}
+- Key Metrics Focus: ${keyMetrics}
+${comparison !== 'none' ? `- Comparison: ${comparison}` : ''}
 
-YOUR INTERPRETATION:
-${soWhat}
+${needsDataResearch ? `# DATA GATHERING REQUIRED
+**IMPORTANT**: The agent doesn't have specific market data. You MUST:
+1. Use your knowledge of general real estate market trends
+2. Provide realistic, representative example data for ${marketLocation}
+3. Use typical market metrics (median price, days on market, inventory levels, list-to-sale ratio)
+4. Make data feel specific but note it's "recent trends" or "current market conditions"
+5. DO NOT make up exact numbers - use ranges and general trends
 
-STRUCTURE:
-1. Lead with the insight, not the data (so what, then what)
-2. Translate stats into real impact ("This means YOU can...")
-3. Give specific, actionable advice
-4. End with why timing matters now
+Example approach: "Recent trends in ${marketLocation} show median prices ranging from $X-$Y for ${propertyTypeLabels[propertyType]}..."
+` : `# MARKET DATA PROVIDED
+${specificData}
+`}
 
-CONSTRAINTS:
-- Use data as proof points, not the headline
-- Avoid jargon (inventory, absorption rate, etc.) - use plain English
-- Make it relevant to their situation (${audience})
+${actionableInsight ? `# AGENT'S INTERPRETATION
+${actionableInsight}
+` : ''}
+
+${trendDirection !== 'unknown' ? `# MARKET TREND
+Current market is: ${trendDirection.replace('-', ' ')}
+` : ''}
+
+# AUDIENCE-SPECIFIC INSIGHTS
+${audience === 'buyers' ? `
+- What does this market mean for their buying power?
+- Should they act now or wait?
+- What negotiation leverage do they have?
+- Are prices expected to rise or fall?
+` : ''}
+${audience === 'sellers' ? `
+- Is this a good time to list?
+- How should they price to sell quickly vs. maximize value?
+- What's the competition like?
+- How long should they expect to wait?
+` : ''}
+${audience === 'investors' ? `
+- What's the ROI potential?
+- Cash flow vs. appreciation play?
+- Is inventory favorable for investors?
+- What are the risks?
+` : ''}
+
+# STRUCTURE REQUIREMENTS
+1. **Headline**: One sentence that captures the main market insight
+2. **The Big Picture**: 2-3 sentences on overall market state
+3. **Key Metrics** (${keyMetrics}):
+   ${keyMetrics === 'all-metrics' ? '- Median/average price trends\n   - Days on market\n   - Inventory levels (months of supply)\n   - List-to-sale ratio' : `- Focus on ${keyMetrics}`}
+4. **What It Means for ${audience}**:
+   - Translate data into actionable decisions
+   - Use "This means YOU can..." language
+5. **Action Step**: What should they do RIGHT NOW?
+6. **Call-to-Action**: Specific next step to engage with you
+
+# WRITING CONSTRAINTS
+- Lead with insight, not data (so what → what)
+- Avoid jargon - use plain English (not "absorption rate", say "how fast homes are selling")
+- Make it ${audience}-specific and relevant
 - Create urgency without fear-mongering
+- Use conversational tone (you're an advisor, not a reporter)
+- Include specific numbers when available
+- Compare to previous periods if data allows
 - DO NOT be boring or academic
-- DO NOT cherry-pick only data that benefits you
-- DO NOT make predictions you can't back up
+- DO NOT cherry-pick data to make market look better/worse
+- DO NOT make predictions without backing them up
+- DO NOT use phrases like "unprecedented" or "historic" unless truly warranted
 
-OUTPUT FORMAT:
-Headline: [The main insight in one sentence]
-What's Happening: [1-2 paragraphs with key data points]
-What It Means for ${audience === 'general' ? 'You' : audience}: [Practical implications]
-Action Step: [What should they do now?]
-Call-to-Action: [Specific next step]
+# QUALITY CHECKLIST
+□ Starts with an insight that makes them want to keep reading
+□ Data supports claims (not the other way around)
+□ ${audience} clearly understands what to do next
+□ Tone is authoritative but not arrogant
+□ Feels like advice from a trusted friend, not a sales pitch
+□ Under 400 words (scannable)
 
-Write this to educate first, sell second. Be the trusted advisor.`;
+# OUTPUT FORMAT
+**Headline:** [The main insight in one sentence - make it compelling]
+
+**The Big Picture**
+[2-3 sentences setting the scene for ${marketLocation}]
+
+**What the Numbers Show**
+[Present key metrics with context and comparison]
+
+**What This Means for ${audience}**
+[Practical implications - "This means you can/should..."]
+
+**Action Step**
+[One specific thing they should do this week]
+
+**Next Step**
+[Clear CTA - "Reply to this email..." or "Call me for..." or "Download my free..."]
+
+Write this to educate first, sell second. Be the trusted advisor who gives straight answers.`;
 }
 
 function generateVideoScriptPrompt(answers: Record<string, string>): string {
