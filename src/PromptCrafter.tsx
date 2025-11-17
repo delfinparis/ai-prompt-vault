@@ -613,22 +613,18 @@ function PromptCrafter() {
       )}
 
       <div style={styles.container}>
-        {/* Header */}
-        <div style={styles.header}>
-        <h1 style={styles.logo}>AI PROMPT VAULT</h1>
-        <p style={styles.tagline}>
-          creates optimized prompts for chatgpt, claude & other ai assistants
-        </p>
+        {/* Header - History Button Only */}
         {history.length > 0 && !showHistory && (
-          <button
-            onClick={() => setShowHistory(true)}
-            style={styles.historyButton}
-            aria-label={`View prompt history, ${history.length} saved ${history.length === 1 ? 'prompt' : 'prompts'}`}
-          >
-            📜 Prompt History ({history.length})
-          </button>
+          <div style={styles.header}>
+            <button
+              onClick={() => setShowHistory(true)}
+              style={styles.historyButton}
+              aria-label={`View prompt history, ${history.length} saved ${history.length === 1 ? 'prompt' : 'prompts'}`}
+            >
+              📜 Prompt History ({history.length})
+            </button>
+          </div>
         )}
-      </div>
 
       {/* History View */}
       {showHistory && (
@@ -3269,21 +3265,6 @@ const styles: Record<string, React.CSSProperties> = {
     textAlign: 'center',
     marginBottom: '12px', // Reduced from 24px
     paddingTop: '8px' // Reduced from 16px
-  },
-  logo: {
-    fontSize: '24px', // Reduced from 28px
-    fontWeight: 'bold',
-    marginBottom: '4px', // Reduced from 8px
-    lineHeight: 1.2,
-    background: 'linear-gradient(135deg, #a78bfa 0%, #10b981 100%)', // Brighter purple for contrast
-    WebkitBackgroundClip: 'text',
-    WebkitTextFillColor: 'transparent',
-    backgroundClip: 'text'
-  },
-  tagline: {
-    fontSize: '13px', // Reduced from 14px
-    color: '#d1d5db', // Increased from #94a3b8 for AAA contrast (10.1:1)
-    lineHeight: 1.4,
   },
   stepContainer: {
     maxWidth: '800px',
