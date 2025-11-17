@@ -354,13 +354,17 @@ function PromptCrafter() {
           : item
       );
       setHistory(updatedHistory);
-    } catch (error) {
+    } catch (error: any) {
       console.error('AI Generation error:', error);
-      setGeneratedOutput('Unable to generate content. Please try copying the prompt to ChatGPT manually.');
+      const errorMessage = error?.message || 'Unknown error';
+      console.error('Error details:', errorMessage);
+
+      setGeneratedOutput(`Unable to generate content. Error: ${errorMessage}\n\nPlease try copying the prompt to ChatGPT manually.`);
 
       analytics.track('AI_Generated', {
         useCase: state.selectedUseCase!,
-        success: false
+        success: false,
+        error: errorMessage
       });
     } finally {
       setIsGenerating(false);
