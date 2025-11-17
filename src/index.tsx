@@ -3,7 +3,7 @@ import ReactDOM from "react-dom/client";
 import "./index.css";
 import CallYourSphereWizard from "./CallYourSphereWizard";
 import CallYourSphereWizardV2 from "./CallYourSphereWizardV2";
-// import PromptCrafter from "./PromptCrafter"; // Temporarily disabled due to compilation errors
+import PromptCrafter from "./PromptCrafter";
 import * as serviceWorkerRegistration from './serviceWorkerRegistration';
 
 // Feature flags
@@ -11,14 +11,12 @@ const USE_V2 = true; // Call Your Sphere version
 
 // Simple routing based on URL path
 function App() {
-  // const path = window.location.pathname; // Disabled until PromptCrafter is fixed
+  const path = window.location.pathname;
 
   // /prompts or /ai-scripts -> PromptCrafter
-  // Temporarily disabled - PromptCrafter has compilation errors
-  // TODO: Fix PromptCrafter.tsx and re-enable this route
-  // if (path === '/prompts' || path === '/ai-scripts') {
-  //   return <PromptCrafter />;
-  // }
+  if (path === '/prompts' || path === '/ai-scripts') {
+    return <PromptCrafter />;
+  }
 
   // Default: Call Your Sphere
   return USE_V2 ? <CallYourSphereWizardV2 /> : <CallYourSphereWizard />;
