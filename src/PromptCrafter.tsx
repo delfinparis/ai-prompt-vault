@@ -189,7 +189,8 @@ function PromptCrafter() {
   const [copiedPromptFromViewer, setCopiedPromptFromViewer] = useState(false);
   const [showCelebration, setShowCelebration] = useState(false);
 
-  // Quick Mode state (NEW)
+  // Quick Mode state (reserved for v2.1)
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [quickMode, setQuickMode] = useState(() => {
     // Load Quick Mode preference from localStorage
     const saved = localStorage.getItem('promptCrafterQuickMode');
@@ -1234,7 +1235,8 @@ function QuestionFlow({
         onAnswer(q.id, q.defaultValue);
       }
     });
-  }, [useCaseId]); // Only run when use case changes
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [useCaseId]); // Only run when use case changes, not on every answer update
 
   if (!currentQuestion) {
     return null;
@@ -1354,7 +1356,8 @@ const ESSENTIAL_QUESTIONS: Record<string, string[]> = {
   'thank-you': ['occasion', 'client-names', 'memorable-moment']
 };
 
-// Helper function to mark questions as essential or optional
+// Helper function to mark questions as essential or optional (reserved for Quick Mode v2.1)
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function markQuestionPriority(question: Question, useCaseId: string, quickMode: boolean): Question & { isEssential: boolean } {
   const essentialIds = ESSENTIAL_QUESTIONS[useCaseId] || [];
   const isEssential = essentialIds.includes(question.id);
