@@ -1629,7 +1629,7 @@ function getQuestionsForUseCase(useCaseId: string): Question[] {
         id: 'address',
         type: 'text' as const,
         question: 'Property address',
-        subtitle: 'AI can research online details about this address',
+        subtitle: 'AI can research online details about this address. If listing is not live, paste all listing information here.',
         placeholder: 'Example: 123 Main Street, Austin, TX 78704'
       },
       {
