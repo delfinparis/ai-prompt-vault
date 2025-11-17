@@ -272,6 +272,7 @@ const KEY_WEEK_START = "cys:weekStart";
 // ========== MAIN COMPONENT ==========
 
 // Map moods to barriers
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const MOOD_TO_BARRIER: Record<string, string> = {
   'anxious': 'rejection-fear',
   'avoiding': 'perfectionism',

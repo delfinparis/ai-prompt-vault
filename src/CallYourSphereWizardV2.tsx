@@ -419,6 +419,7 @@ export default function CallYourSphereWizardV2() {
     }, timings[breathPhase]);
 
     return () => clearTimeout(timer);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [breathingActive, breathPhase, currentRound]);
 
   const incrementStreak = () => {
