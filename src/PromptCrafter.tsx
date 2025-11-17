@@ -1201,7 +1201,7 @@ function PromptCrafter() {
                   style={{
                     padding: '8px 16px',
                     background: 'transparent',
-                    color: '#94a3b8',
+                    color: '#d1d5db',
                     border: '1px solid #475569',
                     borderRadius: '8px',
                     cursor: 'pointer',
@@ -1375,7 +1375,7 @@ function PromptCrafter() {
               <button
                 onClick={() => {
                   setShowConfirmationModal(false);
-                  handleGeneratePrompt();
+                  handleGenerate();
                 }}
                 style={{
                   ...styles.primaryButton,
@@ -1543,7 +1543,7 @@ function QuestionFlow({
       )}
 
       {currentQuestion.type === 'select' && 'options' in currentQuestion && currentQuestion.options && (
-        <div style={{ display: 'grid', gap: '12px' }}>
+        <div style={{ display: 'grid', gap: '12px', marginBottom: '24px' }}>
           {currentQuestion.options.map((option, index) => (
             <button
               key={option.value}
