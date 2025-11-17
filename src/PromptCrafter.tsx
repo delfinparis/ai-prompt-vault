@@ -2693,7 +2693,7 @@ function generateListingDescriptionPrompt(answers: Record<string, string>): stri
 
   let prompt = `You are a real estate copywriter who writes listing descriptions that make buyers want to schedule a showing immediately.
 
-Act as a master journalist, author, poet, advertising copywriter, and book editor to craft an accessible, yet engaging listing description that doesn't read like all the other listing descriptions, but captures the emotion of the reader without being over the top or cheesy, but professional and fun. Let's make it so a buyer sees it and says, "WOW - I have to go see this property!" Let's make it 1300 characters max, or as close to that as you can get. Let's also respect all NAR rules about listing descriptions as well as Fair Housing rules.
+Act as a master journalist, author, poet, advertising copywriter, and book editor to craft an accessible, yet engaging listing description that doesn't read like all the other listing descriptions, but captures the emotion of the reader without being over the top or cheesy, but professional and fun. Let's make it so a buyer sees it and says, "WOW - I have to go see this property!" Let's also respect all NAR rules about listing descriptions as well as Fair Housing rules.
 
 TASK: Write an MLS listing description for a ${propertyType.replace('-', ' ')}.
 
@@ -2734,8 +2734,10 @@ ${address ? '- Use online research about the address to add credible neighborhoo
 
 OUTPUT FORMAT:
 Headline: [Attention-grabbing first sentence]
-Body: [2-3 paragraphs with sensory details and lifestyle benefits]
+Body: [2-3 paragraphs with sensory details and lifestyle benefits - MAXIMUM 1300 CHARACTERS for this section only]
 Key Features: [Bulleted list of top 5-7 features]
+
+CRITICAL: The Body section MUST be 1300 characters or less (as close to 1300 as possible, but never exceed it). The Headline and Key Features are separate and don't count toward this limit.
 
 Write this to sell the lifestyle, not just the house.`;
 
