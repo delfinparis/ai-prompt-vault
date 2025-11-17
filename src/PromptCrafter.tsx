@@ -29,8 +29,9 @@ type PromptHistory = {
   useCaseName: string;
   prompt: string;
   answers: Record<string, string>;
-  aiOutput?: string; // NEW: Save AI-generated output
-  userRating?: 'good' | 'bad'; // NEW: Track quality
+  aiOutput?: string; // AI-generated output
+  aiVariations?: string[]; // Multiple AI variations
+  userRating?: 'good' | 'bad'; // Track quality
 };
 
 type QuestionOption = {
@@ -183,6 +184,10 @@ function PromptCrafter() {
   // AI Generation state
   const [isGenerating, setIsGenerating] = useState(false);
   const [generatedOutput, setGeneratedOutput] = useState<string | null>(null);
+  const [generatedVariations, setGeneratedVariations] = useState<string[]>([]);
+  const [selectedVariation, setSelectedVariation] = useState<number>(0);
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [editedOutput, setEditedOutput] = useState<string>('');
   const [copiedOutput, setCopiedOutput] = useState(false);
   const [showPrompt, setShowPrompt] = useState(false);
   const [loadingMessage, setLoadingMessage] = useState(0);
@@ -299,39 +304,49 @@ function PromptCrafter() {
     setTimeout(() => setCopiedPrompt(false), 2000);
   };
 
-  const handleGenerate = async () => {
+  const handleGenerateVariations = async (count: number = 3) => {
     // First, generate the prompt if it doesn't exist
     if (!state.generatedPrompt) {
       handleGeneratePrompt();
-      // Wait for next render cycle to ensure prompt is set
       await new Promise(resolve => setTimeout(resolve, 100));
     }
 
     setIsGenerating(true);
     setGeneratedOutput(null);
+    setGeneratedVariations([]);
+    setSelectedVariation(0);
     setShowPrompt(false);
     setLoadingMessage(0);
 
-    // Get the current prompt (in case it was just generated)
     const promptToUse = generatePrompt(state.selectedUseCase!, state.answers);
+    const variations: string[] = [];
 
     try {
-      const response = await fetch('/api/generate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          prompt: promptToUse,
-          userInput: JSON.stringify(state.answers)
-        })
+      // Generate multiple variations in parallel
+      const promises = Array.from({ length: count }, async (_, i) => {
+        const response = await fetch('/api/generate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            prompt: promptToUse + `\n\nNote: This is variation ${i + 1} of ${count}. Make it unique from the others.`,
+            userInput: JSON.stringify(state.answers)
+          })
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(data.error || 'Generation failed');
+        }
+
+        return data.output || data.result || 'No output received';
       });
 
-      const data = await response.json();
+      const results = await Promise.all(promises);
+      variations.push(...results);
 
-      if (!response.ok) {
-        throw new Error(data.error || 'Generation failed');
-      }
-
-      setGeneratedOutput(data.output || data.result || 'No output received');
+      setGeneratedVariations(variations);
+      setGeneratedOutput(variations[0]); // Show first variation by default
 
       // 🎉 CELEBRATION TIME!
       setShowCelebration(true);
@@ -357,10 +372,10 @@ function PromptCrafter() {
       // Clear session data
       analytics.clearSessionData(`${state.selectedUseCase}_startTime`);
 
-      // Update history with AI output
+      // Update history with first variation
       const updatedHistory = history.map(item =>
         item.id === history[0]?.id
-          ? { ...item, aiOutput: data.output || data.result }
+          ? { ...item, aiOutput: variations[0], aiVariations: variations }
           : item
       );
       setHistory(updatedHistory);
@@ -379,6 +394,11 @@ function PromptCrafter() {
     } finally {
       setIsGenerating(false);
     }
+  };
+
+  const handleGenerate = async () => {
+    // Wrapper that calls handleGenerateVariations with count=1
+    await handleGenerateVariations(1);
   };
 
   // Helper function to count how many defaults were changed
@@ -1137,6 +1157,34 @@ function PromptCrafter() {
           ) : (
             // After AI generation - show output
             <>
+              {/* Variation Selector (if multiple variations exist) */}
+              {generatedVariations.length > 1 && (
+                <div style={{ marginBottom: '16px', display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                  {generatedVariations.map((_, index) => (
+                    <button
+                      key={index}
+                      onClick={() => {
+                        setSelectedVariation(index);
+                        setGeneratedOutput(generatedVariations[index]);
+                        setEditedOutput(generatedVariations[index]);
+                      }}
+                      style={{
+                        padding: '8px 16px',
+                        background: selectedVariation === index ? '#8b5cf6' : 'transparent',
+                        color: selectedVariation === index ? '#fff' : '#94a3b8',
+                        border: `2px solid ${selectedVariation === index ? '#8b5cf6' : '#475569'}`,
+                        borderRadius: '8px',
+                        cursor: 'pointer',
+                        fontSize: '13px',
+                        fontWeight: '600'
+                      }}
+                    >
+                      Version {index + 1}
+                    </button>
+                  ))}
+                </div>
+              )}
+
               <div style={{
                 background: 'rgba(16, 185, 129, 0.12)',
                 border: '2px solid #10b981',
@@ -1144,19 +1192,59 @@ function PromptCrafter() {
                 padding: '20px',
                 marginBottom: '24px'
               }}>
-                <div style={{ fontSize: '14px', fontWeight: 'bold', color: '#10b981', marginBottom: '12px' }}>
-                  ✨ AI Generated Output:
+                <div style={{ fontSize: '14px', fontWeight: 'bold', color: '#10b981', marginBottom: '12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span>✨ AI Generated Output{generatedVariations.length > 1 ? ` (Version ${selectedVariation + 1})` : ''}:</span>
+                  <button
+                    onClick={() => {
+                      setIsEditMode(!isEditMode);
+                      setEditedOutput(generatedOutput || '');
+                    }}
+                    style={{
+                      padding: '4px 12px',
+                      background: isEditMode ? '#8b5cf6' : 'transparent',
+                      color: isEditMode ? '#fff' : '#10b981',
+                      border: `1px solid ${isEditMode ? '#8b5cf6' : '#10b981'}`,
+                      borderRadius: '6px',
+                      cursor: 'pointer',
+                      fontSize: '12px'
+                    }}
+                  >
+                    {isEditMode ? '✓ Done Editing' : '✏️ Edit'}
+                  </button>
                 </div>
-                <div style={{
-                  fontSize: '14px',
-                  lineHeight: '1.7',
-                  color: '#e5e7eb',
-                  whiteSpace: 'pre-wrap',
-                  maxHeight: '400px',
-                  overflowY: 'auto'
-                }}>
-                  {generatedOutput}
-                </div>
+                {isEditMode ? (
+                  <textarea
+                    value={editedOutput}
+                    onChange={(e) => {
+                      setEditedOutput(e.target.value);
+                      setGeneratedOutput(e.target.value);
+                    }}
+                    style={{
+                      width: '100%',
+                      minHeight: '300px',
+                      fontSize: '14px',
+                      lineHeight: '1.7',
+                      color: '#e5e7eb',
+                      background: 'rgba(15, 23, 42, 0.5)',
+                      border: '1px solid #475569',
+                      borderRadius: '8px',
+                      padding: '12px',
+                      resize: 'vertical',
+                      fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Roboto, sans-serif',
+                    }}
+                  />
+                ) : (
+                  <div style={{
+                    fontSize: '14px',
+                    lineHeight: '1.7',
+                    color: '#e5e7eb',
+                    whiteSpace: 'pre-wrap',
+                    maxHeight: '400px',
+                    overflowY: 'auto'
+                  }}>
+                    {generatedOutput}
+                  </div>
+                )}
               </div>
 
               {/* Actions after generation */}
@@ -1172,8 +1260,23 @@ function PromptCrafter() {
                   {copiedOutput ? '✓ Copied!' : '📋 Copy Output'}
                 </button>
                 <button
+                  onClick={() => handleGenerateVariations(3)}
+                  style={{
+                    ...styles.secondaryButton,
+                    marginTop: 0,
+                    flex: '1 1 200px',
+                    background: 'transparent',
+                    borderColor: '#8b5cf6',
+                    color: '#a78bfa'
+                  }}
+                >
+                  🔄 Generate 3 Versions
+                </button>
+                <button
                   onClick={() => {
                     setGeneratedOutput(null);
+                    setGeneratedVariations([]);
+                    setIsEditMode(false);
                     setIsGenerating(false);
                   }}
                   style={{
@@ -1182,7 +1285,7 @@ function PromptCrafter() {
                     flex: '1 1 200px'
                   }}
                 >
-                  🔄 Generate Again
+                  ↩️ Start Over
                 </button>
               </div>
 
