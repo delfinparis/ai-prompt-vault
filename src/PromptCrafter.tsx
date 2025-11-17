@@ -187,6 +187,9 @@ function PromptCrafter() {
   const [copiedPromptFromViewer, setCopiedPromptFromViewer] = useState(false);
   const [showCelebration, setShowCelebration] = useState(false);
 
+  // Voice preference (simple version - will expand with full UI later)
+  const [voicePreference, setVoicePreference] = useState<string>('friendly');
+
   // Load history from localStorage on mount
   useEffect(() => {
     const savedHistory = localStorage.getItem('promptHistory');
@@ -210,6 +213,28 @@ function PromptCrafter() {
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }, [state.step, showHistory]);
+
+  // Load saved voice preference for this use case
+  useEffect(() => {
+    if (state.selectedUseCase) {
+      const savedVoice = localStorage.getItem(`voice_pref_${state.selectedUseCase}`);
+      if (savedVoice) {
+        setVoicePreference(savedVoice);
+        console.log(`Loaded saved voice preference for ${state.selectedUseCase}: ${savedVoice}`);
+      } else {
+        setVoicePreference('friendly'); // Default
+      }
+    }
+  }, [state.selectedUseCase]);
+
+  // Save voice preference whenever it changes (and we have a use case selected)
+  const saveVoicePreference = (voice: string) => {
+    setVoicePreference(voice);
+    if (state.selectedUseCase) {
+      localStorage.setItem(`voice_pref_${state.selectedUseCase}`, voice);
+      console.log(`Saved voice preference for ${state.selectedUseCase}: ${voice}`);
+    }
+  };
 
   // Cycle through funny loading messages
   useEffect(() => {
