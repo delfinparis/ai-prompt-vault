@@ -186,14 +186,13 @@ function PromptCrafter() {
   const [generatedOutput, setGeneratedOutput] = useState<string | null>(null);
   const [generatedVariations, setGeneratedVariations] = useState<string[]>([]);
   const [selectedVariation, setSelectedVariation] = useState<number>(0);
-  const [isEditMode, setIsEditMode] = useState(false);
-  const [editedOutput, setEditedOutput] = useState<string>('');
   const [copiedOutput, setCopiedOutput] = useState(false);
   const [showPrompt, setShowPrompt] = useState(false);
   const [loadingMessage, setLoadingMessage] = useState(0);
   const [copiedPromptFromViewer, setCopiedPromptFromViewer] = useState(false);
   const [showCelebration, setShowCelebration] = useState(false);
   const [showPremiumModal, setShowPremiumModal] = useState(false);
+  const [showConfirmationModal, setShowConfirmationModal] = useState(false);
 
   // Premium subscription status (hardcoded for now - will integrate with payment later)
   const hasPremiumSubscription = false;
@@ -433,6 +432,36 @@ function PromptCrafter() {
       setCopiedOutput(true);
       setTimeout(() => setCopiedOutput(false), 2000);
     }
+  };
+
+  const generateSummary = (): string => {
+    if (!state.selectedUseCase) return '';
+
+    const useCase = USE_CASES.find(uc => uc.id === state.selectedUseCase);
+    if (!useCase) return '';
+
+    const questions = getQuestionsForUseCase(state.selectedUseCase);
+    const keyAnswers: string[] = [];
+
+    // Build a natural language summary
+    questions.forEach(q => {
+      const answer = state.answers[q.id];
+      if (answer && answer.trim()) {
+        // Get the label for select options
+        if (q.type === 'select' && 'options' in q && q.options) {
+          const selectedOption = q.options.find(opt => opt.value === answer);
+          if (selectedOption) {
+            keyAnswers.push(selectedOption.label.toLowerCase());
+          }
+        } else {
+          keyAnswers.push(answer);
+        }
+      }
+    });
+
+    // Create a natural summary based on use case
+    const summary = `You are looking for ${useCase.name.toLowerCase()} ${keyAnswers.length > 0 ? 'for ' + keyAnswers.join(', ') : ''}`;
+    return summary;
   };
 
   const handleRestorePrompt = (item: PromptHistory) => {
@@ -943,7 +972,7 @@ function PromptCrafter() {
           onAnswer={handleAnswer}
           onNext={() => setState({ ...state, step: state.step + 1 })}
           onBack={() => setState({ ...state, step: Math.max(0, state.step - 1) })}
-          onGenerate={handleGeneratePrompt}
+          onGenerate={() => setShowConfirmationModal(true)}
         />
       )}
 
@@ -1161,13 +1190,12 @@ function PromptCrafter() {
           ) : (
             // After AI generation - show output
             <>
-              {/* Header with Back and Start Over buttons */}
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+              {/* Header with Back button */}
+              <div style={{ marginBottom: '20px' }}>
                 <button
                   onClick={() => {
                     setGeneratedOutput(null);
                     setGeneratedVariations([]);
-                    setIsEditMode(false);
                     setIsGenerating(false);
                   }}
                   style={{
@@ -1183,21 +1211,6 @@ function PromptCrafter() {
                 >
                   ← Back
                 </button>
-                <button
-                  onClick={handleReset}
-                  style={{
-                    padding: '8px 16px',
-                    background: 'transparent',
-                    color: '#94a3b8',
-                    border: '1px solid #475569',
-                    borderRadius: '8px',
-                    cursor: 'pointer',
-                    fontSize: '14px',
-                    fontWeight: '500'
-                  }}
-                >
-                  ↩️ Start Over
-                </button>
               </div>
 
               {/* Variation Selector (if multiple variations exist) */}
@@ -1209,7 +1222,6 @@ function PromptCrafter() {
                       onClick={() => {
                         setSelectedVariation(index);
                         setGeneratedOutput(generatedVariations[index]);
-                        setEditedOutput(generatedVariations[index]);
                       }}
                       style={{
                         padding: '8px 16px',
@@ -1317,6 +1329,75 @@ function PromptCrafter() {
           <button onClick={handleReset} style={styles.secondaryButton}>
             Create Another Prompt
           </button>
+        </div>
+      )}
+
+      {/* Confirmation Modal */}
+      {showConfirmationModal && (
+        <div
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: 'rgba(0, 0, 0, 0.8)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 1000
+          }}
+          onClick={() => setShowConfirmationModal(false)}
+        >
+          <div
+            style={{
+              background: '#1e293b',
+              border: '2px solid #8b5cf6',
+              borderRadius: '16px',
+              padding: '32px',
+              maxWidth: '500px',
+              width: '90%',
+              textAlign: 'center'
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div style={{ fontSize: '48px', marginBottom: '16px' }}>✨</div>
+            <h2 style={{ fontSize: '24px', color: '#f8fafc', marginBottom: '16px' }}>
+              Ready to Generate?
+            </h2>
+            <p style={{ fontSize: '16px', color: '#d1d5db', marginBottom: '24px', lineHeight: '1.6' }}>
+              {generateSummary()}
+            </p>
+            <p style={{ fontSize: '14px', color: '#94a3b8', marginBottom: '24px' }}>
+              Is this correct?
+            </p>
+            <div style={{ display: 'flex', gap: '12px', flexDirection: 'column' }}>
+              <button
+                onClick={() => {
+                  setShowConfirmationModal(false);
+                  handleGeneratePrompt();
+                }}
+                style={{
+                  ...styles.primaryButton,
+                  marginTop: 0
+                }}
+              >
+                Yes, show me some magic! ✨
+              </button>
+              <button
+                onClick={() => {
+                  setShowConfirmationModal(false);
+                  setState({ ...state, step: 1 });
+                }}
+                style={{
+                  ...styles.secondaryButton,
+                  marginTop: 0
+                }}
+              >
+                No, I want to make changes
+              </button>
+            </div>
+          </div>
         </div>
       )}
 
@@ -1466,11 +1547,20 @@ function QuestionFlow({
           {currentQuestion.options.map((option, index) => (
             <button
               key={option.value}
-              onClick={() => onAnswer(currentQuestion.id, option.value)}
+              onClick={() => {
+                onAnswer(currentQuestion.id, option.value);
+                // Auto-advance after a short delay to show selection
+                setTimeout(() => {
+                  isLastQuestion ? onGenerate() : onNext();
+                }, 300);
+              }}
               onKeyDown={(e) => {
                 if (e.key === 'Enter' || e.key === ' ') {
                   e.preventDefault();
                   onAnswer(currentQuestion.id, option.value);
+                  setTimeout(() => {
+                    isLastQuestion ? onGenerate() : onNext();
+                  }, 300);
                 }
               }}
               autoFocus={index === 0}
