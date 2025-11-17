@@ -300,17 +300,27 @@ function PromptCrafter() {
   };
 
   const handleGenerate = async () => {
+    // First, generate the prompt if it doesn't exist
+    if (!state.generatedPrompt) {
+      handleGeneratePrompt();
+      // Wait for next render cycle to ensure prompt is set
+      await new Promise(resolve => setTimeout(resolve, 100));
+    }
+
     setIsGenerating(true);
     setGeneratedOutput(null);
     setShowPrompt(false);
     setLoadingMessage(0);
+
+    // Get the current prompt (in case it was just generated)
+    const promptToUse = generatePrompt(state.selectedUseCase!, state.answers);
 
     try {
       const response = await fetch('/api/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          prompt: state.generatedPrompt,
+          prompt: promptToUse,
           userInput: JSON.stringify(state.answers)
         })
       });
