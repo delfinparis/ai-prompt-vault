@@ -190,6 +190,19 @@ function PromptCrafter() {
   // Voice preference (simple version - will expand with full UI later)
   const [voicePreference, setVoicePreference] = useState<string>('friendly');
 
+  // Onboarding tour state
+  const [showTour, setShowTour] = useState(false);
+  const [tourStep, setTourStep] = useState(0);
+
+  // Check if user has seen onboarding tour
+  useEffect(() => {
+    const hasSeenTour = localStorage.getItem('onboarding_complete');
+    if (!hasSeenTour && state.step === 0) {
+      // Show tour after a brief delay for better UX
+      setTimeout(() => setShowTour(true), 500);
+    }
+  }, [state.step]);
+
   // Load history from localStorage on mount
   useEffect(() => {
     const savedHistory = localStorage.getItem('promptHistory');
