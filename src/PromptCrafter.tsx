@@ -1626,6 +1626,13 @@ function getQuestionsForUseCase(useCaseId: string): Question[] {
         ]
       },
       {
+        id: 'address',
+        type: 'text' as const,
+        question: 'Property address',
+        subtitle: 'AI can research online details about this address',
+        placeholder: 'Example: 123 Main Street, Austin, TX 78704'
+      },
+      {
         id: 'basic-specs',
         type: 'text' as const,
         question: 'Beds, baths, sq ft, year built',
@@ -1650,6 +1657,13 @@ function getQuestionsForUseCase(useCaseId: string): Question[] {
         question: 'Top 5-7 features to highlight',
         subtitle: 'Updates, unique features, what makes it special',
         placeholder: 'Example: Updated kitchen (2023), quartz counters, Wolf appliances, primary suite w/ spa bath, huge backyard, smart home, 2-car garage...'
+      },
+      {
+        id: 'existing-description',
+        type: 'textarea' as const,
+        question: 'Current listing description (if you have one)',
+        subtitle: 'Optional - AI can improve/rewrite your existing copy',
+        placeholder: 'Paste your current listing description here, or leave blank for a fresh start...'
       },
       {
         id: 'lifestyle-appeal',
@@ -2660,7 +2674,14 @@ Write all ${emails} emails. Number them clearly.`;
 
 function generateListingDescriptionPrompt(answers: Record<string, string>): string {
   const propertyType = answers['property-type'] || 'single-family';
-  const details = answers.details || '';
+  const address = answers.address || '';
+  const basicSpecs = answers['basic-specs'] || '';
+  const location = answers.location || '';
+  const price = answers.price || '';
+  const keyFeatures = answers['key-features'] || '';
+  const existingDescription = answers['existing-description'] || '';
+  const lifestyleAppeal = answers['lifestyle-appeal'] || 'family';
+  const urgency = answers.urgency || 'new-listing';
   const vibe = answers.vibe || 'professional';
 
   const toneGuidance = {
@@ -2670,12 +2691,31 @@ function generateListingDescriptionPrompt(answers: Record<string, string>): stri
     casual: 'Friendly and warm, like you\'re describing it to a friend'
   };
 
-  return `You are a real estate copywriter who writes listing descriptions that make buyers want to schedule a showing immediately.
+  let prompt = `You are a real estate copywriter who writes listing descriptions that make buyers want to schedule a showing immediately.
 
 TASK: Write an MLS listing description for a ${propertyType.replace('-', ' ')}.
 
-PROPERTY DETAILS:
-${details}
+PROPERTY INFORMATION:`;
+
+  if (address) {
+    prompt += `\nAddress: ${address}
+IMPORTANT: Research this address online to find accurate neighborhood details, school ratings, nearby amenities, and property history. Incorporate relevant findings naturally into the description.`;
+  }
+
+  prompt += `\n${basicSpecs ? `Basics: ${basicSpecs}` : ''}
+${location ? `Location: ${location}` : ''}
+${price ? `Price: ${price}` : ''}
+${keyFeatures ? `Key Features:\n${keyFeatures}` : ''}`;
+
+  if (existingDescription) {
+    prompt += `\n\nEXISTING DESCRIPTION (improve/rewrite this):
+${existingDescription}
+
+TASK: Rewrite the above description to be more compelling. Keep accurate details but improve flow, remove clichés, add sensory language, and create urgency.`;
+  }
+
+  prompt += `\n\nTARGET BUYER: ${lifestyleAppeal.replace('-', ' ')}
+URGENCY FACTOR: ${urgency.replace('-', ' ')}
 
 STYLE: ${vibe}
 ${toneGuidance[vibe as keyof typeof toneGuidance]}
@@ -2688,6 +2728,7 @@ CONSTRAINTS:
 - Keep it under 250 words (buyers skim)
 - DO NOT use: "charming", "cozy" (code for small), "unique" (code for weird), "motivated seller", "won't last long"
 - DO NOT list every single feature - highlight what makes it special
+${address ? '- Use online research about the address to add credible neighborhood/area details' : ''}
 
 OUTPUT FORMAT:
 Headline: [Attention-grabbing first sentence]
@@ -2695,6 +2736,8 @@ Body: [2-3 paragraphs with sensory details and lifestyle benefits]
 Key Features: [Bulleted list of top 5-7 features]
 
 Write this to sell the lifestyle, not just the house.`;
+
+  return prompt;
 }
 
 function generateConsultationScriptPrompt(answers: Record<string, string>): string {

@@ -1,0 +1,330 @@
+{
+  "metadata": {
+    "totalProfilesGenerated": 100000,
+    "profilesTested": 1000,
+    "totalIssuesFound": 5000,
+    "uniqueIssues": 4731,
+    "timestamp": "2025-11-17T13:18:32.957Z"
+  },
+  "profileDistribution": {
+    "age": {
+      "30-40": 24894,
+      "40-50": 25274,
+      "50-60": 24726,
+      "60-70": 25106
+    },
+    "techSavviness": {
+      "low": 35691,
+      "medium": 37528,
+      "high": 26781
+    },
+    "primaryDevice": {
+      "mobile": 41975,
+      "desktop": 36697,
+      "tablet": 21328
+    }
+  },
+  "issuesByCategory": {
+    "inefficiency": 998,
+    "confusion": 947,
+    "complexity": 971,
+    "disruption": 562,
+    "clarity": 1081,
+    "duplication": 430,
+    "clutter": 8,
+    "necessity": 1,
+    "duplicity": 1,
+    "duplicated": 1
+  },
+  "issuesBySeverity": {
+    "high": 1036,
+    "medium": 3860,
+    "low": 104
+  },
+  "issuesByLocation": {
+    "confirmationModal": 979,
+    "resultScreen": 1848,
+    "collapsible prompt viewer": 411,
+    "premiumModal": 669,
+    "result screen": 29,
+    "confirmation modal": 21,
+    "premium modal": 15,
+    "loadingScreen": 45,
+    "questionFlow": 155,
+    "version selector": 608,
+    "questionFlow and resultScreen": 139,
+    "resultScreen (version selector)": 10,
+    "resultScreen - version selector": 6,
+    "Back button and Create Another Prompt button": 2,
+    "navigation buttons": 4,
+    "Back and Create Another Prompt buttons": 5,
+    "collapsed prompt viewer": 1,
+    "back button and create another prompt": 4,
+    "questionFlow and confirmationModal": 2,
+    "navigation": 2,
+    "navigation options": 6,
+    "Back button and Create Another Prompt": 2,
+    "navigation options (Back and Create Another Prompt)": 2,
+    "resultsScreen": 2,
+    "versionSelector": 3,
+    "back button and create another prompt button": 1,
+    "resultScreen - collapsible prompt viewer": 3,
+    "questionFlow and loadingScreen": 1,
+    "questionFlow & resultScreen": 2,
+    "resultScreen: version selector": 2,
+    "resultScreen (collapsible prompt viewer)": 4,
+    "homeScreen": 5,
+    "back button & create another prompt": 1,
+    "navigation elements": 4,
+    "loadingScreen and resultScreen": 1,
+    "back and create another prompt buttons": 1,
+    "back button and Create Another Prompt button": 2,
+    "back button and Create Another Prompt": 2,
+    "home screen": 1
+  },
+  "topIssues": [
+    {
+      "category": "inefficiency",
+      "severity": "high",
+      "location": "confirmationModal",
+      "description": "The confirmation modal may slow down the workflow by requiring an additional step before generating results.",
+      "suggestedFix": "Remove the confirmation modal and allow users to generate results directly after answering questions, with an option to review before finalizing.",
+      "frequency": 16
+    },
+    {
+      "category": "confusion",
+      "severity": "high",
+      "location": "resultScreen",
+      "description": "The presence of multiple buttons (Copy Result, Regenerate, Back, Create Another Prompt) may overwhelm the realtor, leading to confusion about which action to take.",
+      "suggestedFix": "Simplify the result screen by reducing the number of visible buttons. Consider grouping related actions (e.g., copying and regenerating) or using a dropdown for less frequently used options.",
+      "frequency": 8
+    },
+    {
+      "category": "inefficiency",
+      "severity": "high",
+      "location": "confirmationModal",
+      "description": "The confirmation modal may slow down the process by requiring an additional step before generating results.",
+      "suggestedFix": "Remove the confirmation modal and directly generate results after the final input; provide a summary on the result screen instead.",
+      "frequency": 7
+    },
+    {
+      "category": "confusion",
+      "severity": "high",
+      "location": "resultScreen",
+      "description": "The presence of multiple buttons (Copy Result, Regenerate, Back, Create Another Prompt) may overwhelm the user, leading to confusion about which action to take next.",
+      "suggestedFix": "Consolidate actions to prioritize the most important functions (e.g., combine Regenerate and Create Another Prompt into one function that allows the user to either adjust their input for a new result or generate another result).",
+      "frequency": 5
+    },
+    {
+      "category": "confusion",
+      "severity": "high",
+      "location": "resultScreen",
+      "description": "The presence of multiple buttons (Copy Result, Regenerate, Back, Create Another Prompt) may overwhelm the user and create confusion about which action to take next.",
+      "suggestedFix": "Consolidate actions by using a single 'Next Steps' button that opens a menu with options like 'Copy Result' and 'Create Another Prompt'.",
+      "frequency": 5
+    },
+    {
+      "category": "inefficiency",
+      "severity": "high",
+      "location": "confirmationModal",
+      "description": "The confirmation modal may slow down the process, as it adds an additional step before generating results.",
+      "suggestedFix": "Remove the confirmation modal and directly generate results after the user clicks 'Next', incorporating a brief summary on the result screen instead.",
+      "frequency": 4
+    },
+    {
+      "category": "inefficiency",
+      "severity": "high",
+      "location": "confirmationModal",
+      "description": "The confirmation modal may slow down the workflow as it adds an extra step before generating results.",
+      "suggestedFix": "Remove the confirmation modal and automate the result generation after the last input step unless a major change is made, allowing for a more seamless experience.",
+      "frequency": 4
+    },
+    {
+      "category": "inefficiency",
+      "severity": "high",
+      "location": "confirmationModal",
+      "description": "The confirmation modal may slow down the process, especially for users who are confident in their input.",
+      "suggestedFix": "Remove the confirmation modal for straightforward inputs and allow users to directly generate results, providing a simple undo option instead.",
+      "frequency": 4
+    },
+    {
+      "category": "confusion",
+      "severity": "high",
+      "location": "resultScreen",
+      "description": "The presence of multiple buttons (Copy Result, Regenerate, Back, Create Another Prompt) may overwhelm the user, especially for someone with low tech savviness.",
+      "suggestedFix": "Consider condensing the buttons by removing 'Regenerate' or combining 'Back' and 'Create Another Prompt' into a single button that leads to a prompt creation with the option to edit the last prompt.",
+      "frequency": 4
+    },
+    {
+      "category": "confusion",
+      "severity": "high",
+      "location": "resultScreen",
+      "description": "The presence of multiple buttons (Copy Result, Regenerate, Back, Create Another Prompt) may overwhelm the user and make it unclear what the primary action should be.",
+      "suggestedFix": "Consider reducing the number of buttons by combining actions or using a more streamlined approach, such as consolidating 'Back' and 'Create Another Prompt' into a single 'Start Over' button.",
+      "frequency": 3
+    },
+    {
+      "category": "complexity",
+      "severity": "high",
+      "location": "resultScreen",
+      "description": "There are too many buttons on the result screen, which can overwhelm the user and lead to decision fatigue.",
+      "suggestedFix": "Combine similar functionalities, such as 'Copy Result' and 'Create Another Prompt', into a single button that allows users to choose their next action.",
+      "frequency": 3
+    },
+    {
+      "category": "confusion",
+      "severity": "high",
+      "location": "resultScreen",
+      "description": "The presence of too many buttons (Copy Result, Regenerate, Back, Create Another Prompt) may overwhelm the realtor, especially given their short attention span.",
+      "suggestedFix": "Consolidate actions; for instance, combine 'Create Another Prompt' with 'Back' to streamline options.",
+      "frequency": 3
+    },
+    {
+      "category": "confusion",
+      "severity": "high",
+      "location": "resultScreen",
+      "description": "The presence of too many buttons (Copy Result, Regenerate, Back, Create Another Prompt) can overwhelm the user, especially for someone with low tech savviness.",
+      "suggestedFix": "Simplify the result screen by consolidating actions; for example, combine 'Copy Result' and 'Create Another Prompt' into a single action button that says 'Use This Result'.",
+      "frequency": 3
+    },
+    {
+      "category": "inefficiency",
+      "severity": "high",
+      "location": "confirmationModal",
+      "description": "The confirmation modal adds an unnecessary step that could slow down the process of generating content.",
+      "suggestedFix": "Remove the confirmation modal and directly generate the result after the user clicks 'Next' on the question flow.",
+      "frequency": 3
+    },
+    {
+      "category": "confusion",
+      "severity": "high",
+      "location": "resultScreen",
+      "description": "The presence of multiple buttons (Copy Result, Regenerate, Back, Create Another Prompt) may overwhelm the realtor, especially given their low tech savviness.",
+      "suggestedFix": "Consolidate actions by providing a single prominent 'Next Steps' button that leads to a new screen with options rather than displaying multiple buttons.",
+      "frequency": 3
+    },
+    {
+      "category": "inefficiency",
+      "severity": "high",
+      "location": "confirmationModal",
+      "description": "The confirmation modal may slow down the workflow by adding an unnecessary step before generating results.",
+      "suggestedFix": "Remove the confirmation modal and allow users to directly generate results after submitting their input. Instead, implement a quick review message on the result screen if needed.",
+      "frequency": 3
+    },
+    {
+      "category": "inefficiency",
+      "severity": "high",
+      "location": "confirmationModal",
+      "description": "The confirmation modal adds an unnecessary step, potentially slowing down the process of generating content.",
+      "suggestedFix": "Eliminate the confirmation modal and directly transition from the question flow to the loading screen after the user clicks 'Next'.",
+      "frequency": 2
+    },
+    {
+      "category": "complexity",
+      "severity": "high",
+      "location": "collapsible prompt viewer",
+      "description": "The collapsible prompt viewer may add unnecessary complexity, especially for users with low tech savviness.",
+      "suggestedFix": "Remove the collapsible prompt viewer or replace it with a static prompt display, simplifying the user experience without losing context.",
+      "frequency": 2
+    },
+    {
+      "category": "complexity",
+      "severity": "high",
+      "location": "collapsible prompt viewer",
+      "description": "The collapsible prompt viewer may add unnecessary complexity and clutter to the result screen, especially for users with short attention spans.",
+      "suggestedFix": "Remove the collapsible prompt viewer or integrate the prompt summary directly into the result box for easier access.",
+      "frequency": 2
+    },
+    {
+      "category": "confusion",
+      "severity": "high",
+      "location": "resultScreen",
+      "description": "The presence of multiple buttons (Copy Result, Regenerate, Back, Create Another Prompt) may overwhelm the user and lead to confusion about what action to take next.",
+      "suggestedFix": "Consolidate actions into fewer buttons, possibly combining Regenerate and Create Another Prompt into a single 'Regenerate Another Result' button that prompts for confirmation.",
+      "frequency": 2
+    }
+  ],
+  "criticalIssues": [],
+  "highPriorityIssues": [
+    {
+      "category": "inefficiency",
+      "severity": "high",
+      "location": "confirmationModal",
+      "description": "The confirmation modal may slow down the workflow by requiring an additional step before generating results.",
+      "suggestedFix": "Remove the confirmation modal and allow users to generate results directly after answering questions, with an option to review before finalizing.",
+      "frequency": 16
+    },
+    {
+      "category": "confusion",
+      "severity": "high",
+      "location": "resultScreen",
+      "description": "The presence of multiple buttons (Copy Result, Regenerate, Back, Create Another Prompt) may overwhelm the realtor, leading to confusion about which action to take.",
+      "suggestedFix": "Simplify the result screen by reducing the number of visible buttons. Consider grouping related actions (e.g., copying and regenerating) or using a dropdown for less frequently used options.",
+      "frequency": 8
+    },
+    {
+      "category": "inefficiency",
+      "severity": "high",
+      "location": "confirmationModal",
+      "description": "The confirmation modal may slow down the process by requiring an additional step before generating results.",
+      "suggestedFix": "Remove the confirmation modal and directly generate results after the final input; provide a summary on the result screen instead.",
+      "frequency": 7
+    },
+    {
+      "category": "confusion",
+      "severity": "high",
+      "location": "resultScreen",
+      "description": "The presence of multiple buttons (Copy Result, Regenerate, Back, Create Another Prompt) may overwhelm the user, leading to confusion about which action to take next.",
+      "suggestedFix": "Consolidate actions to prioritize the most important functions (e.g., combine Regenerate and Create Another Prompt into one function that allows the user to either adjust their input for a new result or generate another result).",
+      "frequency": 5
+    },
+    {
+      "category": "confusion",
+      "severity": "high",
+      "location": "resultScreen",
+      "description": "The presence of multiple buttons (Copy Result, Regenerate, Back, Create Another Prompt) may overwhelm the user and create confusion about which action to take next.",
+      "suggestedFix": "Consolidate actions by using a single 'Next Steps' button that opens a menu with options like 'Copy Result' and 'Create Another Prompt'.",
+      "frequency": 5
+    },
+    {
+      "category": "inefficiency",
+      "severity": "high",
+      "location": "confirmationModal",
+      "description": "The confirmation modal may slow down the process, as it adds an additional step before generating results.",
+      "suggestedFix": "Remove the confirmation modal and directly generate results after the user clicks 'Next', incorporating a brief summary on the result screen instead.",
+      "frequency": 4
+    },
+    {
+      "category": "inefficiency",
+      "severity": "high",
+      "location": "confirmationModal",
+      "description": "The confirmation modal may slow down the workflow as it adds an extra step before generating results.",
+      "suggestedFix": "Remove the confirmation modal and automate the result generation after the last input step unless a major change is made, allowing for a more seamless experience.",
+      "frequency": 4
+    },
+    {
+      "category": "inefficiency",
+      "severity": "high",
+      "location": "confirmationModal",
+      "description": "The confirmation modal may slow down the process, especially for users who are confident in their input.",
+      "suggestedFix": "Remove the confirmation modal for straightforward inputs and allow users to directly generate results, providing a simple undo option instead.",
+      "frequency": 4
+    },
+    {
+      "category": "confusion",
+      "severity": "high",
+      "location": "resultScreen",
+      "description": "The presence of multiple buttons (Copy Result, Regenerate, Back, Create Another Prompt) may overwhelm the user, especially for someone with low tech savviness.",
+      "suggestedFix": "Consider condensing the buttons by removing 'Regenerate' or combining 'Back' and 'Create Another Prompt' into a single button that leads to a prompt creation with the option to edit the last prompt.",
+      "frequency": 4
+    },
+    {
+      "category": "confusion",
+      "severity": "high",
+      "location": "resultScreen",
+      "description": "The presence of multiple buttons (Copy Result, Regenerate, Back, Create Another Prompt) may overwhelm the user and make it unclear what the primary action should be.",
+      "suggestedFix": "Consider reducing the number of buttons by combining actions or using a more streamlined approach, such as consolidating 'Back' and 'Create Another Prompt' into a single 'Start Over' button.",
+      "frequency": 3
+    }
+  ]
+}
