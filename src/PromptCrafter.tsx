@@ -215,6 +215,34 @@ function PromptCrafter() {
     }
   }, []);
 
+  // Auto-resize iframe for Squarespace embedding
+  useEffect(() => {
+    const sendHeight = () => {
+      const height = document.documentElement.scrollHeight;
+      window.parent.postMessage({ type: 'resize', height }, '*');
+    };
+
+    // Send initial height
+    sendHeight();
+
+    // Send height on window resize
+    window.addEventListener('resize', sendHeight);
+
+    // Send height when content changes (DOM mutations)
+    const observer = new MutationObserver(sendHeight);
+    observer.observe(document.body, {
+      childList: true,
+      subtree: true,
+      attributes: true
+    });
+
+    // Cleanup
+    return () => {
+      window.removeEventListener('resize', sendHeight);
+      observer.disconnect();
+    };
+  }, [state.step, generatedOutput, isGenerating, showHistory]);
+
   // Save history to localStorage whenever it changes
   useEffect(() => {
     if (history.length > 0) {
