@@ -362,6 +362,20 @@ export default function CallYourSphereWizardV2() {
   const [streak, setStreak] = useState(0);
   const [totalCalls, setTotalCalls] = useState(0);
 
+  // ═══════════════════════════════════════════════════════════════════════════════
+  // AI CUSTOM SCRIPT GENERATION
+  // ═══════════════════════════════════════════════════════════════════════════════
+
+  const [isGeneratingScript, setIsGeneratingScript] = useState(false);
+  const [customScript, setCustomScript] = useState<{
+    call_script?: string;
+    text_script?: string;
+    voicemail_script?: string;
+    conversation_prompts?: string[];
+    referral_segue?: string;
+  } | null>(null);
+  const [selectedScriptType, setSelectedScriptType] = useState<'call' | 'text' | 'voicemail'>('call');
+
   useEffect(() => {
     const savedStreak = parseInt(localStorage.getItem('cys:streak') || '0');
     const savedTotal = parseInt(localStorage.getItem('cys:totalCalls') || '0');
@@ -476,6 +490,40 @@ export default function CallYourSphereWizardV2() {
 
   const handleScriptSelect = (script: ScriptVariation) => {
     setState({ ...state, selectedScript: script, step: 4 });
+  };
+
+  const handleGenerateCustomScript = async () => {
+    setIsGeneratingScript(true);
+    setCustomScript(null);
+
+    try {
+      const response = await fetch('/api/generate-call-script', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          emotion: state.mood || 'neutral',
+          blockReason: state.barrier?.id || 'none',
+          fearStory: state.barrier?.validate || '',
+          actionType: 'call',
+          contactName: state.contactName,
+          contactNotes: state.contactNotes,
+          agentTone: 'friendly and conversational',
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to generate script');
+      }
+
+      const data = await response.json();
+      setCustomScript(data);
+      setSelectedScriptType('call');
+    } catch (error) {
+      console.error('Error generating custom script:', error);
+      alert('Failed to generate custom script. Please try again.');
+    } finally {
+      setIsGeneratingScript(false);
+    }
   };
 
   const handleStartCall = () => {
@@ -810,6 +858,192 @@ export default function CallYourSphereWizardV2() {
               </button>
             ))}
           </div>
+
+          {/* AI Custom Script Generator */}
+          <div style={{ marginBottom: '24px', textAlign: 'center' }}>
+            <p style={{ fontSize: '14px', color: '#94a3b8', marginBottom: '12px' }}>
+              Or generate a personalized script with AI
+            </p>
+            <button
+              onClick={handleGenerateCustomScript}
+              disabled={isGeneratingScript}
+              style={{
+                background: isGeneratingScript
+                  ? '#475569'
+                  : 'linear-gradient(135deg, #a78bfa 0%, #8b5cf6 100%)',
+                border: 'none',
+                borderRadius: '12px',
+                padding: '14px 28px',
+                color: '#ffffff',
+                fontSize: '15px',
+                fontWeight: 'bold',
+                cursor: isGeneratingScript ? 'not-allowed' : 'pointer',
+                transition: 'all 0.2s',
+                boxShadow: '0 4px 6px rgba(139, 92, 246, 0.3)',
+              }}
+            >
+              {isGeneratingScript ? '⏳ Generating...' : '✨ Generate Custom Script'}
+            </button>
+          </div>
+
+          {/* Display Generated Custom Script with Variations */}
+          {customScript && (
+            <div style={{
+              background: 'rgba(16, 185, 129, 0.1)',
+              border: '2px solid #10b981',
+              borderRadius: '16px',
+              padding: '20px',
+              marginBottom: '24px'
+            }}>
+              <h3 style={{ fontSize: '18px', fontWeight: 'bold', color: '#10b981', marginBottom: '16px' }}>
+                🎯 Your Personalized Script
+              </h3>
+
+              {/* Tab Navigation */}
+              <div style={{ display: 'flex', gap: '8px', marginBottom: '16px', flexWrap: 'wrap' }}>
+                <button
+                  onClick={() => setSelectedScriptType('call')}
+                  style={{
+                    padding: '8px 16px',
+                    borderRadius: '8px',
+                    border: selectedScriptType === 'call' ? '2px solid #10b981' : '2px solid #475569',
+                    background: selectedScriptType === 'call' ? 'rgba(16, 185, 129, 0.2)' : 'transparent',
+                    color: selectedScriptType === 'call' ? '#10b981' : '#cbd5e1',
+                    fontSize: '14px',
+                    fontWeight: selectedScriptType === 'call' ? 'bold' : 'normal',
+                    cursor: 'pointer',
+                  }}
+                >
+                  📞 Call Script
+                </button>
+                <button
+                  onClick={() => setSelectedScriptType('text')}
+                  style={{
+                    padding: '8px 16px',
+                    borderRadius: '8px',
+                    border: selectedScriptType === 'text' ? '2px solid #10b981' : '2px solid #475569',
+                    background: selectedScriptType === 'text' ? 'rgba(16, 185, 129, 0.2)' : 'transparent',
+                    color: selectedScriptType === 'text' ? '#10b981' : '#cbd5e1',
+                    fontSize: '14px',
+                    fontWeight: selectedScriptType === 'text' ? 'bold' : 'normal',
+                    cursor: 'pointer',
+                  }}
+                >
+                  💬 Text Message
+                </button>
+                <button
+                  onClick={() => setSelectedScriptType('voicemail')}
+                  style={{
+                    padding: '8px 16px',
+                    borderRadius: '8px',
+                    border: selectedScriptType === 'voicemail' ? '2px solid #10b981' : '2px solid #475569',
+                    background: selectedScriptType === 'voicemail' ? 'rgba(16, 185, 129, 0.2)' : 'transparent',
+                    color: selectedScriptType === 'voicemail' ? '#10b981' : '#cbd5e1',
+                    fontSize: '14px',
+                    fontWeight: selectedScriptType === 'voicemail' ? 'bold' : 'normal',
+                    cursor: 'pointer',
+                  }}
+                >
+                  📱 Voicemail
+                </button>
+              </div>
+
+              {/* Script Content */}
+              <div style={{
+                background: 'rgba(15, 23, 42, 0.6)',
+                borderRadius: '12px',
+                padding: '16px',
+                marginBottom: '16px'
+              }}>
+                <p style={{ fontSize: '15px', lineHeight: '1.7', color: '#e5e7eb', whiteSpace: 'pre-wrap' }}>
+                  {selectedScriptType === 'call' && customScript.call_script}
+                  {selectedScriptType === 'text' && customScript.text_script}
+                  {selectedScriptType === 'voicemail' && customScript.voicemail_script}
+                </p>
+              </div>
+
+              {/* Conversation Prompts */}
+              {customScript.conversation_prompts && customScript.conversation_prompts.length > 0 && (
+                <div style={{ marginBottom: '16px' }}>
+                  <h4 style={{ fontSize: '14px', fontWeight: 'bold', color: '#10b981', marginBottom: '8px' }}>
+                    💡 Conversation Starters:
+                  </h4>
+                  <ul style={{ paddingLeft: '20px', margin: 0 }}>
+                    {customScript.conversation_prompts.map((prompt, index) => (
+                      <li key={index} style={{ fontSize: '14px', color: '#cbd5e1', marginBottom: '4px' }}>
+                        {prompt}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {/* Referral Segue */}
+              {customScript.referral_segue && (
+                <div>
+                  <h4 style={{ fontSize: '14px', fontWeight: 'bold', color: '#10b981', marginBottom: '8px' }}>
+                    🤝 Soft Referral Ask:
+                  </h4>
+                  <p style={{ fontSize: '14px', color: '#cbd5e1', fontStyle: 'italic' }}>
+                    {customScript.referral_segue}
+                  </p>
+                </div>
+              )}
+
+              {/* Use This Script Button */}
+              <button
+                onClick={() => {
+                  // Create a temporary script object to use with the existing flow
+                  const tempScript: ScriptVariation = {
+                    id: 'custom-ai',
+                    name: 'AI-Generated Custom Script',
+                    emoji: '🤖',
+                    tone: 'Personalized for ' + state.contactName,
+                    opening: {
+                      say: customScript.call_script || '',
+                      listenFor: 'Their response and tone',
+                      nextMove: 'Adapt based on their reaction'
+                    },
+                    body: {
+                      say: customScript.text_script || '',
+                      listenFor: 'Engagement signals',
+                      nextMove: 'Continue conversation naturally'
+                    },
+                    transition: {
+                      say: customScript.conversation_prompts?.[0] || '',
+                      listenFor: 'Their interests',
+                      nextMove: 'Build rapport'
+                    },
+                    ask: {
+                      say: customScript.referral_segue || '',
+                      listenFor: 'Willingness to refer',
+                      nextMove: 'Thank them gracefully'
+                    },
+                    close: {
+                      say: customScript.voicemail_script || 'Thanks for your time!',
+                      listenFor: 'Goodbye',
+                      nextMove: 'End call warmly'
+                    }
+                  };
+                  handleScriptSelect(tempScript);
+                }}
+                style={{
+                  width: '100%',
+                  marginTop: '16px',
+                  background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                  border: 'none',
+                  borderRadius: '12px',
+                  padding: '14px',
+                  color: '#ffffff',
+                  fontSize: '15px',
+                  fontWeight: 'bold',
+                  cursor: 'pointer',
+                }}
+              >
+                ✅ Use This Script
+              </button>
+            </div>
+          )}
         </div>
       )}
 
