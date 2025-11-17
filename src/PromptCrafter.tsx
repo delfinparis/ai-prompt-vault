@@ -963,7 +963,7 @@ function PromptCrafter() {
       {/* Step 4: Generated Content (AI-First) */}
       {!showHistory && state.step === 4 && (
         <div style={styles.stepContainer}>
-          <h2 style={styles.title}>Your Content is Ready!</h2>
+          {generatedOutput && <h2 style={styles.title}>Your Content is Ready!</h2>}
 
           {!generatedOutput ? (
             // Before AI generation
