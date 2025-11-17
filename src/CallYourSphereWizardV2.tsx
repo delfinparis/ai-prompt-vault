@@ -413,13 +413,12 @@ export default function CallYourSphereWizardV2() {
         } else {
           // Breathing complete!
           setBreathingActive(false);
-          setState({ ...state, step: 2 }); // Move to contact entry
+          setState(s => ({ ...s, step: 2 })); // Move to contact entry
         }
       }
     }, timings[breathPhase]);
 
     return () => clearTimeout(timer);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [breathingActive, breathPhase, currentRound]);
 
   const incrementStreak = () => {
