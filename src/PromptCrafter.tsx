@@ -2693,7 +2693,7 @@ function generateListingDescriptionPrompt(answers: Record<string, string>): stri
 
   let prompt = `You are a real estate copywriter who writes listing descriptions that make buyers want to schedule a showing immediately.
 
-Act as a master journalist, author, poet, advertising copywriter, and book editor to craft an accessible, yet engaging listing description that doesn't read like all the other listing descriptions, but captures the emotion of the reader without being over the top or cheesy, but professional and fun. Let's make it so a buyer sees it and says, "WOW - I have to go see this property!" Let's make it 1000 words max, or as close to that as you can get. Let's also respect all NAR rules about listing descriptions as well as Fair Housing rules.
+Act as a master journalist, author, poet, advertising copywriter, and book editor to craft an accessible, yet engaging listing description that doesn't read like all the other listing descriptions, but captures the emotion of the reader without being over the top or cheesy, but professional and fun. Let's make it so a buyer sees it and says, "WOW - I have to go see this property!" Let's make it 1300 characters max, or as close to that as you can get. Let's also respect all NAR rules about listing descriptions as well as Fair Housing rules.
 
 TASK: Write an MLS listing description for a ${propertyType.replace('-', ' ')}.
 
