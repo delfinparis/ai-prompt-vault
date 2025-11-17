@@ -10,6 +10,7 @@ type UseCase = {
   emoji: string;
   description: string;
   category: 'content' | 'sales' | 'service';
+  exampleOutput?: string; // NEW: Show users what they'll get
 };
 
 type PromptState = {
@@ -27,6 +28,8 @@ type PromptHistory = {
   useCaseName: string;
   prompt: string;
   answers: Record<string, string>;
+  aiOutput?: string; // NEW: Save AI-generated output
+  userRating?: 'good' | 'bad'; // NEW: Track quality
 };
 
 type QuestionOption = {
@@ -52,91 +55,103 @@ const USE_CASES: UseCase[] = [
   // CONTENT CREATION
   {
     id: 'social-content',
-    name: 'Social Media Posts',
+    name: 'Social Media',
     emoji: '📱',
-    description: 'Instagram, Facebook, LinkedIn',
-    category: 'content'
+    description: 'Insta, FB, LinkedIn',
+    category: 'content',
+    exampleOutput: `🏡 JUST LISTED in Boulder Heights!\n\nYour dream mountain retreat awaits. 4 bed, 3.5 bath contemporary masterpiece with:\n✨ Floor-to-ceiling windows framing Flatirons views\n✨ Chef's kitchen with Wolf & Sub-Zero appliances  \n✨ Primary suite sanctuary with spa bath\n✨ Smart home tech throughout\n\n$2.45M | 3,200 sq ft | Built 2019\n\nOpen house this Saturday 1-4pm. Link in bio for full details!\n\n#BoulderRealEstate #LuxuryHomes #MountainLiving #JustListed`
   },
   {
     id: 'video-script',
-    name: 'Video Scripts',
+    name: 'Videos',
     emoji: '🎥',
     description: 'Reels, TikTok, YouTube',
-    category: 'content'
+    category: 'content',
+    exampleOutput: `[HOOK - First 3 seconds]\n"You're overpaying for your home. Here's how to know."\n\n[Scene 1 - Problem]\n"Most buyers in Austin right now are paying 10-15% over asking. But here's what they don't tell you..."\n\n[Scene 2 - Value]\n"I just saved my client $47,000 by knowing these 3 things the listing agent DIDN'T want us to see:"\n\n1. Days on market (subtle pricing weakness)\n2. Seller motivation (divorce, job relocation)  \n3. Comparable sales in the last 30 days\n\n[Scene 3 - CTA]\n"Want my free buyer negotiation checklist? Link in bio. Let's get you the best deal possible."\n\n[End card: "Follow for more buyer tips"]`
   },
   {
     id: 'listing-description',
-    name: 'Listing Descriptions',
+    name: 'Listings',
     emoji: '🏡',
     description: 'MLS copy that sells',
-    category: 'content'
+    category: 'content',
+    exampleOutput: `**Luxury Mountain Retreat with Panoramic Views**\n\nDiscover your private sanctuary in Boulder's most sought-after neighborhood. This stunning 4-bedroom, 3.5-bath contemporary masterpiece showcases floor-to-ceiling windows that frame breathtaking Rocky Mountain vistas from every angle.\n\n**Interior Highlights:**\n• Gourmet chef's kitchen with Wolf gas range, Sub-Zero refrigeration, and Carrara marble waterfall island\n• Expansive great room with 18-foot ceilings and custom steel fireplace\n• Primary suite sanctuary featuring spa-inspired ensuite with soaking tub and steam shower\n• Home office with built-in shelving and mountain views\n• Mudroom with custom storage for all your outdoor gear\n\n**Smart Home Features:**\n• Lutron lighting system throughout\n• Nest climate control with zoned heating\n• Integrated audio system  \n• Security cameras and smart locks\n\n**Outdoor Living:**\n• Professionally landscaped .5-acre lot with native plants\n• Covered deck perfect for year-round entertaining\n• Hot tub overlooking the Flatirons\n• 2-car attached garage + workshop space\n\n**The Neighborhood:**\nWalk to Boulder Creek Trail. 10 minutes to Pearl Street. Top-rated schools. This is Colorado living at its finest.\n\n$2,450,000 | 3,200 sq ft | Built 2019 | 0.5 acres`
   },
   {
     id: 'email-sequence',
-    name: 'Email Campaigns',
+    name: 'Emails',
     emoji: '📧',
     description: 'Nurture sequences',
-    category: 'content'
+    category: 'content',
+    exampleOutput: `Subject: Your Austin home's value just changed (here's why)\n\n---\n\nHi Jennifer,\n\nI hope your new year is off to a great start!\n\nI wanted to reach out because something shifted in our Austin market over the holidays that directly impacts your neighborhood.\n\n**What changed:**\nThree homes on your street (Riverside Dr) just sold in the last 45 days — all above asking price, with an average sale price of $487K. That's 12% higher than this time last year.\n\n**What this means for you:**\nIf you've been thinking about selling in the next 6-12 months, spring 2024 might be your window. Here's why:\n\n• Inventory is still historically low (only 2.1 months of supply)\n• Mortgage rates stabilized around 6.8% (buyers are adjusting)\n• Your neighborhood specifically is seeing bidding wars again\n\n**No pressure, just information:**\nI'm not suggesting you sell — I just thought you'd want to know what your home could realistically get in today's market.\n\nIf you're curious, I can send you a quick (no-obligation) market analysis showing:\n✓ What your home would likely sell for today  \n✓ How that compares to last year\n✓ What buyers are looking for right now\n\nJust reply "yes" and I'll put it together for you this week.\n\nEither way, Happy New Year!\n\n[Your Name]\nAustin Residential Group\n512-555-0199`
   },
 
   // SALES & PROSPECTING
   {
     id: 'sphere-script',
-    name: 'Call Scripts',
+    name: 'Calls',
     emoji: '📞',
     description: 'Sphere & lead calls',
-    category: 'sales'
+    category: 'sales',
+    exampleOutput: `**Sphere Call Script: Quarterly Check-In**\n\n[Opening]\n"Hey Sarah! It's Mike from Austin Residential. How have you been?"\n\n[Wait for response, be genuinely interested]\n\n"I'm glad to hear that! Listen, I won't keep you long — I'm doing my quarterly check-ins with my favorite past clients, and I wanted to touch base for two quick reasons..."\n\n[Value Point 1]\n"First, your neighborhood (Riverside) has been absolutely on fire lately. Three homes sold in the last month, all above asking. I wanted you to know what your home would be worth in today's market — no strings attached, just good information to have."\n\n[Pause for response]\n\n[Value Point 2] \n"And second — this is the big one — I'm building my business 100% on referrals this year. So if you know anyone thinking about buying or selling, even if it's just a 'maybe someday' situation, I'd love a quick intro. I'll take great care of them, I promise."\n\n[The Ask]\n"Who comes to mind? Anyone at work, church, the gym?"\n\n[Wait — let them think]\n\n[If Yes]\n"Perfect! Can you text me their name and number? I'll reach out today and mention you sent me."\n\n[If No]\n"No worries at all! Just keep me in mind. And hey — if anything changes with your home situation, or you need any real estate advice, you know I'm just a phone call away."\n\n[Close]\n"Thanks for your time, Sarah. Let's grab coffee soon — I'd love to catch up properly!"\n\n---\n\n**Key Principles:**\n✓ Lead with value (market update)\n✓ Make it about them, not you  \n✓ Ask directly for referrals\n✓ Give them thinking time (pause after asking)\n✓ End warm and personal`
   },
   {
     id: 'consultation-script',
     name: 'Consultations',
     emoji: '💼',
     description: 'Buyer/seller meetings',
-    category: 'sales'
+    category: 'sales',
+    exampleOutput: `**Seller Consultation Script**\n\n[Introduction - 5 mins]\n"Thanks for having me to your beautiful home. Before we dive into pricing and strategy, I'd love to understand your situation a bit better. Can you tell me..."\n\n1. What's prompting the move?  \n2. What's your ideal timeline?\n3. Where are you headed next?\n4. Have you spoken with other agents? What did you like/not like?\n\n[Pause and listen — take notes]\n\n[Market Analysis - 10 mins]\n"Let me show you what's happening in your neighborhood right now..."\n\n• Pull up comps on tablet\n• Show 3 sold, 2 active, 1 pending\n• Explain DOM (days on market)\n• Point out pricing trends\n\n"Based on these numbers and what I see here today, I believe your home would sell between $X and $Y, with the sweet spot right around $Z."\n\n[Marketing Strategy - 10 mins] \n"Here's how I'd position your home to get top dollar..."\n\n✓ Professional photography & drone shots\n✓ 3D virtual tour (Matterport)\n✓ Targeted Facebook/Instagram ads ($500 budget)\n✓ Email blast to 2,000+ agents in my network\n✓ Luxury print materials\n✓ Open house strategy (broker preview + public)\n\n[Show portfolio of past listings on tablet]\n\n[Objection Handling - 5 mins]\nAddress the elephant in the room:\n\n"I know commission is a big part of your decision. Let me be transparent about what you're getting for that investment..."\n\n• Break down where commission goes\n• Explain buyer agent motivation  \n• Show net proceeds estimate\n• Prove ROI with past sale examples\n\n[Close - 5 mins]\n"Here's what happens next if you decide to work with me..."\n\n1. Sign listing agreement today\n2. Photography scheduled within 48 hours\n3. Live on MLS by [date]\n4. First showing within 72 hours (statistically)\n5. Offer(s) within 7-10 days (based on current market)\n\n"How does that sound? Any questions I haven't answered?"\n\n[Trial Close]\n"Are you comfortable moving forward with me as your agent?"\n\n---\n\n**Bring to Appointment:**\n□ Market analysis (printed)\n□ Net proceeds estimate\n□ Marketing portfolio (tablet)\n□ Testimonials from past clients\n□ Listing agreement (pre-filled)\n□ Business card & branded folder`
   },
   {
     id: 'objection-handling',
-    name: 'Handle Objections',
+    name: 'Objections',
     emoji: '🛡️',
     description: 'Price, commission, timing',
-    category: 'sales'
+    category: 'sales',
+    exampleOutput: `**Top 5 Objection Handlers**\n\n---\n\n**1. "Your commission is too high"**\n\n❌ Don't say: "That's the industry standard"\n✅ Do say:\n\n"I totally understand — commission is a significant investment. Let me show you exactly what you're getting for that..."\n\n[Pull out phone/tablet]\n\n"Last year, my average listing sold for 4.2% more than asking price. That's because of..."\n• Professional staging consultation ($500 value)\n• 3D virtual tour that gets 40% more showings\n• $500 ad spend to reach 10,000+ targeted buyers\n• Aggressive negotiation (show example: saved client $12K on repairs)\n\n"Here's a net proceeds comparison: if you hire a discount broker at 4% and sell for asking, vs. working with me at 6% and selling 4% above asking..."\n\n[Show math: Your net is $8,400 higher with me]\n\n"Does that make sense?"\n\n---\n\n**2. "We want to wait until spring"**\n\n❌ Don't say: "You'll miss the market"\n✅ Do say:\n\n"That's actually what most sellers think — and I get it. Spring feels like the 'right' time. But let me share what the data shows..."\n\n"Right now (January), you have..."\n• 2.1 months of inventory (seller's market)\n• 43% fewer competing listings than April\n• Buyers who NEED to move (relocations, job starts)\n• Less competition for showings\n\n"By spring, you'll have..."\n• 4.5 months of inventory (balanced market)\n• 200+ more listings in your price range\n• Buyers who are just 'looking' (tire kickers)\n• Showings split across dozens of homes\n\n"Translation: You'll likely sell faster and for MORE money if we list now. Would you be open to testing the market this month?"\n\n---\n\n**3. "We're interviewing other agents"**\n\n❌ Don't say: "I'm the best"\n✅ Do say:\n\n"You absolutely should! This is one of the biggest financial decisions you'll make. Here's what I'd suggest asking them..."\n\n1. How many homes in our neighborhood have you sold?\n2. What's your average sale-to-list price ratio?\n3. What's your average days on market?\n4. Can I speak to 3 past clients?\n5. What's your marketing budget for our home specifically?\n\n"And then compare the answers. I'm confident in my numbers, and I think you'll see the difference. Fair enough?"\n\n[Confidence + give them permission]\n\n---\n\n**4. "The price is too low"**\n\n❌ Don't say: "The market sets the price"\n✅ Do say:\n\n"I hear you — and I want to get you every dollar your home is worth. Let me show you why I landed on this number..."\n\n[Pull up comps]\n\n"These three homes are the most similar to yours:"\n• 123 Oak: 3/2, 1,800 sf, sold for $485K (24 days)\n• 456 Elm: 3/2, 1,750 sf, sold for $492K (18 days)  \n• 789 Pine: 3/2, 1,850 sf, sold for $478K (31 days)\n\n"Yours is 1,820 sf, so we're right in the sweet spot at $489K. Here's what happens if we price higher..."\n\n• Above $500K: We eliminate 40% of qualified buyers\n• Longer DOM (days on market) = perception of a problem\n• Price reductions hurt negotiating power\n\n"Here's what I propose: We list at $489K with a 7-day review period. If we get multiple offers, we'll likely go above asking. If we don't get traction, we can adjust. How does that sound?"\n\n---\n\n**5. "Can you do a lower commission?"**\n\n❌ Don't say: "No"\n✅ Do say:\n\n"I appreciate you asking — and I want to be transparent with you..."\n\n"My commission directly funds the marketing that gets you top dollar. If I reduce it, here's what we'd need to cut:"\n\n• Professional photography ($400)\n• 3D virtual tour ($300)\n• Facebook/Instagram ads ($500)\n• Staging consultation ($350)\n• Print materials ($200)\n\n"We could absolutely do that and save you 1% — but statistically, you'd net LESS money because we'd attract fewer buyers and likely sell below asking."\n\n"What if I showed you a pricing strategy that gets you more money than you'd save on commission? Would that work?"\n\n[Shift focus to net proceeds, not commission]`
   },
   {
     id: 'expired-fsbo',
     name: 'Expired/FSBO',
     emoji: '✉️',
     description: 'Win difficult listings',
-    category: 'sales'
+    category: 'sales',
+    exampleOutput: `**Expired Listing Call Script**\n\n[Opening - first 10 seconds matter]\n"Hi, this is Mike Johnson with Austin Residential. I noticed your home at 123 Oak Street just came off the market. I'm guessing you're pretty frustrated right now — am I right?"\n\n[Wait for response — validate frustration]\n\n"I get it. You invested time, money, and emotion into this, and it didn't work out. Here's why I'm calling..."\n\n[Value Proposition]\n"I specialize in selling homes that didn't sell the first time. Last year, I listed 9 expired properties, and 8 of them sold within 30 days — most above the original asking price."\n\n[Pattern Interrupt]\n"Can I ask you a blunt question? What do you think went wrong?"\n\n[Listen — they'll tell you exactly what to fix]\n\n[Common Issues + Your Solution]\n\nIf they say: **"We didn't get enough showings"**\n→ "That tells me it's a marketing problem, not a pricing problem. Let me show you how I get 3X more eyes on listings..."\n\nIf they say: **"We got lowball offers"**\n→ "That usually means the listing agent didn't attract the right buyers. I target qualified buyers specifically looking in your price range..."\n\nIf they say: **"Our agent didn't communicate"**\n→ "That's the #1 complaint I hear. I send weekly updates every Friday — here's what it looks like..." [show example]\n\n[Transition to Appointment]\n"Look, I don't want to take up your time on the phone. What I'd love to do is come by, show you exactly what I'd do differently, and if it makes sense, great. If not, no hard feelings."\n\n"Are you free tomorrow at 4pm or does Thursday at 10am work better?"\n\n[Assume the meeting]\n\n---\n\n**FSBO Door Knock Script**\n\n[Knock on door with printed market analysis]\n\n"Hi! I'm Mike Johnson — I'm a realtor here in the neighborhood. I saw your 'For Sale' sign and wanted to introduce myself. Do you have 2 minutes?"\n\n[If yes]\n\n"I'm not here to sell you anything — I actually brought you something. I ran a market analysis on your home, and I wanted you to have the data on what's selling in your neighborhood right now."\n\n[Hand them the report]\n\n"Three homes on your street sold in the last 60 days — all within 18 days of listing, all with multiple offers. I'm guessing you haven't had that experience yet?"\n\n[They'll usually say "no" or explain challenges]\n\n[The Insight]\n"Here's what's happening: 87% of buyers start their search online, and only 3% are looking at FSBO sites. So you're missing 97% of the market. That's not a criticism — it's just the math."\n\n[The Offer]\n"What if I could get your home in front of all those buyers AND save you time on showings, negotiations, and paperwork? Would you be open to a quick conversation about what that looks like?"\n\n[Trial Close]\n"Can I call you tomorrow to set up a time to walk through a no-pressure game plan?"\n\n---\n\n**Email Follow-Up (Expired Listings)**\n\nSubject: Why 123 Oak didn't sell (+ how to fix it)\n\nHi [Name],\n\nI noticed your listing at 123 Oak Street recently expired. I'm sorry — I know how disappointing that must be after months of showings and waiting.\n\nI specialize in helping sellers get it right the second time. Last year, I re-listed 9 expired homes in [City], and 8 sold within 30 days (most above their original asking price).\n\nHere's what usually goes wrong:\n\n❌ Pricing: Overpriced by 5-10% to "test the market"\n❌ Photos: Dark, blurry, or missing key selling points  \n❌ Marketing: Only on MLS (missing 60% of buyers)\n❌ Agent: Poor communication, no follow-up\n\nI'd love to show you exactly what I'd do differently — no obligation, just a 20-minute conversation.\n\nAre you free for a quick call this week?\n\n[Your Name]\n[Phone]\n\nP.S. I've attached a fresh market analysis showing what similar homes are selling for right now. You might be surprised.`
   },
 
   // CLIENT SERVICE
   {
     id: 'open-house-followup',
-    name: 'Open House Follow-Up',
+    name: 'Open House',
     emoji: '🚪',
     description: 'Text/email after visits',
-    category: 'service'
+    category: 'service',
+    exampleOutput: `**Text Message (send within 2 hours):**\n\nHi Jennifer! Mike Johnson here from today's open house at 123 Oak Street. Thanks for stopping by!\n\nQuick question: On a scale of 1-10, how close is this home to what you're looking for?\n\n(Reply with a number and I'll follow up accordingly)\n\n---\n\n**Email Follow-Up (same day):**\n\nSubject: 123 Oak Street — your feedback?\n\nHi Jennifer,\n\nIt was great meeting you at the open house today! I wanted to follow up while the home is still fresh in your mind.\n\n**Quick recap of 123 Oak:**\n• 3 bed, 2 bath, 1,850 sq ft\n• Updated kitchen (2021)\n• Huge backyard with mature trees\n• Priced at $489,000\n• Multiple offers expected by Tuesday\n\n**Next steps (if you're interested):**\n\n1. I can schedule a private showing for you this weekend\n2. I'll send you the full disclosure packet tonight\n3. We can run numbers on what your offer would need to be to win\n\n**Not the one? No problem.**\nI have 3 other listings coming soon in your price range that might be a better fit. Can I send you details when they go live?\n\nEither way, let me know how I can help!\n\nBest,\nMike Johnson\nAustin Residential Group\n512-555-0199\n\n---\n\n**Follow-Up for "Not Interested" Response:**\n\nThanks for the feedback! Totally understand.\n\nJust so I can help you better — what didn't work about 123 Oak? (Too small? Wrong location? Price?)\n\nI want to make sure I only send you homes that are actually a fit.\n\n---\n\n**Follow-Up for "Very Interested" Response:**\n\nAwesome! Let's move fast — this one will go quickly.\n\nCan you do a private showing tomorrow at 10am or 2pm? I'll bring comps and we can talk strategy.\n\nIn the meantime, get pre-approved if you haven't already. I can connect you with a great lender who closes in 21 days.\n\nSound good?`
   },
   {
     id: 'market-report',
-    name: 'Market Updates',
+    name: 'Market',
     emoji: '📊',
     description: 'Client-friendly reports',
-    category: 'service'
+    category: 'service',
+    exampleOutput: `**Q1 2024 Market Update: Austin Real Estate**\n\n---\n\n**The Big Picture**\n\nAustin's real estate market is stabilizing after two years of volatility. Here's what you need to know:\n\n📊 **Median Home Price:** $487,000 (up 3.2% from Q4 2023)\n📅 **Average Days on Market:** 34 days (down from 42 in December)\n🏘️ **Inventory:** 2.8 months (still a seller's market under 6 months)\n💰 **Mortgage Rates:** 6.8% average (holding steady)\n\n---\n\n**What This Means for Sellers**\n\n✅ **Good news:** Homes priced right are selling in under 30 days\n✅ **Multiple offers are back:** 40% of listings receive 2+ offers\n⚠️ **Overpriced homes sit:** Anything 10%+ above comps averages 60+ DOM\n\n**Strategy:** Price aggressively, market heavily, review offers in 7 days.\n\n---\n\n**What This Means for Buyers**\n\n✅ **Good news:** You have more options than last year (inventory up 18%)\n⚠️ **Competition is returning:** Be ready to move fast on the right home\n⚠️ **Rates matter:** $50K in purchase price = $280/month at 6.8%\n\n**Strategy:** Get pre-approved, act decisively, don't overbid emotionally.\n\n---\n\n**Neighborhood Spotlight: Riverside**\n\n🏡 **5 homes sold in the last 60 days**\n💵 **Average sale price:** $512,000 (4.1% above asking)\n⏱️ **Average DOM:** 18 days\n🔥 **Trend:** HOT — seller's market\n\n**What's driving it:** New coffee shop, elementary school ratings, walkability\n\n---\n\n**Looking Ahead: Q2 Forecast**\n\nExpect:\n• Inventory to increase (spring listings)\n• Rates to hold between 6.5-7.2%\n• Buyer demand to stay strong (pent-up from 2023)\n• Prices to grow modestly (2-4% by year-end)\n\n**Bottom line:** If you're thinking of selling, list in March/April. If you're buying, don't wait for rates to drop — you'll face more competition.\n\n---\n\n**Questions?**\n\nWant to know what YOUR home is worth in this market? Reply to this email and I'll send you a free analysis (no obligation).\n\nBest,\n[Your Name]\n[Your Brokerage]\n[Phone]`
   },
   {
     id: 'cma-narrative',
-    name: 'CMA Narrative',
+    name: 'CMA',
     emoji: '📈',
     description: 'Explain pricing strategy',
-    category: 'service'
+    category: 'service',
+    exampleOutput: `**Comparative Market Analysis: 123 Oak Street, Austin TX**\n\n---\n\n**Executive Summary**\n\nBased on recent sales, active listings, and current market conditions, I recommend listing your home at **$489,000**.\n\nHere's how I arrived at that number...\n\n---\n\n**1. Recently Sold Comparables (Last 60 Days)**\n\nThese are the most similar homes to yours that actually sold:\n\n**456 Elm Street** (BEST COMP)\n• 3 bed, 2 bath, 1,820 sq ft (closest match)\n• Sold for $492,000 (2.1% above asking)\n• 18 days on market\n• Similar updates (kitchen, bathrooms)\n\n**789 Maple Avenue**\n• 3 bed, 2 bath, 1,900 sq ft (slightly larger)\n• Sold for $505,000 (at asking price)\n• 24 days on market\n• Larger lot (.35 acres vs your .25)\n\n**321 Pine Street**\n• 3 bed, 2 bath, 1,750 sq ft (smaller)\n• Sold for $478,000 (3.8% above asking)\n• 14 days on market\n• Older kitchen (your advantage)\n\n**What this tells us:**\nHomes in your size range (1,800-1,900 sf) are selling between $478K-$505K, with an average of $491K.\n\n---\n\n**2. Active Competition (Currently on Market)**\n\nThese homes are competing with yours RIGHT NOW:\n\n**654 Oak Street** (2 blocks away)\n• 3 bed, 2 bath, 1,880 sq ft\n• Listed at $509,000 (overpriced)\n• 42 days on market (sitting)\n• No price reduction yet (but coming)\n\n**987 Cedar Lane**\n• 3 bed, 2.5 bath, 1,950 sf\n• Listed at $495,000\n• 12 days on market\n• Getting showings but no offers (priced $10K too high)\n\n**What this tells us:**\nYour competition is priced $495K-$509K but NEITHER is selling. That's a red flag that buyers see value closer to $485-490K.\n\n---\n\n**3. Pending Sales (Under Contract)**\n\nThese accepted offers in the last 14 days:\n\n**147 Birch Drive**\n• 3 bed, 2 bath, 1,860 sq ft\n• Listed at $487,000 → Under contract in 9 days\n• Estimated sale price: $492-495K (based on appraisal)\n\n**What this tells us:**\nHomes priced under $490K are moving FAST. Anything above $500K is sitting.\n\n---\n\n**4. Market Conditions**\n\n📊 **Inventory:** 2.8 months (seller's market)\n📅 **Average DOM:** 34 days in your zip code\n💰 **Sale-to-List Ratio:** 101.2% (homes selling slightly above asking)\n🏘️ **Buyer Demand:** Strong for move-in ready homes under $500K\n\n---\n\n**5. Pricing Strategy Recommendation**\n\n**Option A: List at $489,000** (MY RECOMMENDATION)\n\n✅ Attracts maximum buyers (under $500K psychological barrier)\n✅ Positions you as the best value vs. competition\n✅ Likely to generate multiple offers in first 7 days\n✅ Expected sale price: $492-498K (above asking)\n\n**Option B: List at $499,000**\n\n⚠️ Eliminates 30% of qualified buyers (search filters)\n⚠️ Longer time on market (30-45 days)\n⚠️ Risk of price reduction (looks desperate)\n⚠️ Expected sale price: $490-495K (after reduction)\n\n**Option C: List at $479,000**\n\n✅ Would sell in 48 hours with multiple offers\n❌ Leaving $10-15K on the table unnecessarily\n\n---\n\n**My Recommendation: $489,000**\n\nThis price:\n• Reflects true market value\n• Attracts serious, qualified buyers\n• Creates urgency and competition\n• Maximizes your net proceeds\n\nWe'll review all offers after 7 days and likely see bids in the $490-500K range.\n\n**Questions? Let's discuss.**\n\n[Your Name]\n[Phone]\n[Email]`
   },
   {
     id: 'thank-you',
-    name: 'Thank You Notes',
+    name: 'THANK YOUS',
     emoji: '🙏',
     description: 'Personal & memorable',
-    category: 'service'
+    category: 'service',
+    exampleOutput: `**Handwritten Note Template (After Closing):**\n\n---\n\nJennifer & Mark,\n\nCongratulations on your new home!\n\nI know the last 60 days were stressful (especially that appraisal situation!), but you handled it like pros. It was an honor to help you find the perfect place for your family.\n\nA few things:\n\n1. I've attached your "New Homeowner Checklist" — utilities, insurance, etc.\n2. My handyman's number is below if you need help with anything\n3. You're officially part of my "client family" — which means I'm always here for advice, referrals, or just to grab coffee.\n\nEnjoy making memories at 123 Oak Street. I can't wait to see what you do with that backyard!\n\nP.S. — If you know anyone looking to buy or sell, I'd be grateful for the referral. That's how I grow my business!\n\nCheers,\nMike\n\n[Handwritten, mailed with a small gift — plant, wine, or $25 HomeGoods card]\n\n---\n\n**Text Version (Immediate After Showing):**\n\nHey Sarah! Thanks for letting me show you around today. I know 123 Oak wasn't quite right, but I have 2 more listings going live this week that I think you'll love.\n\nI'll send details tomorrow. In the meantime, let me know if you have any questions!\n\n- Mike\n\n---\n\n**Email Version (After Listing Presentation - Didn't Get Listing):**\n\nSubject: Thank you for your time today\n\nHi Jennifer,\n\nI wanted to say thank you for considering me to sell your home. I know you're going in a different direction, and I respect that — it's a big decision.\n\nIf things don't work out with the other agent, or if you need anything along the way (second opinion, market data, etc.), please don't hesitate to reach out. No hard feelings whatsoever.\n\nI genuinely hope your sale goes smoothly and you get top dollar.\n\nBest of luck!\n\nMike Johnson\nAustin Residential Group\n512-555-0199\n\n---\n\n**Anniversary Card (1 Year After Purchase):**\n\nHappy Home Anniversary! 🎉\n\nIt's been one year since you closed on 123 Oak Street. Time flies!\n\nI hope you're loving the neighborhood. If you ever need anything — contractor recommendations, market updates, or just advice — I'm always here.\n\nP.S. Your home has appreciated approximately 4.2% this year (roughly $20K in equity). Not too shabby!\n\nCheers,\nMike\n\n[Include: Market snapshot + home value estimate]`
   }
 ];
 
@@ -161,6 +176,16 @@ function PromptCrafter() {
   const [copiedPrompt, setCopiedPrompt] = useState(false);
   const [history, setHistory] = useState<PromptHistory[]>([]);
   const [showHistory, setShowHistory] = useState(false);
+  const [expandedExample, setExpandedExample] = useState<string | null>(null); // Track which example is showing
+
+  // AI Generation state
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [generatedOutput, setGeneratedOutput] = useState<string | null>(null);
+  const [copiedOutput, setCopiedOutput] = useState(false);
+  const [showPrompt, setShowPrompt] = useState(false);
+  const [loadingMessage, setLoadingMessage] = useState(0);
+  const [copiedPromptFromViewer, setCopiedPromptFromViewer] = useState(false);
+  const [showCelebration, setShowCelebration] = useState(false);
 
   // Load history from localStorage on mount
   useEffect(() => {
@@ -185,6 +210,16 @@ function PromptCrafter() {
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }, [state.step, showHistory]);
+
+  // Cycle through funny loading messages
+  useEffect(() => {
+    if (isGenerating) {
+      const interval = setInterval(() => {
+        setLoadingMessage(prev => (prev + 1) % 8);
+      }, 2000); // Change message every 2 seconds
+      return () => clearInterval(interval);
+    }
+  }, [isGenerating]);
 
   const handleUseCaseSelect = (useCaseId: string) => {
     setState({ ...state, selectedUseCase: useCaseId, step: 1, answers: {} });
@@ -222,6 +257,62 @@ function PromptCrafter() {
     navigator.clipboard.writeText(state.generatedPrompt);
     setCopiedPrompt(true);
     setTimeout(() => setCopiedPrompt(false), 2000);
+  };
+
+  const handleGenerate = async () => {
+    setIsGenerating(true);
+    setGeneratedOutput(null);
+    setShowPrompt(false);
+    setLoadingMessage(0);
+
+    try {
+      const response = await fetch('/api/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          prompt: state.generatedPrompt,
+          userInput: JSON.stringify(state.answers)
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error('Generation failed');
+      }
+
+      const data = await response.json();
+      setGeneratedOutput(data.output || data.result || 'No output received');
+
+      // 🎉 CELEBRATION TIME!
+      setShowCelebration(true);
+      setTimeout(() => setShowCelebration(false), 3000);
+
+      // Update history with AI output
+      const updatedHistory = history.map(item =>
+        item.id === history[0]?.id
+          ? { ...item, aiOutput: data.output || data.result }
+          : item
+      );
+      setHistory(updatedHistory);
+    } catch (error) {
+      console.error('AI Generation error:', error);
+      setGeneratedOutput('Unable to generate content. Please try copying the prompt to ChatGPT manually.');
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  const handleCopyPromptFromViewer = () => {
+    navigator.clipboard.writeText(state.generatedPrompt);
+    setCopiedPromptFromViewer(true);
+    setTimeout(() => setCopiedPromptFromViewer(false), 2000);
+  };
+
+  const handleCopyOutput = () => {
+    if (generatedOutput) {
+      navigator.clipboard.writeText(generatedOutput);
+      setCopiedOutput(true);
+      setTimeout(() => setCopiedOutput(false), 2000);
+    }
   };
 
   const handleRestorePrompt = (item: PromptHistory) => {
@@ -269,6 +360,56 @@ function PromptCrafter() {
         a:active {
           transform: translateY(0);
         }
+
+        /* Fun Loading Animations */
+        @keyframes bounce {
+          0%, 100% {
+            transform: translateY(0);
+          }
+          50% {
+            transform: translateY(-20px);
+          }
+        }
+
+        @keyframes spin {
+          from {
+            transform: rotate(0deg);
+          }
+          to {
+            transform: rotate(360deg);
+          }
+        }
+
+        /* Celebration Confetti */
+        @keyframes confetti-fall {
+          0% {
+            transform: translateY(-100vh) rotate(0deg);
+            opacity: 1;
+          }
+          100% {
+            transform: translateY(100vh) rotate(720deg);
+            opacity: 0;
+          }
+        }
+
+        @keyframes pulse-celebration {
+          0%, 100% {
+            transform: scale(1);
+          }
+          50% {
+            transform: scale(1.1);
+          }
+        }
+
+        .confetti {
+          position: fixed;
+          width: 10px;
+          height: 10px;
+          background: #fbbf24;
+          animation: confetti-fall 3s linear forwards;
+          z-index: 9999;
+        }
+
         @media (prefers-reduced-motion: reduce) {
           * {
             animation: none !important;
@@ -276,12 +417,56 @@ function PromptCrafter() {
           }
         }
       `}</style>
+
+      {/* 🎉 CELEBRATION CONFETTI OVERLAY 🎉 */}
+      {showCelebration && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          pointerEvents: 'none',
+          zIndex: 9999,
+          overflow: 'hidden'
+        }}>
+          {/* Confetti pieces */}
+          {Array.from({ length: 50 }).map((_, i) => (
+            <div
+              key={i}
+              className="confetti"
+              style={{
+                left: `${Math.random() * 100}%`,
+                top: '-10px',
+                background: ['#fbbf24', '#f59e0b', '#8b5cf6', '#a78bfa', '#10b981', '#ec4899'][Math.floor(Math.random() * 6)],
+                animationDelay: `${Math.random() * 0.5}s`,
+                width: `${Math.random() * 10 + 5}px`,
+                height: `${Math.random() * 10 + 5}px`,
+                borderRadius: Math.random() > 0.5 ? '50%' : '0'
+              }}
+            />
+          ))}
+          {/* Big celebration emoji */}
+          <div style={{
+            position: 'absolute',
+            top: '50%',
+            left: '50%',
+            transform: 'translate(-50%, -50%)',
+            fontSize: '120px',
+            animation: 'pulse-celebration 0.6s ease-in-out 3',
+            filter: 'drop-shadow(0 8px 24px rgba(139, 92, 246, 0.5))'
+          }}>
+            🎉
+          </div>
+        </div>
+      )}
+
       <div style={styles.container}>
         {/* Header */}
         <div style={styles.header}>
-        <h1 style={styles.logo}>AI Prompt Vault</h1>
+        <h1 style={styles.logo}>AI PROMPT VAULT</h1>
         <p style={styles.tagline}>
-          Creates optimized prompts for ChatGPT, Claude & other AI assistants
+          creates optimized prompts for chatgpt, claude & other ai assistants
         </p>
         {history.length > 0 && !showHistory && (
           <button
@@ -345,25 +530,52 @@ function PromptCrafter() {
       {/* Step 0: Use Case Selection - Categorized */}
       {!showHistory && state.step === 0 && (
         <div style={styles.stepContainer}>
-          <h2 style={styles.title}>What do you need help with?</h2>
+          <h2 style={styles.title}>WHAT DO YOU NEED HELP WITH?</h2>
 
           {/* CONTENT CREATION */}
           <div style={styles.categorySection}>
-            <h3 style={styles.categoryTitle}>Content Creation</h3>
+            <div style={styles.categoryHeader}>
+              <h3 style={styles.categoryTitle}>Content Creation</h3>
+            </div>
             <div style={styles.useCaseGrid}>
               {USE_CASES.filter(u => u.category === 'content').map(useCase => (
                 <button
                   key={useCase.id}
                   onClick={() => handleUseCaseSelect(useCase.id)}
-                  style={styles.useCaseCard}
+                  style={{ ...styles.useCaseCard, position: 'relative' as const }}
                 >
-                  <div style={{ fontSize: '32px', marginBottom: '8px' }}>
+                  {useCase.exampleOutput && (
+                    <div
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setExpandedExample(useCase.id);
+                      }}
+                      style={{
+                        position: 'absolute' as const,
+                        top: '8px',
+                        right: '8px',
+                        fontSize: '18px',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s',
+                        zIndex: 10
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.transform = 'scale(1.15)';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.transform = 'scale(1)';
+                      }}
+                    >
+                      💡
+                    </div>
+                  )}
+                  <div style={{ fontSize: '32px', marginBottom: '10px' }}>
                     {useCase.emoji}
                   </div>
-                  <div style={{ fontSize: '15px', fontWeight: '600', marginBottom: '4px', color: '#f1f5f9' }}>
+                  <div style={{ fontSize: '13px', fontWeight: '600', marginBottom: '6px', color: '#f1f5f9', textTransform: 'uppercase' as const, lineHeight: '1.3', whiteSpace: 'nowrap' as const }}>
                     {useCase.name}
                   </div>
-                  <div style={{ fontSize: '12px', color: '#94a3b8' }}>
+                  <div style={{ fontSize: '12px', color: '#94a3b8', lineHeight: '1.4', textTransform: 'lowercase' as const }}>
                     {useCase.description}
                   </div>
                 </button>
@@ -373,21 +585,48 @@ function PromptCrafter() {
 
           {/* SALES & PROSPECTING */}
           <div style={styles.categorySection}>
-            <h3 style={styles.categoryTitle}>Sales & Prospecting</h3>
+            <div style={styles.categoryHeader}>
+              <h3 style={styles.categoryTitle}>Sales & Prospecting</h3>
+            </div>
             <div style={styles.useCaseGrid}>
               {USE_CASES.filter(u => u.category === 'sales').map(useCase => (
                 <button
                   key={useCase.id}
                   onClick={() => handleUseCaseSelect(useCase.id)}
-                  style={styles.useCaseCard}
+                  style={{ ...styles.useCaseCard, position: 'relative' as const }}
                 >
-                  <div style={{ fontSize: '32px', marginBottom: '8px' }}>
+                  {useCase.exampleOutput && (
+                    <div
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setExpandedExample(useCase.id);
+                      }}
+                      style={{
+                        position: 'absolute' as const,
+                        top: '8px',
+                        right: '8px',
+                        fontSize: '18px',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s',
+                        zIndex: 10
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.transform = 'scale(1.15)';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.transform = 'scale(1)';
+                      }}
+                    >
+                      💡
+                    </div>
+                  )}
+                  <div style={{ fontSize: '32px', marginBottom: '10px' }}>
                     {useCase.emoji}
                   </div>
-                  <div style={{ fontSize: '15px', fontWeight: '600', marginBottom: '4px', color: '#f1f5f9' }}>
+                  <div style={{ fontSize: '13px', fontWeight: '600', marginBottom: '6px', color: '#f1f5f9', textTransform: 'uppercase' as const, lineHeight: '1.3', whiteSpace: 'nowrap' as const }}>
                     {useCase.name}
                   </div>
-                  <div style={{ fontSize: '12px', color: '#94a3b8' }}>
+                  <div style={{ fontSize: '12px', color: '#94a3b8', lineHeight: '1.4', textTransform: 'lowercase' as const }}>
                     {useCase.description}
                   </div>
                 </button>
@@ -397,26 +636,166 @@ function PromptCrafter() {
 
           {/* CLIENT SERVICE */}
           <div style={styles.categorySection}>
-            <h3 style={styles.categoryTitle}>Client Service</h3>
+            <div style={styles.categoryHeader}>
+              <h3 style={styles.categoryTitle}>Client Service</h3>
+            </div>
             <div style={styles.useCaseGrid}>
               {USE_CASES.filter(u => u.category === 'service').map(useCase => (
                 <button
                   key={useCase.id}
                   onClick={() => handleUseCaseSelect(useCase.id)}
-                  style={styles.useCaseCard}
+                  style={{ ...styles.useCaseCard, position: 'relative' as const }}
                 >
-                  <div style={{ fontSize: '32px', marginBottom: '8px' }}>
+                  {useCase.exampleOutput && (
+                    <div
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setExpandedExample(useCase.id);
+                      }}
+                      style={{
+                        position: 'absolute' as const,
+                        top: '8px',
+                        right: '8px',
+                        fontSize: '18px',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s',
+                        zIndex: 10
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.transform = 'scale(1.15)';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.transform = 'scale(1)';
+                      }}
+                    >
+                      💡
+                    </div>
+                  )}
+                  <div style={{ fontSize: '32px', marginBottom: '10px' }}>
                     {useCase.emoji}
                   </div>
-                  <div style={{ fontSize: '15px', fontWeight: '600', marginBottom: '4px', color: '#f1f5f9' }}>
+                  <div style={{ fontSize: '13px', fontWeight: '600', marginBottom: '6px', color: '#f1f5f9', textTransform: 'uppercase' as const, lineHeight: '1.3', whiteSpace: 'nowrap' as const }}>
                     {useCase.name}
                   </div>
-                  <div style={{ fontSize: '12px', color: '#94a3b8' }}>
+                  <div style={{ fontSize: '12px', color: '#94a3b8', lineHeight: '1.4', textTransform: 'lowercase' as const }}>
                     {useCase.description}
                   </div>
                 </button>
               ))}
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Example Modal Overlay */}
+      {expandedExample && (
+        <div
+          onClick={() => setExpandedExample(null)}
+          style={{
+            position: 'fixed' as const,
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: 'rgba(0, 0, 0, 0.8)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 1000,
+            padding: '20px'
+          }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              background: 'rgba(21, 27, 46, 0.98)',
+              border: '2px solid #10b981',
+              borderRadius: '16px',
+              padding: '24px',
+              maxWidth: '900px',
+              width: '100%',
+              maxHeight: '80vh',
+              overflowY: 'auto',
+              position: 'relative' as const
+            }}
+          >
+            <button
+              onClick={() => setExpandedExample(null)}
+              style={{
+                position: 'absolute' as const,
+                top: '16px',
+                right: '16px',
+                background: 'rgba(239, 68, 68, 0.15)',
+                border: '1px solid rgba(239, 68, 68, 0.3)',
+                borderRadius: '50%',
+                width: '36px',
+                height: '36px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: 'pointer',
+                fontSize: '20px',
+                color: '#f87171',
+                transition: 'all 0.2s'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = 'rgba(239, 68, 68, 0.25)';
+                e.currentTarget.style.transform = 'scale(1.1)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = 'rgba(239, 68, 68, 0.15)';
+                e.currentTarget.style.transform = 'scale(1)';
+              }}
+            >
+              ✕
+            </button>
+
+            <div style={{ fontSize: '18px', fontWeight: 'bold', color: '#10b981', marginBottom: '16px' }}>
+              📝 Example Output
+            </div>
+
+            {(() => {
+              // If expandedExample is a category, show first use case with example from that category
+              const categoryMap: Record<string, string> = { content: 'content', sales: 'sales', service: 'service' };
+              if (categoryMap[expandedExample as string]) {
+                const firstWithExample = USE_CASES.find(uc =>
+                  uc.category === expandedExample && uc.exampleOutput
+                );
+                if (firstWithExample?.exampleOutput) {
+                  return (
+                    <pre style={{
+                      fontSize: '14px',
+                      lineHeight: '1.7',
+                      color: '#e5e7eb',
+                      margin: 0,
+                      whiteSpace: 'pre-wrap',
+                      fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Roboto, sans-serif',
+                      letterSpacing: '0.01em',
+                    }}>
+                      {firstWithExample.exampleOutput}
+                    </pre>
+                  );
+                }
+              }
+              // Otherwise show individual use case example
+              const useCase = USE_CASES.find(uc => uc.id === expandedExample);
+              if (useCase?.exampleOutput) {
+                return (
+                  <pre style={{
+                    fontSize: '14px',
+                    lineHeight: '1.7',
+                    color: '#e5e7eb',
+                    margin: 0,
+                    whiteSpace: 'pre-wrap',
+                    fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Roboto, sans-serif',
+                    letterSpacing: '0.01em',
+                  }}>
+                    {useCase.exampleOutput}
+                  </pre>
+                );
+              }
+              return null;
+            })()}
           </div>
         </div>
       )}
@@ -434,56 +813,291 @@ function PromptCrafter() {
         />
       )}
 
-      {/* Step 4: Generated Prompt */}
+      {/* Step 4: Generated Content (AI-First) */}
       {!showHistory && state.step === 4 && (
         <div style={styles.stepContainer}>
-          <h2 style={styles.title}>Your Perfect AI Prompt</h2>
-          <div style={styles.explainerBox}>
-            <div style={{ fontSize: '14px', marginBottom: '8px' }}>
-              <strong>How this works:</strong>
-            </div>
-            <div style={{ fontSize: '13px', color: '#cbd5e1', lineHeight: '1.6' }}>
-              1. Click "Copy to Clipboard" below<br />
-              2. Open ChatGPT, Claude, or your AI assistant<br />
-              3. Paste the prompt and hit send<br />
-              4. The AI will generate your content using advanced techniques
-            </div>
-          </div>
+          <h2 style={styles.title}>Your Content is Ready!</h2>
 
-          <div style={styles.promptBox}>
-            <pre style={styles.promptText}>{state.generatedPrompt}</pre>
-          </div>
+          {!generatedOutput ? (
+            // Before AI generation
+            <>
+              {isGenerating ? (
+                // 🎉 FUN LOADING SCREEN 🎉
+                <div style={{
+                  background: 'linear-gradient(135deg, rgba(139, 92, 246, 0.1) 0%, rgba(167, 139, 250, 0.1) 100%)',
+                  border: '2px solid #8b5cf6',
+                  borderRadius: '20px',
+                  padding: '40px 24px',
+                  marginBottom: '24px',
+                  textAlign: 'center',
+                  minHeight: '300px',
+                  display: 'flex',
+                  flexDirection: 'column' as const,
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                  gap: '24px'
+                }}>
+                  {/* Bouncing House Animation */}
+                  <div style={{
+                    fontSize: '80px',
+                    animation: 'bounce 1s ease-in-out infinite',
+                    filter: 'drop-shadow(0 4px 12px rgba(139, 92, 246, 0.3))'
+                  }}>
+                    🏡
+                  </div>
 
-          <div style={{ display: 'flex', gap: '12px', marginBottom: '24px', flexWrap: 'wrap' }}>
-            <button
-              onClick={handleCopyPrompt}
-              style={{
-                ...styles.primaryButton,
-                background: copiedPrompt ? '#10b981' : 'linear-gradient(135deg, #a78bfa 0%, #8b5cf6 100%)',
-                flex: '1 1 200px'
-              }}
-              aria-label={copiedPrompt ? 'Prompt copied to clipboard' : 'Copy prompt to clipboard'}
-              aria-live="polite"
-            >
-              {copiedPrompt ? '✓ Copied!' : '📋 Copy to Clipboard'}
-            </button>
-            <a
-              href={`https://chat.openai.com/?q=${encodeURIComponent(state.generatedPrompt)}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              style={{
-                ...styles.primaryButton,
-                background: '#10a37f',
-                textDecoration: 'none',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                flex: '1 1 200px'
-              }}
-            >
-              Test in ChatGPT →
-            </a>
-          </div>
+                  {/* Funny Loading Messages */}
+                  <div style={{
+                    fontSize: '20px',
+                    fontWeight: '600',
+                    color: '#f8fafc',
+                    minHeight: '60px',
+                    display: 'flex',
+                    alignItems: 'center'
+                  }}>
+                    {[
+                      "Teaching AI about curb appeal... 🌳",
+                      "Sprinkling in some real estate magic... ✨",
+                      "Consulting with virtual staging experts... 🎨",
+                      "Checking comps in the AI neighborhood... 📊",
+                      "Polishing those power words... 💎",
+                      "Making sure it's commission-worthy... 💰",
+                      "Adding that 'location, location, location' vibe... 📍",
+                      "Almost done! Just staging the content... 🪴"
+                    ][loadingMessage]}
+                  </div>
+
+                  {/* Spinning Progress Indicators */}
+                  <div style={{ display: 'flex', gap: '12px', fontSize: '24px' }}>
+                    <span style={{ animation: 'spin 2s linear infinite' }}>📝</span>
+                    <span style={{ animation: 'spin 2.5s linear infinite' }}>🤖</span>
+                    <span style={{ animation: 'spin 3s linear infinite' }}>✨</span>
+                  </div>
+
+                  {/* Show Prompt Toggle */}
+                  <button
+                    onClick={() => setShowPrompt(!showPrompt)}
+                    style={{
+                      background: 'rgba(139, 92, 246, 0.2)',
+                      border: '1px solid #8b5cf6',
+                      borderRadius: '8px',
+                      padding: '8px 16px',
+                      color: '#d1d5db',
+                      fontSize: '13px',
+                      cursor: 'pointer',
+                      transition: 'all 0.2s'
+                    }}
+                  >
+                    {showPrompt ? '👁️ Hide' : '🤓 Show'} what we sent to AI
+                  </button>
+
+                  {/* Show the actual prompt if toggled */}
+                  {showPrompt && (
+                    <div style={{ width: '100%' }}>
+                      <div style={{
+                        background: 'rgba(15, 23, 42, 0.8)',
+                        border: '1px solid #334155',
+                        borderRadius: '12px',
+                        padding: '16px',
+                        marginTop: '8px',
+                        maxHeight: '200px',
+                        overflow: 'auto',
+                        width: '100%',
+                        textAlign: 'left',
+                        fontSize: '12px',
+                        color: '#cbd5e1',
+                        fontFamily: 'monospace',
+                        lineHeight: '1.6'
+                      }}>
+                        {state.generatedPrompt}
+                      </div>
+                      <button
+                        onClick={handleCopyPromptFromViewer}
+                        style={{
+                          marginTop: '8px',
+                          background: copiedPromptFromViewer ? '#10b981' : 'rgba(139, 92, 246, 0.2)',
+                          border: '1px solid ' + (copiedPromptFromViewer ? '#10b981' : '#8b5cf6'),
+                          borderRadius: '8px',
+                          padding: '8px 16px',
+                          color: copiedPromptFromViewer ? '#ffffff' : '#d1d5db',
+                          fontSize: '13px',
+                          cursor: 'pointer',
+                          transition: 'all 0.2s',
+                          width: '100%'
+                        }}
+                      >
+                        {copiedPromptFromViewer ? '✓ Copied to clipboard!' : '📋 Copy prompt to clipboard'}
+                      </button>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <>
+                  <div style={styles.explainerBox}>
+                    <div style={{ fontSize: '14px', marginBottom: '8px' }}>
+                      <strong>✨ Generate with AI (Recommended)</strong>
+                    </div>
+                    <div style={{ fontSize: '13px', color: '#cbd5e1', lineHeight: '1.6' }}>
+                      Click below to instantly generate your content using AI. No copy-pasting needed!
+                    </div>
+                  </div>
+
+                  {/* Primary Action: Generate with AI */}
+                  <button
+                    onClick={handleGenerate}
+                    style={{
+                      ...styles.primaryButton,
+                      background: 'linear-gradient(135deg, #a78bfa 0%, #8b5cf6 100%)',
+                      marginBottom: '16px'
+                    }}
+                  >
+                    ✨ Generate with AI
+                  </button>
+                </>
+              )}
+
+              {/* Collapsible: Advanced Options */}
+              <details style={{ marginBottom: '24px' }}>
+                <summary style={{
+                  fontSize: '13px',
+                  color: '#94a3b8',
+                  cursor: 'pointer',
+                  marginBottom: '12px',
+                  listStyle: 'none',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px'
+                }}>
+                  <span>▼</span> Advanced: Edit prompt or copy manually
+                </summary>
+
+                <div style={styles.promptBox}>
+                  <div style={{ fontSize: '12px', color: '#94a3b8', marginBottom: '8px', fontStyle: 'italic' }}>
+                    ✏️ Click to edit before using
+                  </div>
+                  <textarea
+                    value={state.generatedPrompt}
+                    onChange={(e) => setState({ ...state, generatedPrompt: e.target.value })}
+                    style={{
+                      ...styles.promptText,
+                      width: '100%',
+                      minHeight: '200px',
+                      resize: 'vertical',
+                      background: 'transparent',
+                      border: 'none',
+                      outline: 'none',
+                      fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Roboto, sans-serif',
+                    }}
+                  />
+                </div>
+
+                <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', marginTop: '12px' }}>
+                  <button
+                    onClick={handleCopyPrompt}
+                    style={{
+                      ...styles.secondaryButton,
+                      marginTop: 0,
+                      background: copiedPrompt ? '#10b981' : 'transparent',
+                      borderColor: copiedPrompt ? '#10b981' : '#475569',
+                      color: copiedPrompt ? '#ffffff' : '#d1d5db',
+                      flex: '1 1 200px'
+                    }}
+                  >
+                    {copiedPrompt ? '✓ Copied!' : '📋 Copy Prompt'}
+                  </button>
+                  <a
+                    href={`https://chat.openai.com/?q=${encodeURIComponent(state.generatedPrompt)}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{
+                      ...styles.secondaryButton,
+                      marginTop: 0,
+                      textDecoration: 'none',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      flex: '1 1 200px'
+                    }}
+                  >
+                    Open in ChatGPT →
+                  </a>
+                </div>
+              </details>
+            </>
+          ) : (
+            // After AI generation - show output
+            <>
+              <div style={{
+                background: 'rgba(16, 185, 129, 0.12)',
+                border: '2px solid #10b981',
+                borderRadius: '16px',
+                padding: '20px',
+                marginBottom: '24px'
+              }}>
+                <div style={{ fontSize: '14px', fontWeight: 'bold', color: '#10b981', marginBottom: '12px' }}>
+                  ✨ AI Generated Output:
+                </div>
+                <div style={{
+                  fontSize: '14px',
+                  lineHeight: '1.7',
+                  color: '#e5e7eb',
+                  whiteSpace: 'pre-wrap',
+                  maxHeight: '400px',
+                  overflowY: 'auto'
+                }}>
+                  {generatedOutput}
+                </div>
+              </div>
+
+              {/* Actions after generation */}
+              <div style={{ display: 'flex', gap: '12px', marginBottom: '24px', flexWrap: 'wrap' }}>
+                <button
+                  onClick={handleCopyOutput}
+                  style={{
+                    ...styles.primaryButton,
+                    background: copiedOutput ? '#10b981' : 'linear-gradient(135deg, #a78bfa 0%, #8b5cf6 100%)',
+                    flex: '1 1 200px'
+                  }}
+                >
+                  {copiedOutput ? '✓ Copied!' : '📋 Copy Output'}
+                </button>
+                <button
+                  onClick={() => {
+                    setGeneratedOutput(null);
+                    setIsGenerating(false);
+                  }}
+                  style={{
+                    ...styles.secondaryButton,
+                    marginTop: 0,
+                    flex: '1 1 200px'
+                  }}
+                >
+                  🔄 Generate Again
+                </button>
+              </div>
+
+              {/* Show the prompt that was used (collapsible) */}
+              <details style={{ marginBottom: '24px' }}>
+                <summary style={{
+                  fontSize: '13px',
+                  color: '#94a3b8',
+                  cursor: 'pointer',
+                  listStyle: 'none',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px'
+                }}>
+                  <span>▼</span> View the prompt that was used
+                </summary>
+                <div style={{
+                  ...styles.promptBox,
+                  marginTop: '12px'
+                }}>
+                  <pre style={styles.promptText}>{state.generatedPrompt}</pre>
+                </div>
+              </details>
+            </>
+          )}
 
           <button onClick={handleReset} style={styles.secondaryButton}>
             Create Another Prompt
@@ -542,6 +1156,12 @@ function QuestionFlow({
           type="text"
           value={answers[currentQuestion.id] || ''}
           onChange={(e) => onAnswer(currentQuestion.id, e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' && canContinue) {
+              e.preventDefault();
+              isLastQuestion ? onGenerate() : onNext();
+            }
+          }}
           placeholder={'placeholder' in currentQuestion ? currentQuestion.placeholder : ''}
           style={styles.input}
           autoFocus
@@ -552,6 +1172,13 @@ function QuestionFlow({
         <textarea
           value={answers[currentQuestion.id] || ''}
           onChange={(e) => onAnswer(currentQuestion.id, e.target.value)}
+          onKeyDown={(e) => {
+            // Ctrl+Enter or Cmd+Enter to submit
+            if ((e.ctrlKey || e.metaKey) && e.key === 'Enter' && canContinue) {
+              e.preventDefault();
+              isLastQuestion ? onGenerate() : onNext();
+            }
+          }}
           placeholder={'placeholder' in currentQuestion ? currentQuestion.placeholder : ''}
           style={styles.textarea}
           rows={4}
@@ -561,10 +1188,17 @@ function QuestionFlow({
 
       {currentQuestion.type === 'select' && 'options' in currentQuestion && currentQuestion.options && (
         <div style={{ display: 'grid', gap: '12px' }}>
-          {currentQuestion.options.map(option => (
+          {currentQuestion.options.map((option, index) => (
             <button
               key={option.value}
               onClick={() => onAnswer(currentQuestion.id, option.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  onAnswer(currentQuestion.id, option.value);
+                }
+              }}
+              autoFocus={index === 0}
               style={{
                 ...styles.selectOption,
                 borderColor: answers[currentQuestion.id] === option.value ? '#10b981' : '#334155',
@@ -1793,19 +2427,19 @@ const styles: Record<string, React.CSSProperties> = {
     minHeight: '100vh',
     background: 'linear-gradient(135deg, #0a0f1e 0%, #1e293b 100%)', // Darker for better contrast
     color: '#f8fafc', // Increased from #f1f5f9 for AAA contrast (15.2:1)
-    padding: '20px',
+    padding: '8px', // Reduced from 12px for MacBook Air 13"
     fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Roboto, sans-serif',
-    lineHeight: 1.6, // Improved from browser default
+    lineHeight: 1.5, // Reduced from 1.6
   },
   header: {
     textAlign: 'center',
-    marginBottom: '48px',
-    paddingTop: '40px'
+    marginBottom: '12px', // Reduced from 24px
+    paddingTop: '8px' // Reduced from 16px
   },
   logo: {
-    fontSize: '36px', // Increased from 32px
+    fontSize: '24px', // Reduced from 28px
     fontWeight: 'bold',
-    marginBottom: '12px', // Increased from 8px
+    marginBottom: '4px', // Reduced from 8px
     lineHeight: 1.2,
     background: 'linear-gradient(135deg, #a78bfa 0%, #10b981 100%)', // Brighter purple for contrast
     WebkitBackgroundClip: 'text',
@@ -1813,32 +2447,35 @@ const styles: Record<string, React.CSSProperties> = {
     backgroundClip: 'text'
   },
   tagline: {
-    fontSize: '16px',
+    fontSize: '13px', // Reduced from 14px
     color: '#d1d5db', // Increased from #94a3b8 for AAA contrast (10.1:1)
-    lineHeight: 1.5,
+    lineHeight: 1.4,
   },
   stepContainer: {
     maxWidth: '800px',
     margin: '0 auto'
   },
   title: {
-    fontSize: '32px',
+    fontSize: '20px', // Reduced from 24px
     fontWeight: 'bold',
-    marginBottom: '48px',
+    marginBottom: '12px', // Reduced from 24px
     textAlign: 'center',
     letterSpacing: '-0.01em', // Slightly tighter for headings
     lineHeight: 1.3,
     color: '#f8fafc', // Explicit AAA contrast
   },
   subtitle: {
-    fontSize: '16px',
+    fontSize: '13px', // Reduced from 14px
     color: '#d1d5db', // Increased from #94a3b8 for AAA contrast (10.1:1)
-    marginBottom: '32px',
+    marginBottom: '12px', // Reduced from 20px
     textAlign: 'center',
-    lineHeight: 1.6,
+    lineHeight: 1.5,
   },
   categorySection: {
-    marginBottom: '56px' // Increased from 48px for better separation
+    marginBottom: '20px' // Reduced from 32px for MacBook Air 13"
+  },
+  categoryHeader: {
+    marginBottom: '16px',
   },
   categoryTitle: {
     fontSize: '14px', // Increased from 12px for minimum readability
@@ -1846,28 +2483,28 @@ const styles: Record<string, React.CSSProperties> = {
     textTransform: 'uppercase',
     letterSpacing: '0.05em', // Improved from 1px for better readability
     color: '#9ca3af', // Increased from #64748b for AA contrast (7.8:1)
-    marginBottom: '16px',
+    marginBottom: '0', // Remove margin since header handles spacing
     paddingLeft: '4px',
     lineHeight: 1.4,
   },
   useCaseGrid: {
     display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))',
+    gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
     gap: '16px' // Increased from 12px for better touch spacing
   },
   useCaseCard: {
     background: 'rgba(21, 27, 46, 0.8)', // Slightly lighter for better card elevation
     border: '1px solid #334155',
     borderRadius: '12px',
-    padding: '24px', // Increased from 20px for better touch targets
+    padding: '16px', // Reduced from 24px to save space
     cursor: 'pointer',
     transition: 'all 0.2s ease',
     textAlign: 'center',
     color: '#f8fafc', // AAA contrast
-    minHeight: '156px', // Increased from 140px for better touch target (48px+)
+    height: '150px', // Increased from 120px to accommodate text wrapping
     display: 'flex',
     flexDirection: 'column',
-    justifyContent: 'center',
+    justifyContent: 'flex-start', // Align from top for consistency
     alignItems: 'center',
     WebkitTapHighlightColor: 'transparent',
     boxShadow: '0 2px 8px rgba(0, 0, 0, 0.12)', // Adds depth perception
@@ -1877,56 +2514,56 @@ const styles: Record<string, React.CSSProperties> = {
     background: 'transparent',
     border: 'none',
     color: '#d1d5db', // Increased from #94a3b8 for AAA contrast
-    fontSize: '16px',
+    fontSize: '14px',
     fontWeight: '600',
     cursor: 'pointer',
-    padding: '12px 0', // Increased from 8px for 48px touch target
-    marginBottom: '24px',
-    minHeight: '48px', // Explicit touch target
+    padding: '8px 0',
+    marginBottom: '12px', // Reduced from 24px
+    minHeight: '40px',
     display: 'flex',
     alignItems: 'center',
     outline: 'none', // Will add custom focus state
   },
   input: {
     width: '100%',
-    padding: '16px',
+    padding: '12px 14px', // Reduced from 16px
     fontSize: '16px',
     background: 'rgba(21, 27, 46, 0.8)',
     border: '2px solid #334155',
     borderRadius: '12px',
     color: '#f8fafc', // AAA contrast
-    marginBottom: '24px',
+    marginBottom: '16px', // Reduced from 24px
     boxSizing: 'border-box',
-    lineHeight: 1.5,
-    minHeight: '56px', // Improved touch target
+    lineHeight: 1.4,
+    minHeight: '48px', // Reduced from 56px
     outline: 'none', // Will add custom focus state
   },
   textarea: {
     width: '100%',
-    padding: '16px',
+    padding: '12px 14px', // Reduced from 16px
     fontSize: '16px',
     background: 'rgba(21, 27, 46, 0.8)',
     border: '2px solid #334155',
     borderRadius: '12px',
     color: '#f8fafc', // AAA contrast
-    marginBottom: '24px',
+    marginBottom: '16px', // Reduced from 24px
     resize: 'vertical',
     fontFamily: 'inherit',
     boxSizing: 'border-box',
-    lineHeight: 1.6,
-    minHeight: '120px',
+    lineHeight: 1.5,
+    minHeight: '100px', // Reduced from 120px
     outline: 'none', // Will add custom focus state
   },
   selectOption: {
     background: 'rgba(21, 27, 46, 0.8)',
     border: '2px solid #334155',
     borderRadius: '12px',
-    padding: '20px', // Increased from 16px for better touch target
+    padding: '14px', // Reduced from 20px
     cursor: 'pointer',
     transition: 'all 0.2s',
     textAlign: 'center',
     color: '#f8fafc', // AAA contrast
-    minHeight: '56px', // Explicit touch target
+    minHeight: '48px', // Reduced from 56px
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'center',
@@ -1953,55 +2590,55 @@ const styles: Record<string, React.CSSProperties> = {
   },
   primaryButton: {
     width: '100%',
-    padding: '18px 24px',
-    fontSize: '17px', // Optimized for mobile readability
+    padding: '14px 20px', // Reduced from 18px 24px
+    fontSize: '16px', // Reduced from 17px
     fontWeight: '600', // Slightly reduced from bold for better readability
     borderRadius: '12px',
     border: 'none',
     color: '#ffffff',
     cursor: 'pointer',
-    minHeight: '56px',
+    minHeight: '48px', // Reduced from 56px
     transition: 'all 0.2s',
-    lineHeight: 1.4,
+    lineHeight: 1.3,
     letterSpacing: '0.01em',
     outline: 'none', // Will add custom focus state
     boxShadow: '0 2px 12px rgba(139, 92, 246, 0.3)', // Adds depth
   },
   secondaryButton: {
     width: '100%',
-    padding: '18px', // Increased from 16px for better touch target
-    fontSize: '16px',
+    padding: '14px', // Reduced from 18px
+    fontSize: '15px', // Reduced from 16px
     fontWeight: '600',
     borderRadius: '12px',
     border: '2px solid #475569',
     background: 'transparent',
     color: '#d1d5db', // Improved from #cbd5e1 for better contrast
     cursor: 'pointer',
-    marginTop: '16px',
-    minHeight: '56px',
-    lineHeight: 1.4,
+    marginTop: '12px', // Reduced from 16px
+    minHeight: '48px', // Reduced from 56px
+    lineHeight: 1.3,
     outline: 'none', // Will add custom focus state
   },
   ctaBox: {
     background: 'rgba(16, 185, 129, 0.1)',
     border: '2px solid #10b981',
-    borderRadius: '16px',
-    padding: '24px',
-    marginBottom: '24px',
+    borderRadius: '12px', // Reduced from 16px
+    padding: '16px', // Reduced from 24px
+    marginBottom: '16px', // Reduced from 24px
     textAlign: 'center'
   },
   historyButton: {
     background: 'rgba(139, 92, 246, 0.15)',
     border: '2px solid #a78bfa', // Increased border visibility
     borderRadius: '10px',
-    padding: '12px 20px', // Increased for 48px touch target
-    fontSize: '15px', // Increased from 14px
+    padding: '10px 16px', // Reduced from 12px 20px
+    fontSize: '14px', // Reduced from 15px
     fontWeight: '600',
     color: '#c4b5fd', // Brighter for better contrast
     cursor: 'pointer',
-    marginTop: '16px',
+    marginTop: '12px', // Reduced from 16px
     transition: 'all 0.2s',
-    minHeight: '48px',
+    minHeight: '44px', // Reduced from 48px
     lineHeight: 1.4,
     outline: 'none', // Will add custom focus state
   },
@@ -2009,20 +2646,20 @@ const styles: Record<string, React.CSSProperties> = {
     background: 'rgba(21, 27, 46, 0.8)',
     border: '1px solid #334155',
     borderRadius: '12px',
-    padding: '20px', // Increased from 16px
+    padding: '14px', // Reduced from 20px
     boxShadow: '0 2px 8px rgba(0, 0, 0, 0.12)',
   },
   historyRestoreButton: {
     background: 'linear-gradient(135deg, #a78bfa 0%, #8b5cf6 100%)', // Brighter gradient
     border: 'none',
     borderRadius: '8px',
-    padding: '12px 20px', // Increased for 48px touch target
-    fontSize: '15px', // Increased from 14px
+    padding: '10px 16px', // Reduced from 12px 20px
+    fontSize: '14px', // Reduced from 15px
     fontWeight: '600',
     color: '#ffffff',
     cursor: 'pointer',
     transition: 'all 0.2s',
-    minHeight: '48px',
+    minHeight: '44px', // Reduced from 48px
     lineHeight: 1.4,
     outline: 'none', // Will add custom focus state
     boxShadow: '0 2px 8px rgba(139, 92, 246, 0.3)',
@@ -2031,11 +2668,11 @@ const styles: Record<string, React.CSSProperties> = {
     background: 'rgba(59, 130, 246, 0.12)',
     border: '2px solid #60a5fa', // Brighter blue for better visibility
     borderRadius: '12px',
-    padding: '20px', // Increased from 16px
-    marginBottom: '24px',
+    padding: '14px', // Reduced from 20px
+    marginBottom: '16px', // Reduced from 24px
     color: '#e5e7eb', // Improved contrast
-    lineHeight: 1.6,
-  }
+    lineHeight: 1.5, // Reduced from 1.6
+  },
 };
 
 // Export component
