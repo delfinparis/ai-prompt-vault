@@ -193,6 +193,10 @@ function PromptCrafter() {
   const [loadingMessage, setLoadingMessage] = useState(0);
   const [copiedPromptFromViewer, setCopiedPromptFromViewer] = useState(false);
   const [showCelebration, setShowCelebration] = useState(false);
+  const [showPremiumModal, setShowPremiumModal] = useState(false);
+
+  // Premium subscription status (hardcoded for now - will integrate with payment later)
+  const hasPremiumSubscription = false;
 
   // Quick Mode state (reserved for v2.1)
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -1157,6 +1161,45 @@ function PromptCrafter() {
           ) : (
             // After AI generation - show output
             <>
+              {/* Header with Back and Start Over buttons */}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+                <button
+                  onClick={() => {
+                    setGeneratedOutput(null);
+                    setGeneratedVariations([]);
+                    setIsEditMode(false);
+                    setIsGenerating(false);
+                  }}
+                  style={{
+                    padding: '8px 16px',
+                    background: 'transparent',
+                    color: '#94a3b8',
+                    border: '1px solid #475569',
+                    borderRadius: '8px',
+                    cursor: 'pointer',
+                    fontSize: '14px',
+                    fontWeight: '500'
+                  }}
+                >
+                  ← Back
+                </button>
+                <button
+                  onClick={handleReset}
+                  style={{
+                    padding: '8px 16px',
+                    background: 'transparent',
+                    color: '#94a3b8',
+                    border: '1px solid #475569',
+                    borderRadius: '8px',
+                    cursor: 'pointer',
+                    fontSize: '14px',
+                    fontWeight: '500'
+                  }}
+                >
+                  ↩️ Start Over
+                </button>
+              </div>
+
               {/* Variation Selector (if multiple variations exist) */}
               {generatedVariations.length > 1 && (
                 <div style={{ marginBottom: '16px', display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
@@ -1185,107 +1228,66 @@ function PromptCrafter() {
                 </div>
               )}
 
+              {/* AI Generated Output Box */}
               <div style={{
                 background: 'rgba(16, 185, 129, 0.12)',
                 border: '2px solid #10b981',
                 borderRadius: '16px',
                 padding: '20px',
-                marginBottom: '24px'
+                marginBottom: '16px'
               }}>
-                <div style={{ fontSize: '14px', fontWeight: 'bold', color: '#10b981', marginBottom: '12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span>✨ AI Generated Output{generatedVariations.length > 1 ? ` (Version ${selectedVariation + 1})` : ''}:</span>
-                  <button
-                    onClick={() => {
-                      setIsEditMode(!isEditMode);
-                      setEditedOutput(generatedOutput || '');
-                    }}
-                    style={{
-                      padding: '4px 12px',
-                      background: isEditMode ? '#8b5cf6' : 'transparent',
-                      color: isEditMode ? '#fff' : '#10b981',
-                      border: `1px solid ${isEditMode ? '#8b5cf6' : '#10b981'}`,
-                      borderRadius: '6px',
-                      cursor: 'pointer',
-                      fontSize: '12px'
-                    }}
-                  >
-                    {isEditMode ? '✓ Done Editing' : '✏️ Edit'}
-                  </button>
+                <div style={{ fontSize: '14px', fontWeight: 'bold', color: '#10b981', marginBottom: '12px' }}>
+                  ✨ AI Generated Result{generatedVariations.length > 1 ? ` (Version ${selectedVariation + 1})` : ''}:
                 </div>
-                {isEditMode ? (
-                  <textarea
-                    value={editedOutput}
-                    onChange={(e) => {
-                      setEditedOutput(e.target.value);
-                      setGeneratedOutput(e.target.value);
-                    }}
-                    style={{
-                      width: '100%',
-                      minHeight: '300px',
-                      fontSize: '14px',
-                      lineHeight: '1.7',
-                      color: '#e5e7eb',
-                      background: 'rgba(15, 23, 42, 0.5)',
-                      border: '1px solid #475569',
-                      borderRadius: '8px',
-                      padding: '12px',
-                      resize: 'vertical',
-                      fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Roboto, sans-serif',
-                    }}
-                  />
-                ) : (
-                  <div style={{
-                    fontSize: '14px',
-                    lineHeight: '1.7',
-                    color: '#e5e7eb',
-                    whiteSpace: 'pre-wrap',
-                    maxHeight: '400px',
-                    overflowY: 'auto'
-                  }}>
-                    {generatedOutput}
-                  </div>
-                )}
+                <div style={{
+                  fontSize: '14px',
+                  lineHeight: '1.7',
+                  color: '#e5e7eb',
+                  whiteSpace: 'pre-wrap',
+                  maxHeight: '400px',
+                  overflowY: 'auto'
+                }}>
+                  {generatedOutput}
+                </div>
               </div>
 
-              {/* Actions after generation */}
-              <div style={{ display: 'flex', gap: '12px', marginBottom: '24px', flexWrap: 'wrap' }}>
+              {/* Copy Button - directly below output */}
+              <div style={{ marginBottom: '16px' }}>
                 <button
                   onClick={handleCopyOutput}
                   style={{
                     ...styles.primaryButton,
                     background: copiedOutput ? '#10b981' : 'linear-gradient(135deg, #a78bfa 0%, #8b5cf6 100%)',
-                    flex: '1 1 200px'
+                    width: '100%',
+                    marginTop: 0
                   }}
                 >
-                  {copiedOutput ? '✓ Copied!' : '📋 Copy Output'}
+                  {copiedOutput ? '✓ Copied!' : '📋 Copy Result'}
                 </button>
-                <button
-                  onClick={() => handleGenerateVariations(3)}
-                  style={{
-                    ...styles.secondaryButton,
-                    marginTop: 0,
-                    flex: '1 1 200px',
-                    background: 'transparent',
-                    borderColor: '#8b5cf6',
-                    color: '#a78bfa'
-                  }}
-                >
-                  🔄 Generate 3 Versions
-                </button>
+              </div>
+
+              {/* Regenerate Button - below copy button */}
+              <div style={{ marginBottom: '24px' }}>
                 <button
                   onClick={() => {
-                    setGeneratedOutput(null);
-                    setGeneratedVariations([]);
-                    setIsEditMode(false);
-                    setIsGenerating(false);
+                    if (!hasPremiumSubscription) {
+                      setShowPremiumModal(true);
+                    } else {
+                      handleGenerateVariations(3);
+                    }
                   }}
                   style={{
                     ...styles.secondaryButton,
                     marginTop: 0,
-                    flex: '1 1 200px'
+                    width: '100%',
+                    background: 'transparent',
+                    borderColor: hasPremiumSubscription ? '#8b5cf6' : '#475569',
+                    color: hasPremiumSubscription ? '#a78bfa' : '#64748b',
+                    cursor: hasPremiumSubscription ? 'pointer' : 'not-allowed',
+                    opacity: hasPremiumSubscription ? 1 : 0.6
                   }}
                 >
-                  ↩️ Start Over
+                  🔄 Regenerate (3 Versions)
                 </button>
               </div>
 
@@ -1315,6 +1317,56 @@ function PromptCrafter() {
           <button onClick={handleReset} style={styles.secondaryButton}>
             Create Another Prompt
           </button>
+        </div>
+      )}
+
+      {/* Premium Modal */}
+      {showPremiumModal && (
+        <div
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: 'rgba(0, 0, 0, 0.7)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 1000
+          }}
+          onClick={() => setShowPremiumModal(false)}
+        >
+          <div
+            style={{
+              background: '#1e293b',
+              border: '2px solid #475569',
+              borderRadius: '16px',
+              padding: '32px',
+              maxWidth: '400px',
+              width: '90%',
+              textAlign: 'center'
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div style={{ fontSize: '48px', marginBottom: '16px' }}>🔒</div>
+            <h2 style={{ fontSize: '24px', color: '#f8fafc', marginBottom: '12px' }}>
+              Premium Subscription Required
+            </h2>
+            <p style={{ fontSize: '16px', color: '#94a3b8', marginBottom: '24px', lineHeight: '1.6' }}>
+              Regenerate with multiple versions is a premium feature. Upgrade to unlock unlimited regenerations and more!
+            </p>
+            <button
+              onClick={() => setShowPremiumModal(false)}
+              style={{
+                ...styles.primaryButton,
+                width: '100%',
+                marginTop: 0
+              }}
+            >
+              Got It
+            </button>
+          </div>
         </div>
       )}
       </div>
