@@ -3807,13 +3807,6 @@ function generateBuyerSellerEducationPrompt(answers: Record<string, string>): st
     'negotiation': 'Negotiation Strategies for Buyers/Sellers'
   };
 
-  const formatGuidance = {
-    'guide': 'Step-by-step guide format with clear sections',
-    'checklist': 'Actionable checklist format with checkboxes',
-    'faq': 'Question & answer format addressing common concerns',
-    'article': 'Blog article format with engaging narrative'
-  };
-
   return `You are a real estate expert creating educational content for clients.
 
 TOPIC: ${topicDetails[topic as keyof typeof topicDetails]}
