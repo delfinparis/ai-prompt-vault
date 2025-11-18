@@ -13,7 +13,9 @@ export type AnalyticsEvent =
   | 'PromptCrafter_Abandoned'
   | 'Default_Modified'
   | 'AI_Generated'
-  | 'Quick_Mode_Toggled';
+  | 'Quick_Mode_Toggled'
+  | 'Prompt_Copied'
+  | 'History_Viewed';
 
 interface EventData {
   useCase?: string;

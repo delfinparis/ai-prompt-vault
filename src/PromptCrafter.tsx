@@ -198,10 +198,21 @@ function PromptCrafter() {
     return saved === null ? true : saved === 'true'; // Default to true
   });
 
+  // Voice Personalization (Phase 2)
+  const [voicePreference, setVoicePreference] = useState(() => {
+    const saved = localStorage.getItem('promptCrafterVoicePreference');
+    return saved || 'professional'; // Default to professional
+  });
+
   // Save Quick Mode preference
   useEffect(() => {
     localStorage.setItem('promptCrafterQuickMode', String(quickMode));
   }, [quickMode]);
+
+  // Save Voice Preference
+  useEffect(() => {
+    localStorage.setItem('promptCrafterVoicePreference', voicePreference);
+  }, [voicePreference]);
 
   // Load history from localStorage on mount
   useEffect(() => {
@@ -340,7 +351,7 @@ function PromptCrafter() {
     setShowPrompt(false);
     setLoadingMessage(0);
 
-    const promptToUse = generatePrompt(state.selectedUseCase!, state.answers);
+    const promptToUse = generatePrompt(state.selectedUseCase!, state.answers, voicePreference);
     const variations: string[] = [];
 
     try {
@@ -688,6 +699,100 @@ function PromptCrafter() {
       {!showHistory && state.step === 0 && (
         <div style={styles.stepContainer}>
           <h2 style={styles.title}>WHAT DO YOU NEED HELP WITH?</h2>
+
+          {/* Voice Personalization Selector */}
+          <div style={{
+            background: 'linear-gradient(135deg, rgba(139, 92, 246, 0.1) 0%, rgba(167, 139, 250, 0.1) 100%)',
+            border: '2px solid #8b5cf6',
+            borderRadius: '16px',
+            padding: '20px',
+            marginBottom: '32px'
+          }}>
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '12px',
+              marginBottom: '12px'
+            }}>
+              <span style={{ fontSize: '24px' }}>🎯</span>
+              <h3 style={{
+                fontSize: '16px',
+                fontWeight: '600',
+                color: '#f8fafc',
+                margin: 0
+              }}>Your Voice</h3>
+            </div>
+            <p style={{
+              fontSize: '14px',
+              color: '#d1d5db',
+              marginBottom: '16px',
+              lineHeight: '1.5'
+            }}>
+              Choose your preferred communication style for all generated content
+            </p>
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(2, 1fr)',
+              gap: '12px'
+            }}>
+              {[
+                { value: 'professional', emoji: '👔', label: 'Professional', desc: 'Polished & trustworthy' },
+                { value: 'casual', emoji: '☕', label: 'Casual', desc: 'Warm & friendly' },
+                { value: 'enthusiastic', emoji: '⚡', label: 'Enthusiastic', desc: 'Energetic & inspiring' },
+                { value: 'empathetic', emoji: '💙', label: 'Empathetic', desc: 'Caring & understanding' }
+              ].map(voice => (
+                <button
+                  key={voice.value}
+                  onClick={() => setVoicePreference(voice.value)}
+                  style={{
+                    background: voicePreference === voice.value
+                      ? 'linear-gradient(135deg, #a78bfa 0%, #8b5cf6 100%)'
+                      : 'rgba(21, 27, 46, 0.8)',
+                    border: voicePreference === voice.value
+                      ? '2px solid #a78bfa'
+                      : '2px solid rgba(148, 163, 184, 0.3)',
+                    borderRadius: '12px',
+                    padding: '16px',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s',
+                    textAlign: 'left' as const
+                  }}
+                  onMouseEnter={(e) => {
+                    if (voicePreference !== voice.value) {
+                      e.currentTarget.style.borderColor = '#8b5cf6';
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (voicePreference !== voice.value) {
+                      e.currentTarget.style.borderColor = 'rgba(148, 163, 184, 0.3)';
+                    }
+                  }}
+                >
+                  <div style={{
+                    fontSize: '28px',
+                    marginBottom: '8px'
+                  }}>
+                    {voice.emoji}
+                  </div>
+                  <div style={{
+                    fontSize: '15px',
+                    fontWeight: '600',
+                    color: '#f8fafc',
+                    marginBottom: '4px'
+                  }}>
+                    {voice.label}
+                  </div>
+                  <div style={{
+                    fontSize: '13px',
+                    color: '#9ca3af',
+                    lineHeight: '1.4'
+                  }}>
+                    {voice.desc}
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
 
           {/* CONTENT CREATION */}
           <div style={styles.categorySection}>
@@ -3274,35 +3379,62 @@ Write this like you're writing to a friend. Be real.`;
 }
 
 // Main prompt router (declared after all generators)
-function generatePrompt(useCaseId: string, answers: Record<string, string>): string {
+function generatePrompt(useCaseId: string, answers: Record<string, string>, voicePreference: string = 'professional'): string {
+  // Voice preference instructions
+  const voiceInstructions = {
+    professional: 'Use a professional, polished tone. Clear, authoritative, and trustworthy. Like a seasoned expert.',
+    casual: 'Use a warm, friendly, conversational tone. Like talking to a friend over coffee. Natural and approachable.',
+    enthusiastic: 'Use an energetic, excited tone. Show passion and enthusiasm. Inspire action with positivity.',
+    empathetic: 'Use a caring, understanding tone. Lead with empathy and emotional intelligence. Build deep trust.'
+  };
+
+  const voiceInstruction = voiceInstructions[voicePreference as keyof typeof voiceInstructions] || voiceInstructions.professional;
+
+  let basePrompt: string;
+
   switch (useCaseId) {
     case 'sphere-script':
-      return generateCallingScriptPrompt(answers);
+      basePrompt = generateCallingScriptPrompt(answers);
+      break;
     case 'social-content':
-      return generateSocialContentPrompt(answers);
+      basePrompt = generateSocialContentPrompt(answers);
+      break;
     case 'email-sequence':
-      return generateEmailSequencePrompt(answers);
+      basePrompt = generateEmailSequencePrompt(answers);
+      break;
     case 'listing-description':
-      return generateListingDescriptionPrompt(answers);
+      basePrompt = generateListingDescriptionPrompt(answers);
+      break;
     case 'consultation-script':
-      return generateConsultationScriptPrompt(answers);
+      basePrompt = generateConsultationScriptPrompt(answers);
+      break;
     case 'objection-handling':
-      return generateObjectionHandlingPrompt(answers);
+      basePrompt = generateObjectionHandlingPrompt(answers);
+      break;
     case 'open-house-followup':
-      return generateOpenHouseFollowupPrompt(answers);
+      basePrompt = generateOpenHouseFollowupPrompt(answers);
+      break;
     case 'market-report':
-      return generateMarketReportPrompt(answers);
+      basePrompt = generateMarketReportPrompt(answers);
+      break;
     case 'video-script':
-      return generateVideoScriptPrompt(answers);
+      basePrompt = generateVideoScriptPrompt(answers);
+      break;
     case 'expired-fsbo':
-      return generateExpiredFSBOPrompt(answers);
+      basePrompt = generateExpiredFSBOPrompt(answers);
+      break;
     case 'cma-narrative':
-      return generateCMANarrativePrompt(answers);
+      basePrompt = generateCMANarrativePrompt(answers);
+      break;
     case 'thank-you':
-      return generateThankYouPrompt(answers);
+      basePrompt = generateThankYouPrompt(answers);
+      break;
     default:
       return 'Prompt generation in progress...';
   }
+
+  // Append voice preference instruction
+  return `${basePrompt}\n\nVOICE & TONE: ${voiceInstruction}`;
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
