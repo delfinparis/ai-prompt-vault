@@ -190,12 +190,11 @@ function PromptCrafter() {
   const [copiedPromptFromViewer, setCopiedPromptFromViewer] = useState(false);
   const [showCelebration, setShowCelebration] = useState(false);
 
-  // Quick Mode state (reserved for v2.1)
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  // Quick Mode state (Phase 2)
   const [quickMode, setQuickMode] = useState(() => {
     // Load Quick Mode preference from localStorage
     const saved = localStorage.getItem('promptCrafterQuickMode');
-    return saved === null ? true : saved === 'true'; // Default to true
+    return saved === null ? false : saved === 'true'; // Default to false (show questions)
   });
 
   // Voice Personalization (Phase 2)
@@ -277,8 +276,6 @@ function PromptCrafter() {
   }, [isGenerating]);
 
   const handleUseCaseSelect = (useCaseId: string) => {
-    setState({ ...state, selectedUseCase: useCaseId, step: 1, answers: {} });
-
     // Track when user starts
     analytics.track('PromptCrafter_Started', {
       useCase: useCaseId,
@@ -288,6 +285,31 @@ function PromptCrafter() {
     // Store start time for duration tracking
     analytics.setSessionData(`${useCaseId}_startTime`, Date.now());
     analytics.setSessionData(`${useCaseId}_initialDefaults`, {});
+
+    // Quick Mode: Skip questions and generate immediately with defaults
+    if (quickMode) {
+      const questions = getQuestionsForUseCase(useCaseId);
+      const defaultAnswers: Record<string, string> = {};
+
+      questions.forEach(q => {
+        if (q.defaultValue) {
+          defaultAnswers[q.id] = q.defaultValue;
+        }
+      });
+
+      setState({
+        ...state,
+        selectedUseCase: useCaseId,
+        step: 4, // Jump to result screen
+        answers: defaultAnswers
+      });
+
+      // Immediately generate with defaults
+      setTimeout(() => handleGenerate(), 100);
+    } else {
+      // Normal mode: Show questions
+      setState({ ...state, selectedUseCase: useCaseId, step: 1, answers: {} });
+    }
   };
 
   const handleAnswer = (questionId: string, value: string) => {
@@ -792,6 +814,78 @@ function PromptCrafter() {
                 </button>
               ))}
             </div>
+          </div>
+
+          {/* Quick Mode Toggle */}
+          <div style={{
+            background: 'rgba(21, 27, 46, 0.6)',
+            border: '2px solid rgba(148, 163, 184, 0.3)',
+            borderRadius: '12px',
+            padding: '16px 20px',
+            marginBottom: '32px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between'
+          }}>
+            <div style={{ flex: 1 }}>
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                marginBottom: '4px'
+              }}>
+                <span style={{ fontSize: '20px' }}>⚡</span>
+                <h3 style={{
+                  fontSize: '15px',
+                  fontWeight: '600',
+                  color: '#f8fafc',
+                  margin: 0
+                }}>Quick Mode</h3>
+              </div>
+              <p style={{
+                fontSize: '13px',
+                color: '#9ca3af',
+                margin: 0,
+                lineHeight: '1.4'
+              }}>
+                Skip questions and generate instantly with smart defaults
+              </p>
+            </div>
+            <button
+              onClick={() => {
+                const newValue = !quickMode;
+                setQuickMode(newValue);
+                analytics.track('Quick_Mode_Toggled', {
+                  enabled: newValue
+                });
+              }}
+              style={{
+                background: quickMode
+                  ? 'linear-gradient(135deg, #10b981 0%, #059669 100%)'
+                  : 'rgba(148, 163, 184, 0.2)',
+                border: 'none',
+                borderRadius: '20px',
+                padding: '6px',
+                width: '52px',
+                height: '28px',
+                cursor: 'pointer',
+                position: 'relative' as const,
+                transition: 'all 0.2s',
+                flexShrink: 0
+              }}
+            >
+              <div style={{
+                width: '20px',
+                height: '20px',
+                borderRadius: '50%',
+                background: '#ffffff',
+                position: 'absolute' as const,
+                top: '4px',
+                left: quickMode ? '28px' : '4px',
+                transition: 'all 0.2s',
+                boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
+              }} />
+            </button>
           </div>
 
           {/* CONTENT CREATION */}
