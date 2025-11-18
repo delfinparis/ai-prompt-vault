@@ -38,9 +38,16 @@ serviceWorkerRegistration.register({
     console.log('Call Your Sphere is now available offline!');
   },
   onUpdate: (registration: ServiceWorkerRegistration) => {
-    console.log('New version available! Please refresh.');
-    // Auto-update the service worker
-    if (registration && registration.waiting) {
+    console.log('New version available! Please refresh to update.');
+
+    // Show a user-friendly prompt instead of force-reloading
+    // eslint-disable-next-line no-restricted-globals
+    const updateAvailable = confirm(
+      'A new version of Call Your Sphere is available! Would you like to update now?\n\n' +
+      'Click OK to refresh and get the latest version.'
+    );
+
+    if (updateAvailable && registration && registration.waiting) {
       registration.waiting.postMessage({ type: 'SKIP_WAITING' });
       window.location.reload();
     }

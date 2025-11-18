@@ -227,6 +227,12 @@ function PromptCrafter() {
     return saved || 'professional'; // Default to professional
   });
 
+  // Listing Data Fetching (Virtual Tour Auto-Fetch)
+  const [listingData, setListingData] = useState<any>(null);
+  const [isFetchingListing, setIsFetchingListing] = useState(false);
+  const [listingNotFound, setListingNotFound] = useState(false);
+  const [editableListingData, setEditableListingData] = useState<any>(null);
+
   // Save Quick Mode preference
   useEffect(() => {
     localStorage.setItem('promptCrafterQuickMode', String(quickMode));
@@ -288,6 +294,41 @@ function PromptCrafter() {
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }, [state.step, showHistory]);
+
+  // Fetch listing data from MLS/Zillow/Redfin/Trulia
+  const fetchListingData = async (address: string, propertyType?: string) => {
+    setIsFetchingListing(true);
+    setListingNotFound(false);
+    setListingData(null);
+
+    try {
+      const searchQuery = propertyType
+        ? `${propertyType} at ${address}`
+        : address;
+
+      const response = await fetch('/api/fetch-listing', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ address: searchQuery })
+      });
+
+      const data = await response.json();
+
+      if (data.found) {
+        setListingData(data);
+        setEditableListingData(data); // Copy for editing
+        console.log('[PromptCrafter] Listing found:', data.address);
+      } else {
+        setListingNotFound(true);
+        console.log('[PromptCrafter] Listing not found for:', searchQuery);
+      }
+    } catch (error) {
+      console.error('[PromptCrafter] Error fetching listing:', error);
+      setListingNotFound(true);
+    } finally {
+      setIsFetchingListing(false);
+    }
+  };
 
   // Cycle through funny loading messages
   useEffect(() => {
@@ -746,171 +787,9 @@ function PromptCrafter() {
         <div style={styles.stepContainer}>
           <h2 style={styles.title}>WHAT DO YOU NEED HELP WITH?</h2>
 
-          {/* Voice Personalization Selector */}
-          <div style={{
-            background: 'linear-gradient(135deg, rgba(139, 92, 246, 0.1) 0%, rgba(167, 139, 250, 0.1) 100%)',
-            border: '2px solid #8b5cf6',
-            borderRadius: '16px',
-            padding: '20px',
-            marginBottom: '32px'
-          }}>
-            <div style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '12px',
-              marginBottom: '12px'
-            }}>
-              <span style={{ fontSize: '24px' }}>🎯</span>
-              <h3 style={{
-                fontSize: '16px',
-                fontWeight: '600',
-                color: '#f8fafc',
-                margin: 0
-              }}>Your Voice</h3>
-            </div>
-            <p style={{
-              fontSize: '14px',
-              color: '#d1d5db',
-              marginBottom: '16px',
-              lineHeight: '1.5'
-            }}>
-              Choose your preferred communication style for all generated content
-            </p>
-            <div style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(2, 1fr)',
-              gap: '12px'
-            }}>
-              {[
-                { value: 'professional', emoji: '👔', label: 'Professional', desc: 'Polished & trustworthy' },
-                { value: 'casual', emoji: '☕', label: 'Casual', desc: 'Warm & friendly' },
-                { value: 'enthusiastic', emoji: '⚡', label: 'Enthusiastic', desc: 'Energetic & inspiring' },
-                { value: 'empathetic', emoji: '💙', label: 'Empathetic', desc: 'Caring & understanding' }
-              ].map(voice => (
-                <button
-                  key={voice.value}
-                  onClick={() => setVoicePreference(voice.value)}
-                  style={{
-                    background: voicePreference === voice.value
-                      ? 'linear-gradient(135deg, #a78bfa 0%, #8b5cf6 100%)'
-                      : 'rgba(21, 27, 46, 0.8)',
-                    border: voicePreference === voice.value
-                      ? '2px solid #a78bfa'
-                      : '2px solid rgba(148, 163, 184, 0.3)',
-                    borderRadius: '12px',
-                    padding: '16px',
-                    cursor: 'pointer',
-                    transition: 'all 0.2s',
-                    textAlign: 'left' as const
-                  }}
-                  onMouseEnter={(e) => {
-                    if (voicePreference !== voice.value) {
-                      e.currentTarget.style.borderColor = '#8b5cf6';
-                    }
-                  }}
-                  onMouseLeave={(e) => {
-                    if (voicePreference !== voice.value) {
-                      e.currentTarget.style.borderColor = 'rgba(148, 163, 184, 0.3)';
-                    }
-                  }}
-                >
-                  <div style={{
-                    fontSize: '28px',
-                    marginBottom: '8px'
-                  }}>
-                    {voice.emoji}
-                  </div>
-                  <div style={{
-                    fontSize: '15px',
-                    fontWeight: '600',
-                    color: '#f8fafc',
-                    marginBottom: '4px'
-                  }}>
-                    {voice.label}
-                  </div>
-                  <div style={{
-                    fontSize: '13px',
-                    color: '#9ca3af',
-                    lineHeight: '1.4'
-                  }}>
-                    {voice.desc}
-                  </div>
-                </button>
-              ))}
-            </div>
-          </div>
+          {/* Voice Preference Selector - MOVED TO FINAL STEP BEFORE GENERATION */}
 
-          {/* Quick Mode Toggle */}
-          <div style={{
-            background: 'rgba(21, 27, 46, 0.6)',
-            border: '2px solid rgba(148, 163, 184, 0.3)',
-            borderRadius: '12px',
-            padding: '16px 20px',
-            marginBottom: '32px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between'
-          }}>
-            <div style={{ flex: 1 }}>
-              <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px',
-                marginBottom: '4px'
-              }}>
-                <span style={{ fontSize: '20px' }}>⚡</span>
-                <h3 style={{
-                  fontSize: '15px',
-                  fontWeight: '600',
-                  color: '#f8fafc',
-                  margin: 0
-                }}>Quick Mode</h3>
-              </div>
-              <p style={{
-                fontSize: '13px',
-                color: '#9ca3af',
-                margin: 0,
-                lineHeight: '1.4'
-              }}>
-                Skip questions and generate instantly with smart defaults
-              </p>
-            </div>
-            <button
-              onClick={() => {
-                const newValue = !quickMode;
-                setQuickMode(newValue);
-                analytics.track('Quick_Mode_Toggled', {
-                  enabled: newValue
-                });
-              }}
-              style={{
-                background: quickMode
-                  ? 'linear-gradient(135deg, #10b981 0%, #059669 100%)'
-                  : 'rgba(148, 163, 184, 0.2)',
-                border: 'none',
-                borderRadius: '20px',
-                padding: '6px',
-                width: '52px',
-                height: '28px',
-                cursor: 'pointer',
-                position: 'relative' as const,
-                transition: 'all 0.2s',
-                flexShrink: 0
-              }}
-            >
-              <div style={{
-                width: '20px',
-                height: '20px',
-                borderRadius: '50%',
-                background: '#ffffff',
-                position: 'absolute' as const,
-                top: '4px',
-                left: quickMode ? '28px' : '4px',
-                transition: 'all 0.2s',
-                boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
-              }} />
-            </button>
-          </div>
+          {/* Quick Mode Toggle - TEMPORARILY HIDDEN (functionality preserved) */}
 
           {/* CONTENT CREATION */}
           <div style={styles.categorySection}>
@@ -1190,12 +1069,28 @@ function PromptCrafter() {
           onNext={() => setState({ ...state, step: state.step + 1 })}
           onBack={() => setState({ ...state, step: Math.max(0, state.step - 1) })}
           onGenerate={handleGenerate}
+          fetchListingData={fetchListingData}
+          isFetchingListing={isFetchingListing}
+          listingData={listingData}
+          listingNotFound={listingNotFound}
+          editableListingData={editableListingData}
+          setEditableListingData={setEditableListingData}
+          setState={setState}
+          state={state}
         />
       )}
 
       {/* Step 4: Generated Content (AI-First) */}
       {!showHistory && state.step === 4 && (
         <div style={styles.stepContainer}>
+          {/* Back Button - Uniform across all steps */}
+          <button
+            onClick={() => setState({ ...state, step: Math.max(0, state.step - 1) })}
+            style={styles.backButton}
+          >
+            ← Back
+          </button>
+
           {generatedOutput && <h2 style={styles.title}>Your Content is Ready!</h2>}
 
           {!generatedOutput ? (
@@ -1313,6 +1208,100 @@ function PromptCrafter() {
                 </div>
               ) : (
                 <>
+                  {/* Voice Preference Selector */}
+                  <div style={{
+                    background: 'linear-gradient(135deg, rgba(139, 92, 246, 0.1) 0%, rgba(167, 139, 250, 0.1) 100%)',
+                    border: '2px solid #8b5cf6',
+                    borderRadius: '16px',
+                    padding: '20px',
+                    marginBottom: '24px'
+                  }}>
+                    <div style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '12px',
+                      marginBottom: '12px'
+                    }}>
+                      <span style={{ fontSize: '24px' }}>🎯</span>
+                      <h3 style={{
+                        fontSize: '16px',
+                        fontWeight: '600',
+                        color: '#f8fafc',
+                        margin: 0
+                      }}>Choose Your Voice</h3>
+                    </div>
+                    <p style={{
+                      fontSize: '14px',
+                      color: '#d1d5db',
+                      marginBottom: '16px',
+                      lineHeight: '1.5'
+                    }}>
+                      How should AI write this content?
+                    </p>
+                    <div style={{
+                      display: 'grid',
+                      gridTemplateColumns: 'repeat(2, 1fr)',
+                      gap: '12px'
+                    }}>
+                      {[
+                        { value: 'professional', emoji: '👔', label: 'Professional', desc: 'Polished & trustworthy' },
+                        { value: 'casual', emoji: '☕', label: 'Casual', desc: 'Warm & friendly' },
+                        { value: 'enthusiastic', emoji: '⚡', label: 'Enthusiastic', desc: 'Energetic & inspiring' },
+                        { value: 'empathetic', emoji: '💙', label: 'Empathetic', desc: 'Caring & understanding' }
+                      ].map(voice => (
+                        <button
+                          key={voice.value}
+                          onClick={() => setVoicePreference(voice.value)}
+                          style={{
+                            background: voicePreference === voice.value
+                              ? 'linear-gradient(135deg, #a78bfa 0%, #8b5cf6 100%)'
+                              : 'rgba(21, 27, 46, 0.8)',
+                            border: voicePreference === voice.value
+                              ? '2px solid #a78bfa'
+                              : '2px solid rgba(148, 163, 184, 0.3)',
+                            borderRadius: '12px',
+                            padding: '16px',
+                            cursor: 'pointer',
+                            transition: 'all 0.2s',
+                            textAlign: 'left' as const
+                          }}
+                          onMouseEnter={(e) => {
+                            if (voicePreference !== voice.value) {
+                              e.currentTarget.style.borderColor = '#8b5cf6';
+                            }
+                          }}
+                          onMouseLeave={(e) => {
+                            if (voicePreference !== voice.value) {
+                              e.currentTarget.style.borderColor = 'rgba(148, 163, 184, 0.3)';
+                            }
+                          }}
+                        >
+                          <div style={{
+                            fontSize: '28px',
+                            marginBottom: '8px'
+                          }}>
+                            {voice.emoji}
+                          </div>
+                          <div style={{
+                            fontSize: '15px',
+                            fontWeight: '600',
+                            color: '#f8fafc',
+                            marginBottom: '4px'
+                          }}>
+                            {voice.label}
+                          </div>
+                          <div style={{
+                            fontSize: '13px',
+                            color: '#9ca3af',
+                            lineHeight: '1.4'
+                          }}>
+                            {voice.desc}
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
                   <div style={styles.explainerBox}>
                     <div style={{ fontSize: '14px', marginBottom: '8px' }}>
                       <strong>✨ Generate with AI (Recommended)</strong>
@@ -1468,7 +1457,15 @@ function QuestionFlow({
   onAnswer,
   onNext,
   onBack,
-  onGenerate
+  onGenerate,
+  fetchListingData,
+  isFetchingListing,
+  listingData,
+  listingNotFound,
+  editableListingData,
+  setEditableListingData,
+  setState,
+  state
 }: {
   useCaseId: string;
   currentStep: number;
@@ -1477,6 +1474,14 @@ function QuestionFlow({
   onNext: () => void;
   onBack: () => void;
   onGenerate: () => void;
+  fetchListingData?: (address: string, propertyType?: string) => Promise<void>;
+  isFetchingListing?: boolean;
+  listingData?: any;
+  listingNotFound?: boolean;
+  editableListingData?: any;
+  setEditableListingData?: (data: any) => void;
+  setState?: (state: any) => void;
+  state?: any;
 }) {
   const questions = getQuestionsForUseCase(useCaseId);
   const currentQuestion = questions[currentStep - 1];
@@ -1498,6 +1503,215 @@ function QuestionFlow({
   const isLastQuestion = currentStep === questions.length;
   const canContinue = answers[currentQuestion.id]?.trim().length > 0;
 
+  // Special handling for auto-fetch listing data (virtual-tour-script & listing-description)
+  const shouldFetchListing = (useCaseId === 'virtual-tour-script' || useCaseId === 'listing-description') &&
+                              currentQuestion.id === 'property-address';
+  const isVirtualTourAddress = shouldFetchListing; // Keep for backwards compatibility
+
+  // Handle Next button click with special logic for virtual tour
+  const handleNextClick = async () => {
+    if (isVirtualTourAddress && fetchListingData) {
+      const address = answers['property-address'];
+      const propertyType = answers['property-type'];
+      if (address) {
+        await fetchListingData(address, propertyType);
+        // Don't advance to next step - wait for user to confirm listing data
+      }
+    } else {
+      isLastQuestion ? onGenerate() : onNext();
+    }
+  };
+
+  // Show listing confirmation UI if we've fetched data for virtual tour
+  if (isVirtualTourAddress && (isFetchingListing || listingData || listingNotFound)) {
+    return (
+      <div style={styles.stepContainer}>
+        <button onClick={onBack} style={styles.backButton}>
+          ← Back
+        </button>
+
+        {isFetchingListing ? (
+          <>
+            <h2 style={styles.title}>🔍 Searching for listing...</h2>
+            <p style={styles.subtitle}>Checking Zillow, Redfin, MLS, and Trulia</p>
+            <div style={{
+              background: 'rgba(139, 92, 246, 0.1)',
+              border: '2px solid #8b5cf6',
+              borderRadius: '16px',
+              padding: '40px 24px',
+              textAlign: 'center',
+              minHeight: '200px',
+              display: 'flex',
+              flexDirection: 'column' as const,
+              justifyContent: 'center',
+              alignItems: 'center',
+              gap: '20px'
+            }}>
+              <div style={{
+                fontSize: '60px',
+                animation: 'bounce 1s ease-in-out infinite'
+              }}>
+                🏡
+              </div>
+              <div style={{ fontSize: '16px', color: '#d1d5db' }}>
+                Searching online listings...
+              </div>
+            </div>
+          </>
+        ) : listingData && listingData.found ? (
+          <>
+            <h2 style={styles.title}>✅ Found it! Please confirm</h2>
+            <p style={styles.subtitle}>Edit any details that are incorrect</p>
+
+            <div style={{
+              background: 'rgba(16, 185, 129, 0.1)',
+              border: '2px solid #10b981',
+              borderRadius: '16px',
+              padding: '24px',
+              marginBottom: '24px'
+            }}>
+              <div style={{ display: 'grid', gap: '16px' }}>
+                <label>
+                  <div style={{ color: '#9ca3af', fontSize: '13px', marginBottom: '4px', fontWeight: '500' }}>Address</div>
+                  <input
+                    type="text"
+                    value={editableListingData?.address || ''}
+                    onChange={(e) => setEditableListingData && setEditableListingData({ ...editableListingData, address: e.target.value })}
+                    style={styles.input}
+                  />
+                </label>
+
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px' }}>
+                  <label>
+                    <div style={{ color: '#9ca3af', fontSize: '13px', marginBottom: '4px', fontWeight: '500' }}>Bedrooms</div>
+                    <input
+                      type="number"
+                      value={editableListingData?.bedrooms || ''}
+                      onChange={(e) => setEditableListingData && setEditableListingData({ ...editableListingData, bedrooms: parseInt(e.target.value) || 0 })}
+                      style={styles.input}
+                    />
+                  </label>
+                  <label>
+                    <div style={{ color: '#9ca3af', fontSize: '13px', marginBottom: '4px', fontWeight: '500' }}>Bathrooms</div>
+                    <input
+                      type="number"
+                      step="0.5"
+                      value={editableListingData?.bathrooms || ''}
+                      onChange={(e) => setEditableListingData && setEditableListingData({ ...editableListingData, bathrooms: parseFloat(e.target.value) || 0 })}
+                      style={styles.input}
+                    />
+                  </label>
+                  <label>
+                    <div style={{ color: '#9ca3af', fontSize: '13px', marginBottom: '4px', fontWeight: '500' }}>Sq Ft</div>
+                    <input
+                      type="number"
+                      value={editableListingData?.squareFeet || ''}
+                      onChange={(e) => setEditableListingData && setEditableListingData({ ...editableListingData, squareFeet: parseInt(e.target.value) || 0 })}
+                      style={styles.input}
+                    />
+                  </label>
+                </div>
+
+                {editableListingData?.price && (
+                  <label>
+                    <div style={{ color: '#9ca3af', fontSize: '13px', marginBottom: '4px', fontWeight: '500' }}>Price</div>
+                    <input
+                      type="text"
+                      value={editableListingData?.price ? `$${editableListingData.price.toLocaleString()}` : ''}
+                      onChange={(e) => {
+                        const numValue = parseInt(e.target.value.replace(/\D/g, ''));
+                        setEditableListingData && setEditableListingData({ ...editableListingData, price: numValue || 0 });
+                      }}
+                      style={styles.input}
+                    />
+                  </label>
+                )}
+
+                <label>
+                  <div style={{ color: '#9ca3af', fontSize: '13px', marginBottom: '4px', fontWeight: '500' }}>Features</div>
+                  <textarea
+                    value={editableListingData?.features?.join(', ') || ''}
+                    onChange={(e) => setEditableListingData && setEditableListingData({
+                      ...editableListingData,
+                      features: e.target.value.split(',').map((f: string) => f.trim()).filter((f: string) => f)
+                    })}
+                    placeholder="Updated kitchen, hardwood floors, large backyard..."
+                    style={styles.textarea}
+                    rows={3}
+                  />
+                </label>
+
+                {editableListingData?.description && (
+                  <label>
+                    <div style={{ color: '#9ca3af', fontSize: '13px', marginBottom: '4px', fontWeight: '500' }}>Description</div>
+                    <textarea
+                      value={editableListingData?.description || ''}
+                      onChange={(e) => setEditableListingData && setEditableListingData({ ...editableListingData, description: e.target.value })}
+                      style={styles.textarea}
+                      rows={4}
+                    />
+                  </label>
+                )}
+              </div>
+            </div>
+
+            <button
+              onClick={() => {
+                if (setState && state) {
+                  // Save edited listing data to answers
+                  setState({
+                    ...state,
+                    answers: {
+                      ...state.answers,
+                      'listing-data': JSON.stringify(editableListingData)
+                    },
+                    step: state.step + 1 // Move to next question
+                  });
+                }
+              }}
+              style={styles.primaryButton}
+            >
+              Looks Good! Continue →
+            </button>
+          </>
+        ) : (
+          <>
+            <h2 style={styles.title}>❌ We couldn't find this listing online</h2>
+            <p style={styles.subtitle}>Please paste the entire listing details including your description. We need all property info to craft the best tour script.</p>
+
+            <textarea
+              value={answers['manual-listing-paste'] || ''}
+              onChange={(e) => onAnswer('manual-listing-paste', e.target.value)}
+              placeholder="Paste listing details here:&#10;&#10;Address: 123 Oak St, Austin, TX&#10;Beds: 4&#10;Baths: 3&#10;Sq Ft: 2,400&#10;Price: $495,000&#10;Features: Updated kitchen with granite counters, hardwood floors throughout, large backyard with deck, 2-car garage...&#10;&#10;Description: Beautiful single-family home in desirable neighborhood..."
+              style={{ ...styles.textarea, minHeight: '300px' }}
+              rows={12}
+              autoFocus
+            />
+
+            <button
+              onClick={() => {
+                if (setState && state && answers['manual-listing-paste']) {
+                  setState({ ...state, step: state.step + 1 });
+                }
+              }}
+              disabled={!answers['manual-listing-paste']?.trim()}
+              style={{
+                ...styles.primaryButton,
+                background: answers['manual-listing-paste']?.trim()
+                  ? 'linear-gradient(135deg, #a78bfa 0%, #8b5cf6 100%)'
+                  : '#475569',
+                cursor: answers['manual-listing-paste']?.trim() ? 'pointer' : 'not-allowed',
+                color: '#ffffff'
+              }}
+            >
+              Continue with Manual Entry →
+            </button>
+          </>
+        )}
+      </div>
+    );
+  }
+
   return (
     <div style={styles.stepContainer}>
       <button onClick={onBack} style={styles.backButton}>
@@ -1517,7 +1731,7 @@ function QuestionFlow({
           onKeyDown={(e) => {
             if (e.key === 'Enter' && canContinue) {
               e.preventDefault();
-              isLastQuestion ? onGenerate() : onNext();
+              handleNextClick();
             }
           }}
           placeholder={'placeholder' in currentQuestion ? currentQuestion.placeholder : ''}
@@ -1580,7 +1794,7 @@ function QuestionFlow({
       )}
 
       <button
-        onClick={isLastQuestion ? onGenerate : onNext}
+        onClick={handleNextClick}
         disabled={!canContinue}
         style={{
           ...styles.primaryButton,
@@ -1607,7 +1821,7 @@ const ESSENTIAL_QUESTIONS: Record<string, string[]> = {
   'market-report': ['market-location', 'audience', 'actionable-insight', 'specific-data'],
   'social-content': ['topic', 'market-location', 'cta'],
   'sphere-script': ['who', 'goal', 'relationship'],
-  'listing-description': ['property-type', 'basic-specs', 'location', 'price', 'key-features'],
+  'listing-description': ['property-type', 'property-address', 'key-features'],
   'email-sequence': ['audience', 'problem', 'goal'],
   'consultation-script': ['type', 'client-background', 'motivation'],
   'objection-handling': ['objection', 'exact-wording', 'when-in-process'],
@@ -1616,7 +1830,7 @@ const ESSENTIAL_QUESTIONS: Record<string, string[]> = {
   'expired-fsbo': ['type', 'property-address', 'your-edge', 'format'],
   'cma-narrative': ['property-address', 'property-details', 'your-opinion', 'comparable-sales'],
   'thank-you': ['occasion', 'client-names', 'memorable-moment'],
-  'virtual-tour-script': ['property-address', 'property-type', 'basic-specs', 'tour-highlights'],
+  'virtual-tour-script': ['property-type', 'property-address', 'tour-highlights'],
   'buyer-seller-education': ['topic', 'audience', 'location'],
   'negotiation-points': ['negotiation-type', 'client-role', 'current-situation', 'client-goals']
 };
@@ -1862,12 +2076,14 @@ function getQuestionsForUseCase(useCaseId: string): Question[] {
         ]
       },
       {
-        id: 'address',
+        id: 'property-address',
         type: 'text' as const,
         question: 'Property address',
-        subtitle: 'AI can research online details about this address. If listing is not live, paste all listing information here.',
+        subtitle: 'We\'ll automatically search Zillow, Redfin, MLS & Trulia for listing details',
         placeholder: 'Example: 123 Main Street, Austin, TX 78704'
       },
+      // listing-data-confirmation handled by custom UI (auto-fetch from MLS/Zillow)
+      // listing-manual-paste is fallback if not found
       {
         id: 'basic-specs',
         type: 'text' as const,
@@ -2613,39 +2829,36 @@ function getQuestionsForUseCase(useCaseId: string): Question[] {
     ];
   }
 
-  // Virtual Tour Scripts - NEW
+  // Virtual Tour Scripts - SMART WORKFLOW
+  // Step 1: Ask for property type (helps AI search better)
+  // Step 2: Ask for address, then auto-fetch listing data from MLS/Zillow/Redfin
+  // Step 3: Show editable confirmation OR fallback to manual paste
+  // Step 4-5: Tour preferences (skipping beds/baths/sqft since we already know)
   if (useCaseId === 'virtual-tour-script') {
     return [
-      {
-        id: 'property-address',
-        type: 'text' as const,
-        question: 'Property address?',
-        placeholder: 'Example: 123 Oak Street, Austin, TX 78704'
-      },
       {
         id: 'property-type',
         type: 'select' as const,
         question: 'Property type?',
+        subtitle: 'This helps us find the right listing online',
         defaultValue: 'single-family',
         options: [
-          { value: 'single-family', label: 'Single Family', emoji: '🏡' },
+          { value: 'single-family', label: 'Single Family Home', emoji: '🏡' },
           { value: 'condo', label: 'Condo', emoji: '🏢' },
           { value: 'townhouse', label: 'Townhouse', emoji: '🏘️' },
-          { value: 'luxury', label: 'Luxury Home', emoji: '💎' }
+          { value: 'luxury', label: 'Luxury Estate', emoji: '💎' },
+          { value: 'multi-family', label: 'Multi-Family', emoji: '🏬' }
         ]
       },
       {
-        id: 'basic-specs',
+        id: 'property-address',
         type: 'text' as const,
-        question: 'Beds, baths, sq ft',
-        placeholder: 'Example: 4 bed, 3 bath, 2,400 sqft'
+        question: 'Property address?',
+        subtitle: 'We\'ll automatically search Zillow, Redfin, MLS & Trulia',
+        placeholder: 'Example: 123 Oak Street, Austin, TX 78704'
       },
-      {
-        id: 'price',
-        type: 'text' as const,
-        question: 'List price',
-        placeholder: 'Example: $495,000'
-      },
+      // listing-data-confirmation is a special step handled by custom UI
+      // listing-manual-paste is fallback if not found
       {
         id: 'tour-highlights',
         type: 'textarea' as const,
@@ -3706,11 +3919,48 @@ Write this like you're writing to a friend. Be real.`;
 function generateVirtualTourScriptPrompt(answers: Record<string, string>): string {
   const propertyAddress = answers['property-address'] || '[property address]';
   const propertyType = answers['property-type'] || 'single-family';
-  const basicSpecs = answers['basic-specs'] || '[beds/baths/sqft]';
-  const price = answers.price || '[price]';
   const tourHighlights = answers['tour-highlights'] || '';
   const tourLength = answers['tour-length'] || '5-7min';
   const walkthroughStyle = answers['walkthrough-style'] || 'professional';
+
+  // Check for auto-fetched or manual listing data
+  let propertyDetails = '';
+  if (answers['listing-data']) {
+    try {
+      const listing = JSON.parse(answers['listing-data']);
+      propertyDetails = `
+PROPERTY DETAILS (from ${listing.source || 'MLS/Zillow'}):
+- Address: ${listing.address}
+- Type: ${listing.propertyType || propertyType}
+- Specs: ${listing.bedrooms} bed, ${listing.bathrooms} bath, ${listing.squareFeet?.toLocaleString()} sq ft
+${listing.price ? `- Listed Price: $${listing.price.toLocaleString()}` : ''}
+${listing.yearBuilt ? `- Built: ${listing.yearBuilt}` : ''}
+${listing.lotSize ? `- Lot Size: ${listing.lotSize}` : ''}
+${listing.parking ? `- Parking: ${listing.parking}` : ''}
+${listing.features && listing.features.length > 0 ? `- Key Features: ${listing.features.join(', ')}` : ''}
+${listing.description ? `\nListing Description:\n${listing.description}` : ''}
+      `;
+    } catch (e) {
+      console.error('Failed to parse listing data:', e);
+      propertyDetails = `
+PROPERTY DETAILS:
+- Address: ${propertyAddress}
+- Type: ${propertyType}
+      `;
+    }
+  } else if (answers['manual-listing-paste']) {
+    propertyDetails = `
+PROPERTY DETAILS (provided by agent):
+${answers['manual-listing-paste']}
+    `;
+  } else {
+    // Fallback if no listing data
+    propertyDetails = `
+PROPERTY DETAILS:
+- Address: ${propertyAddress}
+- Type: ${propertyType}
+    `;
+  }
 
   const styleGuidance = {
     'professional': 'Professional, informative tone. Focus on facts, features, and benefits. Speak clearly and confidently.',
@@ -3721,12 +3971,10 @@ function generateVirtualTourScriptPrompt(answers: Record<string, string>): strin
 
   return `You are a real estate agent creating a virtual tour script for a property.
 
-PROPERTY DETAILS:
-- Address: ${propertyAddress}
-- Type: ${propertyType}
-- Specs: ${basicSpecs}
-- Price: ${price}
-- Key Features: ${tourHighlights}
+${propertyDetails}
+
+TOUR FOCUS:
+Key Features to Highlight: ${tourHighlights}
 
 TOUR PARAMETERS:
 - Length: ${tourLength}

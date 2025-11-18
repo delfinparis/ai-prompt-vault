@@ -101,6 +101,11 @@ Return your response as JSON with these keys:
 }
 
 export default async function handler(req: any, res: any) {
+  // Prevent caching of API responses
+  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+  res.setHeader('Pragma', 'no-cache');
+  res.setHeader('Expires', '0');
+
   if (req.method !== "POST") {
     res.status(405).json({ error: "Method not allowed" });
     return;
