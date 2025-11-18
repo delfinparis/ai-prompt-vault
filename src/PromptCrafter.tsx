@@ -73,6 +73,22 @@ const USE_CASES: UseCase[] = [
     exampleOutput: `[HOOK - First 3 seconds]\n"You're overpaying for your home. Here's how to know."\n\n[Scene 1 - Problem]\n"Most buyers in Austin right now are paying 10-15% over asking. But here's what they don't tell you..."\n\n[Scene 2 - Value]\n"I just saved my client $47,000 by knowing these 3 things the listing agent DIDN'T want us to see:"\n\n1. Days on market (subtle pricing weakness)\n2. Seller motivation (divorce, job relocation)  \n3. Comparable sales in the last 30 days\n\n[Scene 3 - CTA]\n"Want my free buyer negotiation checklist? Link in bio. Let's get you the best deal possible."\n\n[End card: "Follow for more buyer tips"]`
   },
   {
+    id: 'virtual-tour-script',
+    name: 'Virtual Tours',
+    emoji: '🎬',
+    description: 'Live walkthrough scripts',
+    category: 'content',
+    exampleOutput: `**Virtual Tour Script: 123 Oak Street**\n\n[Introduction - 0:00-0:30]\n"Hey everyone! Welcome to 123 Oak Street - this stunning 3-bedroom, 2-bath home in the heart of Riverside. I'm Mike Johnson with Austin Residential, and I'm so excited to show you around today."\n\n"Before we dive in, here are the key stats:"\n• Listed at $489,000\n• 1,850 square feet\n• Built in 2015, meticulously maintained\n• Move-in ready\n\n"Alright, let's start outside and work our way in!"\n\n---\n\n[Exterior - 0:30-2:00]\n"Look at this curb appeal! The mature oak trees give you instant privacy, and the sellers just re-landscaped the front yard last spring."\n\n[Walk up driveway]\n\n"Two-car garage with epoxy floors and built-in storage. And check out this covered front porch - perfect for morning coffee."\n\n**Pro tip:** "Notice the architectural shingles? Those were replaced in 2020, so you've got 20+ years left on the roof."\n\n---\n\n[Entry & Living Room - 2:00-4:00]\n"Step inside... WOW. Look at these vaulted ceilings and natural light. The open floor plan is perfect for entertaining."\n\n[Pan around slowly]\n\n"See that fireplace? It's gas - so cozy in winter but no mess. And these floors are engineered hardwood throughout the main living area."\n\n**Call out features:**\n• Crown molding (custom)\n• Neutral paint (freshly done)\n• Ceiling fans with remote\n\n---\n\n[Kitchen - 4:00-6:30]\n"Okay, this kitchen is the heart of the home. Let me show you why..."\n\n[Open cabinets, drawers]\n\n"Quartz countertops, subway tile backsplash, stainless steel appliances - all updated in 2021. And look at this pantry space!"\n\n**Lifestyle sell:**\n"Imagine hosting Thanksgiving here - the island seats 4, you've got prep space for days, and that window overlooks the backyard so you can keep an eye on the kids."\n\n---\n\n[Primary Bedroom - 6:30-8:30]\n"Down the hall to the primary suite... This is your private retreat."\n\n[Show closet]\n\n"Walk-in closet with custom shelving. And the ensuite bathroom? Chef's kiss."\n\n[Enter bathroom]\n\n"Double vanity, soaking tub, separate tiled shower, and - look up - skylight for natural light. It's like a spa."\n\n---\n\n[Secondary Bedrooms - 8:30-10:00]\n"Two more bedrooms down this hall, both good-sized with ceiling fans and great closet space."\n\n**Positioning:**\n"Perfect for kids, home office, or guest room. Very flexible."\n\n---\n\n[Backyard - 10:00-12:00]\n"Now for my favorite part - let's step outside..."\n\n[Open back door dramatically]\n\n"LOOK at this backyard! Fully fenced, mature trees, covered patio... This is where you'll spend your weekends."\n\n**Lifestyle sell:**\n"I can already see summer BBQs, kids playing on that lawn, maybe a fire pit right there. And it backs up to a greenbelt, so total privacy."\n\n---\n\n[Wrap-Up - 12:00-13:30]\n"Alright, let's recap why this home is special:"\n\n✓ Move-in ready (nothing to do)\n✓ Updated kitchen & bathrooms\n✓ Amazing backyard for entertaining\n✓ Top-rated schools\n✓ Quiet street in a HOT neighborhood\n\n"Priced at $489,000, and based on recent sales, I expect this to go fast - probably with multiple offers."\n\n**Call to Action:**\n"If you want to see it in person, call or text me at 512-555-0199. Showings start this weekend, and I'm scheduling private tours for serious buyers right now."\n\n"Questions? Drop them in the comments and I'll answer every one."\n\n"Thanks for watching - see you at the next one!"\n\n---\n\n**Technical Notes:**\n📱 Shoot vertical for social media (Instagram/TikTok)\n🎥 Use gimbal for smooth walking shots\n💡 Film during golden hour (9-11am) for best light\n🎵 Add upbeat background music (royalty-free)\n⏱️ Keep final video under 2 minutes for attention span`
+  },
+  {
+    id: 'buyer-seller-education',
+    name: 'Education',
+    emoji: '📚',
+    description: 'Guides & explainers',
+    category: 'content',
+    exampleOutput: `**First-Time Home Buyer Guide: Austin Edition**\n\n---\n\n**Introduction**\n\nBuying your first home in Austin can feel overwhelming - I get it. This guide will walk you through every step so you know exactly what to expect.\n\n**Timeline: 60-90 days from start to keys**\n\n---\n\n**Step 1: Get Pre-Approved (Week 1)**\n\n**What it is:** A lender reviews your finances and tells you how much you can borrow.\n\n**Why it matters:** Sellers won't take you seriously without it. In this market, cash offers are competing against you.\n\n**What you need:**\n• 2 years of tax returns\n• 2 months of bank statements\n• Recent pay stubs\n• List of debts (student loans, car loans, credit cards)\n\n**How long it takes:** 2-3 days\n\n**Pro tip:** Get pre-approved with 2-3 lenders to compare rates. A 0.25% difference = $12,000 over 30 years.\n\n---\n\n**Step 2: Define Your Must-Haves (Week 1)**\n\n**Make two lists:**\n\n**Non-Negotiables:**\n• 3 bedrooms minimum\n• Under 30-minute commute\n• Good schools (if you have/want kids)\n• Safe neighborhood\n\n**Nice-to-Haves:**\n• Updated kitchen\n• Backyard\n• Garage\n• HOA or no HOA?\n\n**Budget Reality Check:**\nYour pre-approval says $450K, but your COMFORT zone might be $400K. Factor in:\n• Property taxes ($6K-8K/year in Austin)\n• HOA fees ($50-300/month)\n• Maintenance (1% of home value/year)\n• Utilities\n\n---\n\n**Step 3: Start Touring Homes (Week 2-4)**\n\n**How many to see:** 10-15 homes before you find "the one"\n\n**What to bring:**\n• Notebook (they all blur together)\n• Tape measure\n• Phone camera (take LOTS of photos)\n• Your agent (me!)\n\n**Red flags to watch for:**\n🚩 Foundation cracks\n🚩 Water stains on ceilings\n🚩 Funky smells (mold, pets, smoke)\n🚩 "Flipped" homes with cheap finishes\n🚩 Homes next to busy roads or power lines\n\n**Green lights:**\n✅ Well-maintained landscaping\n✅ Updated systems (HVAC, water heater, roof)\n✅ Neutral finishes\n✅ Good natural light\n\n---\n\n**Step 4: Make an Offer (Week 4-5)**\n\n**Components of an offer:**\n• Purchase price\n• Earnest money deposit ($2K-5K)\n• Inspection period (7-10 days)\n• Financing contingency\n• Closing date (30-45 days)\n\n**In a competitive market, you might:**\n• Offer above asking (up to 5%)\n• Waive inspection (risky!)\n• Shorten option period\n• Increase earnest money\n• Write a personal letter to seller\n\n**Pro tip:** Don't fall in love with a house until it's under contract. Emotions lead to overpaying.\n\n---\n\n**Step 5: Inspection & Negotiation (Week 5-6)**\n\n**Home inspection ($400-600):**\nA pro checks:\n• Foundation\n• Roof\n• HVAC\n• Plumbing\n• Electrical\n• Pests\n\n**What happens next:**\nYou'll get a 30-page report. Don't panic - every home has issues.\n\n**Focus on:**\n🔴 Safety issues (electrical, structural)\n🔴 Expensive repairs (roof, foundation, HVAC)\n\n**Ignore:**\n• Cosmetic stuff (paint, minor cracks)\n• Normal wear and tear\n\n**Negotiation options:**\n1. Ask seller to fix it\n2. Ask for credit at closing\n3. Lower the purchase price\n4. Walk away (if it's really bad)\n\n---\n\n**Step 6: Appraisal (Week 7)**\n\n**What it is:** Lender hires an appraiser to confirm the home is worth what you're paying.\n\n**Why it matters:** If appraisal comes in LOW, you have options:\n1. Renegotiate price down\n2. Bring more cash to closing (cover the gap)\n3. Walk away\n\n**Example:**\nYou offered $450K. Appraisal says $440K.\n\n• Lender will only loan on $440K\n• You need $10K extra cash OR seller lowers price\n\n---\n\n**Step 7: Final Walkthrough (Week 8)**\n\n**24-48 hours before closing:**\nYou tour the home one last time to verify:\n✓ Repairs were made (if agreed)\n✓ Home is in same condition\n✓ Seller removed all personal items\n✓ Appliances still work\n\n---\n\n**Step 8: Closing Day!**\n\n**What to bring:**\n• Driver's license\n• Cashier's check (or wire funds)\n• Proof of homeowner's insurance\n\n**What you'll sign:** 100+ pages (no joke)\n• Mortgage docs\n• Title transfer\n• Deed\n• Disclosures\n\n**How long it takes:** 1-2 hours\n\n**What you get:**\n🔑 KEYS!\n📄 Deed (you officially own it)\n\n---\n\n**Costs to Expect**\n\n**Upfront:**\n• Earnest money: $2K-5K (goes toward down payment)\n• Inspection: $400-600\n• Appraisal: $500-700\n\n**At Closing:**\n• Down payment: 3-20% of purchase price\n• Closing costs: 2-5% of purchase price ($8K-20K on a $400K home)\n  - Lender fees\n  - Title insurance\n  - Escrow (property taxes, insurance)\n  - Recording fees\n\n**First-Time Buyer Programs:**\n• FHA loan: 3.5% down\n• Conventional: 3-5% down (with PMI)\n• USDA/VA: 0% down (if you qualify)\n• Austin Housing Authority grants\n\n---\n\n**After You Move In**\n\n**Within 30 days:**\n□ Change locks\n□ Update address (USPS, bank, employer)\n□ Set up utilities\n□ Meet neighbors\n□ Locate main water shutoff valve\n\n**Within 6 months:**\n□ Service HVAC\n□ Clean gutters\n□ Check smoke/CO detectors\n□ Start emergency fund (for repairs)\n\n---\n\n**Common Mistakes to Avoid**\n\n❌ Skipping pre-approval\n❌ Maxing out your budget\n❌ Waiving inspection in a hot market\n❌ Buying based on emotions\n❌ Not budgeting for closing costs\n❌ Opening new credit cards before closing\n❌ Changing jobs before closing\n\n---\n\n**Questions?**\n\nCall/text me anytime: 512-555-0199\n\nI'm here to guide you through EVERY step.\n\nLet's find your first home!\n\n[Your Name]\nAustin Residential Group`
+  },
+  {
     id: 'listing-description',
     name: 'Listings',
     emoji: '🏡',
@@ -121,6 +137,14 @@ const USE_CASES: UseCase[] = [
     description: 'Win difficult listings',
     category: 'sales',
     exampleOutput: `**Expired Listing Call Script**\n\n[Opening - first 10 seconds matter]\n"Hi, this is Mike Johnson with Austin Residential. I noticed your home at 123 Oak Street just came off the market. I'm guessing you're pretty frustrated right now — am I right?"\n\n[Wait for response — validate frustration]\n\n"I get it. You invested time, money, and emotion into this, and it didn't work out. Here's why I'm calling..."\n\n[Value Proposition]\n"I specialize in selling homes that didn't sell the first time. Last year, I listed 9 expired properties, and 8 of them sold within 30 days — most above the original asking price."\n\n[Pattern Interrupt]\n"Can I ask you a blunt question? What do you think went wrong?"\n\n[Listen — they'll tell you exactly what to fix]\n\n[Common Issues + Your Solution]\n\nIf they say: **"We didn't get enough showings"**\n→ "That tells me it's a marketing problem, not a pricing problem. Let me show you how I get 3X more eyes on listings..."\n\nIf they say: **"We got lowball offers"**\n→ "That usually means the listing agent didn't attract the right buyers. I target qualified buyers specifically looking in your price range..."\n\nIf they say: **"Our agent didn't communicate"**\n→ "That's the #1 complaint I hear. I send weekly updates every Friday — here's what it looks like..." [show example]\n\n[Transition to Appointment]\n"Look, I don't want to take up your time on the phone. What I'd love to do is come by, show you exactly what I'd do differently, and if it makes sense, great. If not, no hard feelings."\n\n"Are you free tomorrow at 4pm or does Thursday at 10am work better?"\n\n[Assume the meeting]\n\n---\n\n**FSBO Door Knock Script**\n\n[Knock on door with printed market analysis]\n\n"Hi! I'm Mike Johnson — I'm a realtor here in the neighborhood. I saw your 'For Sale' sign and wanted to introduce myself. Do you have 2 minutes?"\n\n[If yes]\n\n"I'm not here to sell you anything — I actually brought you something. I ran a market analysis on your home, and I wanted you to have the data on what's selling in your neighborhood right now."\n\n[Hand them the report]\n\n"Three homes on your street sold in the last 60 days — all within 18 days of listing, all with multiple offers. I'm guessing you haven't had that experience yet?"\n\n[They'll usually say "no" or explain challenges]\n\n[The Insight]\n"Here's what's happening: 87% of buyers start their search online, and only 3% are looking at FSBO sites. So you're missing 97% of the market. That's not a criticism — it's just the math."\n\n[The Offer]\n"What if I could get your home in front of all those buyers AND save you time on showings, negotiations, and paperwork? Would you be open to a quick conversation about what that looks like?"\n\n[Trial Close]\n"Can I call you tomorrow to set up a time to walk through a no-pressure game plan?"\n\n---\n\n**Email Follow-Up (Expired Listings)**\n\nSubject: Why 123 Oak didn't sell (+ how to fix it)\n\nHi [Name],\n\nI noticed your listing at 123 Oak Street recently expired. I'm sorry — I know how disappointing that must be after months of showings and waiting.\n\nI specialize in helping sellers get it right the second time. Last year, I re-listed 9 expired homes in [City], and 8 sold within 30 days (most above their original asking price).\n\nHere's what usually goes wrong:\n\n❌ Pricing: Overpriced by 5-10% to "test the market"\n❌ Photos: Dark, blurry, or missing key selling points  \n❌ Marketing: Only on MLS (missing 60% of buyers)\n❌ Agent: Poor communication, no follow-up\n\nI'd love to show you exactly what I'd do differently — no obligation, just a 20-minute conversation.\n\nAre you free for a quick call this week?\n\n[Your Name]\n[Phone]\n\nP.S. I've attached a fresh market analysis showing what similar homes are selling for right now. You might be surprised.`
+  },
+  {
+    id: 'negotiation-points',
+    name: 'Negotiation',
+    emoji: '🤝',
+    description: 'Win-win deal points',
+    category: 'sales',
+    exampleOutput: `**Negotiation Talking Points: Buyer Representation**\n\n---\n\n**Scenario: Multiple Offer Situation**\n\nYour client loves the home at 123 Oak ($489K asking). You know there will be 3-5 other offers.\n\n**Goal:** Win the home WITHOUT overpaying\n\n---\n\n**Strategy 1: Escalation Clause (Smart Overbid)**\n\n**What to say:**\n"We're going to offer $492K with an escalation clause up to $505K in $2K increments."\n\n**Why it works:**\n• Shows you're serious ($3K over asking)\n• Protects against overpaying (only goes up if needed)\n• Beats cash offers psychologically (seller sees $505K potential)\n\n**Pro tip:** "I'll also include proof of funds showing we CAN go to $505K if needed."\n\n---\n\n**Strategy 2: Flexible Close Date**\n\n**What to say:**\n"Let's ask the listing agent when the seller wants to close. Then offer that exact date + a free rent-back if they need it."\n\n**Why it works:**\n• Sellers have timing needs (new job, school, etc.)\n• Rent-back solves moving stress\n• Costs you nothing but wins deals\n\n**Example:**\n"We'll close in 21 days if that works for you, or we can do 45 days with a 2-week free rent-back. Whatever helps you most."\n\n---\n\n**Strategy 3: Inspection for Info Only**\n\n**What to say:**\n"We'll do inspection for information only — we won't ask for repairs under $2,000."\n\n**Why it works:**\n• You still protect yourself (no waiving inspection!)\n• Seller feels confident deal won't fall apart over small stuff\n• You stand out from all-cash, no-inspection offers\n\n⚠️ **Important:** Only do this on newer homes or homes in good condition.\n\n---\n\n**Strategy 4: Appraisal Gap Coverage**\n\n**What to say:**\n"We'll cover up to $10K appraisal gap in cash."\n\n**Why it works:**\n• Seller's #1 fear = appraisal coming in low\n• Shows you're financially strong\n• Rarely actually needed (appraisals usually hit)\n\n**How to phrase it:**\n"If the appraisal comes in below our offer price, we'll cover the difference up to $10,000 in cash."\n\n---\n\n**Strategy 5: Personal Letter (Emotional Connection)**\n\n**What to say:**\n"Let's write a 1-page letter about why you love this home. I'll include a photo of your family."\n\n**Why it works:**\n• Sellers are human (they want to know their home is going to someone who'll love it)\n• Differentiates you from investors/flippers\n• Costs $0\n\n**Letter Template:**\n\nDear [Seller Name],\n\nWe fell in love with your home the moment we walked in. [Specific detail about the home]. We can already picture [personal touch — kids playing in backyard, hosting Thanksgiving, etc.].\n\nWe know you have multiple offers, and we want you to know we'll take great care of the home you've loved.\n\nThank you for considering us.\n\n[Your client's name]\n[Include family photo]\n\n---\n\n**Negotiation Talking Points: Seller Representation**\n\n---\n\n**Scenario: You Have Multiple Offers**\n\nYour listing at 123 Oak ($489K) received 4 offers ranging from $492K-$510K.\n\n**Goal:** Get highest price AND best terms\n\n---\n\n**Step 1: Qualify Each Offer (Not Just Price)**\n\nCreate a scorecard:\n\n| Offer | Price | Down Payment | Contingencies | Close Date | Score |\n|-------|-------|--------------|---------------|------------|-------|\n| A     | $510K | 20% ($102K)  | Inspection + Financing | 45 days | 7/10  |\n| B     | $505K | Cash         | Inspection Only | 21 days | 9/10  |\n| C     | $498K | 25% ($125K)  | None (waived all) | 30 days | 8/10  |\n| D     | $492K | 10% ($49K)   | Inspection + Financing + Appraisal | 60 days | 4/10  |\n\n**Recommendation to Seller:**\n"Offer B is $5K less than Offer A, but it's cash and closes in half the time. I'd take Offer B."\n\n---\n\n**Step 2: Counter the Top 2-3 Offers**\n\n**What to say:**\n"We have multiple strong offers. I'm countering the top 3 at $515K with same terms. Highest and best by 5pm tomorrow."\n\n**Why it works:**\n• Creates urgency\n• Pushes price higher\n• Lets buyers compete against themselves\n\n---\n\n**Step 3: Negotiate Repairs After Inspection**\n\n**Buyer asks for $8K in repairs.**\n\n**❌ Don't say:** "No."\n**✅ Do say:** "I'll give you a $4K credit at closing. That's halfway, and you can use it how you want."\n\n**Why it works:**\n• Shows good faith\n• Buyer controls how money is spent\n• Keeps deal together\n\n---\n\n**Talking Points for Common Situations**\n\n---\n\n**Low Appraisal**\n\n**Buyer's agent:** "Appraisal came in at $480K. We need you to drop the price from $489K."\n\n**You:** "I understand. Here are our options:\n1. I'll drop to $485K (meet halfway)\n2. You bring $9K more cash to closing\n3. We both walk away and I relist\n\nWhat works best for your buyer?"\n\n**Why it works:** Gives options, shows flexibility, maintains leverage\n\n---\n\n**Buyer Wants Seller Concessions**\n\n**Buyer's agent:** "Can seller pay $10K toward buyer's closing costs?"\n\n**You:** "We can do $5K if you increase the purchase price by $5K."\n\n**Why it works:** Net same to seller, helps buyer who's cash-poor\n\n---\n\n**Inspection Issues**\n\n**Buyer's agent:** "Inspection found roof needs replacement ($15K). We want a credit."\n\n**You:** "I'll get 3 roofer quotes. If it's truly $15K, I'll credit $10K. If it's less, I'll fix it. Sound fair?"\n\n**Why it works:** Shows you're reasonable, verifies actual cost, prevents buyer from inflating numbers\n\n---\n\n**Win-Win Negotiation Principles**\n\n1. **Always ask "Why?"**\n   - Buyer offers $20K under asking → "Why that number?"\n   - Seller won't budge on price → "What's driving that?"\n\n2. **Find the hidden needs**\n   - Seller might care more about close date than price\n   - Buyer might need appliances included\n\n3. **Give to get**\n   - "I'll agree to X if you agree to Y"\n\n4. **Use silence**\n   - After making an offer, STOP TALKING\n   - Let the other side respond first\n\n5. **Create urgency (ethically)**\n   - "We have another showing scheduled"\n   - "We're reviewing offers tomorrow at 5pm"\n\n---\n\n**Scripts for Tough Conversations**\n\n**Buyer is emotionally attached, considering overbidding:**\n\n"I know you love this home, but let's run the numbers. If you overpay by $30K, that's an extra $180/month for 30 years. That's $64,800 total. Is this home worth $64K more than the next-best option?"\n\n**Seller is overpriced, not getting offers:**\n\n"We've been on market 45 days with 30 showings and zero offers. The market is telling us something. We have two choices: drop the price by $15K now, or wait 30 more days and drop by $25K. Which would you prefer?"\n\n**Buyer won't budge, but you know seller will take less:**\n\n"What if I could get the seller to $485K? Would you write an offer today at that price?"\n\n[If yes, you now have leverage to push seller]\n\n---\n\n**Final Tips**\n\n✓ Everything is negotiable (price, terms, timing, inclusions)\n✓ Don't negotiate against yourself (wait for counteroffers)\n✓ Know your walk-away number (and stick to it)\n✓ Protect the relationship (you might work with them again)\n✓ Get everything in writing (verbal agreements = worthless)`
   },
 
   // CLIENT SERVICE
@@ -1591,7 +1615,10 @@ const ESSENTIAL_QUESTIONS: Record<string, string[]> = {
   'video-script': ['platform', 'length', 'topic', 'specific-content'],
   'expired-fsbo': ['type', 'property-address', 'your-edge', 'format'],
   'cma-narrative': ['property-address', 'property-details', 'your-opinion', 'comparable-sales'],
-  'thank-you': ['occasion', 'client-names', 'memorable-moment']
+  'thank-you': ['occasion', 'client-names', 'memorable-moment'],
+  'virtual-tour-script': ['property-address', 'property-type', 'basic-specs', 'tour-highlights'],
+  'buyer-seller-education': ['topic', 'audience', 'location'],
+  'negotiation-points': ['negotiation-type', 'client-role', 'current-situation', 'client-goals']
 };
 
 // Helper function to mark questions as essential or optional (reserved for Quick Mode v2.1)
@@ -2586,6 +2613,209 @@ function getQuestionsForUseCase(useCaseId: string): Question[] {
     ];
   }
 
+  // Virtual Tour Scripts - NEW
+  if (useCaseId === 'virtual-tour-script') {
+    return [
+      {
+        id: 'property-address',
+        type: 'text' as const,
+        question: 'Property address?',
+        placeholder: 'Example: 123 Oak Street, Austin, TX 78704'
+      },
+      {
+        id: 'property-type',
+        type: 'select' as const,
+        question: 'Property type?',
+        defaultValue: 'single-family',
+        options: [
+          { value: 'single-family', label: 'Single Family', emoji: '🏡' },
+          { value: 'condo', label: 'Condo', emoji: '🏢' },
+          { value: 'townhouse', label: 'Townhouse', emoji: '🏘️' },
+          { value: 'luxury', label: 'Luxury Home', emoji: '💎' }
+        ]
+      },
+      {
+        id: 'basic-specs',
+        type: 'text' as const,
+        question: 'Beds, baths, sq ft',
+        placeholder: 'Example: 4 bed, 3 bath, 2,400 sqft'
+      },
+      {
+        id: 'price',
+        type: 'text' as const,
+        question: 'List price',
+        placeholder: 'Example: $495,000'
+      },
+      {
+        id: 'tour-highlights',
+        type: 'textarea' as const,
+        question: 'What are the key features to highlight in the tour?',
+        subtitle: 'Top 5-7 rooms, features, or selling points',
+        placeholder: 'Example: Updated kitchen with Wolf appliances, primary suite w/ spa bath, huge backyard, smart home features, 2-car garage...'
+      },
+      {
+        id: 'tour-length',
+        type: 'select' as const,
+        question: 'Desired tour length?',
+        defaultValue: '5-7min',
+        options: [
+          { value: '3-5min', label: '3-5 minutes (Quick)', emoji: '⚡' },
+          { value: '5-7min', label: '5-7 minutes (Standard)', emoji: '⏰' },
+          { value: '10min', label: '10+ minutes (Detailed)', emoji: '🎬' }
+        ]
+      },
+      {
+        id: 'walkthrough-style',
+        type: 'select' as const,
+        question: 'Tour style?',
+        defaultValue: 'professional',
+        options: [
+          { value: 'professional', label: 'Professional/Formal', emoji: '💼' },
+          { value: 'conversational', label: 'Conversational/Friendly', emoji: '😊' },
+          { value: 'luxury', label: 'Luxury/Upscale', emoji: '✨' },
+          { value: 'energetic', label: 'Energetic/Enthusiastic', emoji: '🔥' }
+        ]
+      }
+    ];
+  }
+
+  // Buyer/Seller Education - NEW
+  if (useCaseId === 'buyer-seller-education') {
+    return [
+      {
+        id: 'topic',
+        type: 'select' as const,
+        question: 'What topic do you want to educate about?',
+        defaultValue: 'first-time-buyer',
+        options: [
+          { value: 'first-time-buyer', label: 'First-Time Home Buying', emoji: '🏡' },
+          { value: 'selling-process', label: 'Selling Process', emoji: '🏠' },
+          { value: 'market-conditions', label: 'Understanding Market Conditions', emoji: '📊' },
+          { value: 'financing', label: 'Financing & Mortgages', emoji: '💰' },
+          { value: 'inspection', label: 'Home Inspection Guide', emoji: '🔍' },
+          { value: 'negotiation', label: 'Negotiation Strategies', emoji: '🤝' }
+        ]
+      },
+      {
+        id: 'audience',
+        type: 'select' as const,
+        question: 'Who is the audience?',
+        defaultValue: 'general',
+        options: [
+          { value: 'first-time', label: 'First-Time Buyers/Sellers', emoji: '👋' },
+          { value: 'experienced', label: 'Experienced', emoji: '🎯' },
+          { value: 'investors', label: 'Investors', emoji: '💼' },
+          { value: 'general', label: 'General Audience', emoji: '👥' }
+        ]
+      },
+      {
+        id: 'location',
+        type: 'text' as const,
+        question: 'What market/location?',
+        subtitle: 'City, state, or region for local context',
+        placeholder: 'Example: Austin TX, Phoenix metro, Dallas-Fort Worth...'
+      },
+      {
+        id: 'content-length',
+        type: 'select' as const,
+        question: 'How detailed should this be?',
+        defaultValue: 'comprehensive',
+        options: [
+          { value: 'quick-tips', label: 'Quick Tips (5-7 points)', emoji: '⚡' },
+          { value: 'comprehensive', label: 'Comprehensive Guide', emoji: '📚' },
+          { value: 'in-depth', label: 'In-Depth Deep Dive', emoji: '🔬' }
+        ]
+      },
+      {
+        id: 'format',
+        type: 'select' as const,
+        question: 'What format?',
+        defaultValue: 'guide',
+        options: [
+          { value: 'guide', label: 'Step-by-Step Guide', emoji: '📋' },
+          { value: 'checklist', label: 'Checklist', emoji: '✅' },
+          { value: 'faq', label: 'FAQ', emoji: '❓' },
+          { value: 'article', label: 'Blog Article', emoji: '📝' }
+        ]
+      },
+      {
+        id: 'specific-focus',
+        type: 'textarea' as const,
+        question: 'Any specific aspects to focus on?',
+        subtitle: 'Optional - particular questions, concerns, or subtopics',
+        placeholder: 'Example: Focus on avoiding common mistakes, what to expect at closing, how to prepare financially...'
+      }
+    ];
+  }
+
+  // Negotiation Talking Points - NEW
+  if (useCaseId === 'negotiation-points') {
+    return [
+      {
+        id: 'negotiation-type',
+        type: 'select' as const,
+        question: 'What type of negotiation?',
+        defaultValue: 'buyer-offer',
+        options: [
+          { value: 'buyer-offer', label: 'Buyer Making Offer', emoji: '💰' },
+          { value: 'seller-counter', label: 'Seller Countering Offer', emoji: '🔄' },
+          { value: 'inspection', label: 'Inspection Negotiations', emoji: '🔍' },
+          { value: 'appraisal-gap', label: 'Appraisal Gap', emoji: '📊' },
+          { value: 'multiple-offers', label: 'Multiple Offer Situation', emoji: '🔥' }
+        ]
+      },
+      {
+        id: 'client-role',
+        type: 'select' as const,
+        question: 'Who is your client?',
+        options: [
+          { value: 'buyer', label: 'Buyer', emoji: '🔍' },
+          { value: 'seller', label: 'Seller', emoji: '🏠' }
+        ]
+      },
+      {
+        id: 'property-details',
+        type: 'textarea' as const,
+        question: 'Property details and context',
+        subtitle: 'Price, location, days on market, any relevant details',
+        placeholder: 'Example: $495K single-family in Austin, 30 DOM, seller motivated, needs quick close...'
+      },
+      {
+        id: 'current-situation',
+        type: 'textarea' as const,
+        question: 'What\'s the current situation?',
+        subtitle: 'What offers/counteroffers have been made? Any deadlines?',
+        placeholder: 'Example: Listed at $500K, buyer offered $475K, seller countered at $495K, inspection revealed $10K in repairs...'
+      },
+      {
+        id: 'client-goals',
+        type: 'textarea' as const,
+        question: 'What does your client want to achieve?',
+        subtitle: 'Price, terms, contingencies, timeline',
+        placeholder: 'Example: Get price down to $480K, keep inspection contingency, close in 30 days, seller pays closing costs...'
+      },
+      {
+        id: 'leverage-points',
+        type: 'textarea' as const,
+        question: 'What leverage do you have?',
+        subtitle: 'Cash offer, flexible closing, waived contingencies, market conditions',
+        placeholder: 'Example: Cash offer, no financing contingency, can close in 2 weeks, property overpriced compared to comps...'
+      },
+      {
+        id: 'tone',
+        type: 'select' as const,
+        question: 'Negotiation approach?',
+        defaultValue: 'collaborative',
+        options: [
+          { value: 'collaborative', label: 'Collaborative Win-Win', emoji: '🤝' },
+          { value: 'assertive', label: 'Assertive/Firm', emoji: '💪' },
+          { value: 'empathetic', label: 'Empathetic/Understanding', emoji: '💙' },
+          { value: 'data-driven', label: 'Data-Driven/Analytical', emoji: '📊' }
+        ]
+      }
+    ];
+  }
+
   // Default fallback
   return [
     {
@@ -3472,6 +3702,321 @@ ${occasion === 'closing' ? 'Gift Pairing Suggestion: [What type of closing gift 
 Write this like you're writing to a friend. Be real.`;
 }
 
+// Virtual Tour Script (NEW)
+function generateVirtualTourScriptPrompt(answers: Record<string, string>): string {
+  const propertyAddress = answers['property-address'] || '[property address]';
+  const propertyType = answers['property-type'] || 'single-family';
+  const basicSpecs = answers['basic-specs'] || '[beds/baths/sqft]';
+  const price = answers.price || '[price]';
+  const tourHighlights = answers['tour-highlights'] || '';
+  const tourLength = answers['tour-length'] || '5-7min';
+  const walkthroughStyle = answers['walkthrough-style'] || 'professional';
+
+  const styleGuidance = {
+    'professional': 'Professional, informative tone. Focus on facts, features, and benefits. Speak clearly and confidently.',
+    'conversational': 'Warm, friendly tone. Talk like you\'re showing a friend around. Use natural language.',
+    'luxury': 'Upscale, sophisticated tone. Emphasize quality, exclusivity, and lifestyle. Use elegant language.',
+    'energetic': 'Enthusiastic, excited tone. Show passion for the property. Use dynamic language.'
+  };
+
+  return `You are a real estate agent creating a virtual tour script for a property.
+
+PROPERTY DETAILS:
+- Address: ${propertyAddress}
+- Type: ${propertyType}
+- Specs: ${basicSpecs}
+- Price: ${price}
+- Key Features: ${tourHighlights}
+
+TOUR PARAMETERS:
+- Length: ${tourLength}
+- Style: ${walkthroughStyle}
+
+TASK: Create a detailed virtual tour walkthrough script that guides viewers through the property.
+
+SCRIPT STRUCTURE:
+1. **Introduction (0:00-0:30):**
+   - Warm welcome
+   - Property address and quick overview
+   - Hook: What makes this special?
+
+2. **Exterior/Curb Appeal (0:30-1:30):**
+   - First impressions
+   - Architectural style
+   - Outdoor features (yard, driveway, landscaping)
+
+3. **Main Living Areas (1:30-3:30):**
+   - Entry/foyer
+   - Living room
+   - Kitchen (spend extra time here)
+   - Dining area
+   - Highlight flow and functionality
+
+4. **Bedrooms & Bathrooms (3:30-5:00):**
+   - Primary suite (emphasize luxury)
+   - Secondary bedrooms
+   - Notable bathroom features
+
+5. **Special Features (5:00-6:00):**
+   - Home office, bonus room, basement, etc.
+   - Smart home features
+   - Unique selling points
+
+6. **Conclusion (6:00-${tourLength === '3-5min' ? '5:00' : tourLength === '5-7min' ? '7:00' : '10:00'}):**
+   - Recap top 3 features
+   - Location benefits (schools, shopping, commute)
+   - Strong call-to-action
+   - Contact information
+
+TONE & STYLE: ${styleGuidance[walkthroughStyle as keyof typeof styleGuidance]}
+
+REQUIREMENTS:
+- Include specific timestamps for each section
+- Point out details that cameras might miss
+- Anticipate buyer questions and address them
+- ${tourLength === '3-5min' ? 'Keep it concise - hit only the highlights' : tourLength === '10min' ? 'Go deep - provide extensive detail' : 'Balance detail with pacing'}
+- Use descriptive language that paints a picture
+- Include camera movement cues where helpful (e.g., "As we pan left...")
+
+OUTPUT FORMAT:
+**Virtual Tour Script: ${propertyAddress}**
+
+[Introduction - 0:00-0:30]
+[Your script here with specific talking points...]
+
+[Continue for each section with timestamps]
+
+Make it feel like a professional property tour that builds excitement and desire.`;
+}
+
+// Buyer/Seller Education (NEW)
+function generateBuyerSellerEducationPrompt(answers: Record<string, string>): string {
+  const topic = answers.topic || 'first-time-buyer';
+  const audience = answers.audience || 'general';
+  const location = answers.location || '[your market]';
+  const contentLength = answers['content-length'] || 'comprehensive';
+  const format = answers.format || 'guide';
+  const specificFocus = answers['specific-focus'] || '';
+
+  const topicDetails = {
+    'first-time-buyer': 'First-Time Home Buying Process',
+    'selling-process': 'How to Sell Your Home',
+    'market-conditions': 'Understanding Current Market Conditions',
+    'financing': 'Home Financing & Mortgage Options',
+    'inspection': 'Home Inspection Guide',
+    'negotiation': 'Negotiation Strategies for Buyers/Sellers'
+  };
+
+  const formatGuidance = {
+    'guide': 'Step-by-step guide format with clear sections',
+    'checklist': 'Actionable checklist format with checkboxes',
+    'faq': 'Question & answer format addressing common concerns',
+    'article': 'Blog article format with engaging narrative'
+  };
+
+  return `You are a real estate expert creating educational content for clients.
+
+TOPIC: ${topicDetails[topic as keyof typeof topicDetails]}
+AUDIENCE: ${audience}
+LOCATION: ${location}
+CONTENT DEPTH: ${contentLength}
+FORMAT: ${format}
+
+SPECIFIC FOCUS:
+${specificFocus || 'Cover all essential aspects of this topic'}
+
+TASK: Create comprehensive, actionable educational content that empowers ${audience} to make informed decisions.
+
+CONTENT REQUIREMENTS:
+
+${contentLength === 'quick-tips' ? `
+**Quick Tips (5-7 Key Points):**
+- Each tip should be immediately actionable
+- Include "why this matters"
+- Keep it scannable and memorable
+` : contentLength === 'comprehensive' ? `
+**Comprehensive Guide:**
+1. Introduction - Why this matters
+2. Overview - The big picture
+3. Step-by-step process
+4. Common pitfalls to avoid
+5. Pro tips from an experienced agent
+6. Next steps/action items
+7. FAQs
+8. Local market context for ${location}
+` : `
+**In-Depth Deep Dive:**
+- Extensive background and context
+- Detailed step-by-step breakdowns
+- Real-world examples and case studies
+- Expert insights and insider knowledge
+- Advanced strategies
+- Resource links and additional reading
+`}
+
+TONE & APPROACH:
+- Educational but not condescending
+- Empowering, not overwhelming
+- Use analogies and real examples
+- Address fears and concerns directly
+- ${audience === 'first-time' ? 'Explain industry jargon in plain language' : audience === 'investors' ? 'Focus on ROI and market analysis' : 'Balance beginner-friendly and advanced insights'}
+
+${format === 'checklist' ? `
+OUTPUT FORMAT (Checklist):
+**${topicDetails[topic as keyof typeof topicDetails]}: Your Complete Checklist**
+
+Before You Start:
+☐ [Item 1 with brief explanation]
+☐ [Item 2 with brief explanation]
+
+[Continue with logical sections...]
+` : format === 'faq' ? `
+OUTPUT FORMAT (FAQ):
+**${topicDetails[topic as keyof typeof topicDetails]}: Frequently Asked Questions**
+
+Q1: [Most common question]
+A: [Clear, detailed answer]
+
+[Continue with 10-15 essential questions...]
+` : `
+OUTPUT FORMAT:
+# ${topicDetails[topic as keyof typeof topicDetails]}
+
+[Introduction paragraph that hooks the reader]
+
+[Main content sections...]
+
+[Conclusion with clear next steps]
+`}
+
+SPECIAL REQUIREMENTS:
+- Include ${location}-specific insights where relevant
+- Address common misconceptions
+- Provide specific, actionable advice (not generic platitudes)
+- Use data/statistics to support key points
+- End with clear next steps or call-to-action
+
+Make this the kind of resource that clients bookmark and share.`;
+}
+
+// Negotiation Talking Points (NEW)
+function generateNegotiationPointsPrompt(answers: Record<string, string>): string {
+  const negotiationType = answers['negotiation-type'] || 'buyer-offer';
+  const clientRole = answers['client-role'] || 'buyer';
+  const propertyDetails = answers['property-details'] || '';
+  const currentSituation = answers['current-situation'] || '';
+  const clientGoals = answers['client-goals'] || '';
+  const leveragePoints = answers['leverage-points'] || '';
+  const tone = answers.tone || 'collaborative';
+
+  const negotiationContext = {
+    'buyer-offer': 'Making Initial Offer',
+    'seller-counter': 'Countering Buyer Offer',
+    'inspection': 'Post-Inspection Negotiations',
+    'appraisal-gap': 'Appraisal Came in Low',
+    'multiple-offers': 'Multiple Offer Situation'
+  };
+
+  const toneGuidance = {
+    'collaborative': 'Win-win approach. Focus on mutual benefit and finding common ground.',
+    'assertive': 'Strong, confident approach. Advocate firmly for your client without being aggressive.',
+    'empathetic': 'Understanding approach. Acknowledge the other party\'s position while advancing your client\'s interests.',
+    'data-driven': 'Analytical approach. Use market data, comps, and facts to support your position.'
+  };
+
+  return `You are a skilled real estate negotiator preparing talking points for an agent.
+
+NEGOTIATION CONTEXT:
+- Type: ${negotiationContext[negotiationType as keyof typeof negotiationContext]}
+- Representing: ${clientRole}
+- Property: ${propertyDetails}
+
+CURRENT SITUATION:
+${currentSituation}
+
+CLIENT GOALS:
+${clientGoals}
+
+LEVERAGE POINTS:
+${leveragePoints}
+
+NEGOTIATION APPROACH: ${tone}
+${toneGuidance[tone as keyof typeof toneGuidance]}
+
+TASK: Create comprehensive negotiation talking points that help the agent advocate effectively for their client.
+
+OUTPUT STRUCTURE:
+
+**1. OPENING POSITION**
+- Your initial stance
+- How to frame it positively
+- Key message to emphasize
+
+**2. JUSTIFICATION & SUPPORT**
+- Market data to support your position
+- Comparable sales analysis
+- Property-specific factors
+- Timeline/urgency considerations
+
+**3. CONCESSION STRATEGY**
+- What you can offer (if needed)
+- What you need in return
+- Order of concessions (give small, ask big)
+- Walk-away point
+
+**4. KEY TALKING POINTS**
+For each major negotiation element (price, terms, contingencies, timeline):
+- Your position
+- Why it's reasonable
+- Counter to expected objections
+- Alternative solutions
+
+**5. OBJECTION RESPONSES**
+Anticipate the other side's likely objections:
+- Objection: [What they'll say]
+- Response: [How to address it]
+- Reframe: [Turn it to your advantage]
+
+**6. CREATIVE SOLUTIONS**
+Beyond price - other ways to bridge the gap:
+- Closing date flexibility
+- Seller concessions
+- Inspection resolution ideas
+- Financing options
+
+**7. SCRIPTS FOR TOUGH CONVERSATIONS**
+Actual language to use:
+- "I understand your position, however..."
+- "Let's find a solution that works for both parties..."
+- "Based on the data, here's what makes sense..."
+- ${tone === 'assertive' ? '"My client is firm on this point because..."' : tone === 'empathetic' ? '"I can see why that\'s important to you. Here\'s what\'s important to us..."' : '"The numbers show that..."'}
+
+**8. DEAL-MAKING SCENARIOS**
+If they say X, you respond with Y:
+- Scenario 1: [Likely response] → [Your counter]
+- Scenario 2: [Likely response] → [Your counter]
+- Scenario 3: [Likely response] → [Your counter]
+
+**9. TIMING & DELIVERY TIPS**
+- When to push, when to pause
+- How to maintain momentum
+- When to escalate to principals
+
+**10. SUCCESS METRICS**
+- Ideal outcome
+- Acceptable outcome
+- Walk-away point
+
+STYLE:
+- Be specific and tactical (not generic advice)
+- Include exact phrases and scripts
+- Anticipate multiple scenarios
+- Focus on win-win when possible
+- Protect your client's interests firmly but professionally
+
+Make this so thorough that the agent feels confident and prepared for any response.`;
+}
+
 // Main prompt router (declared after all generators)
 function generatePrompt(useCaseId: string, answers: Record<string, string>, voicePreference: string = 'professional'): string {
   // Voice preference instructions
@@ -3522,6 +4067,15 @@ function generatePrompt(useCaseId: string, answers: Record<string, string>, voic
       break;
     case 'thank-you':
       basePrompt = generateThankYouPrompt(answers);
+      break;
+    case 'virtual-tour-script':
+      basePrompt = generateVirtualTourScriptPrompt(answers);
+      break;
+    case 'buyer-seller-education':
+      basePrompt = generateBuyerSellerEducationPrompt(answers);
+      break;
+    case 'negotiation-points':
+      basePrompt = generateNegotiationPointsPrompt(answers);
       break;
     default:
       return 'Prompt generation in progress...';
