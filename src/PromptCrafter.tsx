@@ -449,6 +449,11 @@ function PromptCrafter() {
       navigator.clipboard.writeText(generatedOutput);
       setCopiedOutput(true);
       setTimeout(() => setCopiedOutput(false), 2000);
+
+      // Track copy event
+      analytics.track('Prompt_Copied', {
+        useCase: state.selectedUseCase!
+      });
     }
   };
 
@@ -617,7 +622,12 @@ function PromptCrafter() {
         {history.length > 0 && !showHistory && (
           <div style={styles.header}>
             <button
-              onClick={() => setShowHistory(true)}
+              onClick={() => {
+                setShowHistory(true);
+                analytics.track('History_Viewed', {
+                  historyCount: history.length
+                });
+              }}
               style={styles.historyButton}
               aria-label={`View prompt history, ${history.length} saved ${history.length === 1 ? 'prompt' : 'prompts'}`}
             >
