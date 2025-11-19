@@ -1779,7 +1779,7 @@ const ESSENTIAL_QUESTIONS: Record<string, string[]> = {
   'market-report': ['market-location', 'audience', 'actionable-insight', 'specific-data'],
   'social-content': ['topic', 'market-location', 'cta'],
   'sphere-script': ['who', 'goal', 'relationship'],
-  'listing-description': ['property-type', 'property-address', 'key-features', 'ideal-buyer'],
+  'listing-description': ['property-type', 'property-address', 'three-best-features', 'recent-updates', 'invisible-features', 'tech-eco-features', 'ideal-buyer'],
   'email-sequence': ['audience', 'problem', 'goal'],
   'consultation-script': ['type', 'client-background', 'motivation'],
   'objection-handling': ['objection', 'exact-wording', 'when-in-process'],
@@ -2046,8 +2046,29 @@ function getQuestionsForUseCase(useCaseId: string): Question[] {
         id: 'three-best-features',
         type: 'textarea' as const,
         question: 'What are the 3 BEST features of this property?',
-        subtitle: 'What makes buyers fall in love? What sets it apart?',
+        subtitle: 'What makes buyers fall in love? What sets it apart from other homes at this price?',
         placeholder: 'Example:\n1. Completely renovated chef\'s kitchen with Wolf appliances and quartz waterfall island\n2. Stunning backyard oasis with pool, outdoor kitchen, and mature landscaping\n3. Prime location - walk to top-rated elementary school and trendy coffee district'
+      },
+      {
+        id: 'recent-updates',
+        type: 'textarea' as const,
+        question: 'Recent updates or renovations?',
+        subtitle: 'Include the YEAR - recency matters to buyers!',
+        placeholder: 'Example: Kitchen remodel (2023 - quartz counters, Wolf appliances), new HVAC system (2024), roof replaced (2022), fresh interior paint (2024), refinished hardwood floors (2023)...'
+      },
+      {
+        id: 'invisible-features',
+        type: 'textarea' as const,
+        question: 'What won\'t buyers see in photos?',
+        subtitle: 'New systems, low taxes/HOA, quiet street, warranties, etc.',
+        placeholder: 'Example: Brand new water heater and HVAC (2024), incredibly low property taxes ($3,200/year), end of quiet cul-de-sac (no through traffic), transferable home warranty, new roof with 20-year warranty (2023), low HOA fees ($75/month)...'
+      },
+      {
+        id: 'tech-eco-features',
+        type: 'textarea' as const,
+        question: 'Smart home, tech, or eco-friendly features?',
+        subtitle: '2024 buyers prioritize these - don\'t forget to mention them!',
+        placeholder: 'Example: Nest smart thermostat and locks, owned solar panels (avg $50/month electric bill), EV charging station in garage, energy-efficient windows and appliances, programmable irrigation system, Ring doorbell and security system...'
       },
       {
         id: 'location',
@@ -3321,6 +3342,9 @@ ${existingDescription ? `\nExisting Description:\n${existingDescription}` : ''}`
   }
 
   const threeBestFeatures = answers['three-best-features'] || '';
+  const recentUpdates = answers['recent-updates'] || '';
+  const invisibleFeatures = answers['invisible-features'] || '';
+  const techEcoFeatures = answers['tech-eco-features'] || '';
   const keyFeatures = answers['key-features'] || '';
   const idealBuyer = answers['ideal-buyer'] || '';
 
@@ -3328,8 +3352,17 @@ ${existingDescription ? `\nExisting Description:\n${existingDescription}` : ''}`
 
 ${propertyDetails}
 
-${threeBestFeatures ? `TOP 3 FEATURES (MUST EMPHASIZE):
+${threeBestFeatures ? `TOP 3 FEATURES (MUST EMPHASIZE - Lead with these!):
 ${threeBestFeatures}
+` : ''}
+${recentUpdates ? `RECENT UPDATES & RENOVATIONS (Highlight recency with years!):
+${recentUpdates}
+` : ''}
+${invisibleFeatures ? `FEATURES PHOTOS CAN'T SHOW (Critical value buyers might miss!):
+${invisibleFeatures}
+` : ''}
+${techEcoFeatures ? `SMART HOME, TECH & ECO FEATURES (2024 buyer priority!):
+${techEcoFeatures}
 ` : ''}
 ${keyFeatures ? `ADDITIONAL FEATURES TO HIGHLIGHT:
 ${keyFeatures}
