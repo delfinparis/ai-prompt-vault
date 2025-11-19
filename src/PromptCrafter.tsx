@@ -233,6 +233,14 @@ function PromptCrafter() {
   const [listingNotFound, setListingNotFound] = useState(false);
   const [editableListingData, setEditableListingData] = useState<any>(null);
 
+  // Function to clear listing data states
+  const clearListingData = () => {
+    setListingData(null);
+    setIsFetchingListing(false);
+    setListingNotFound(false);
+    setEditableListingData(null);
+  };
+
   // Save Quick Mode preference
   useEffect(() => {
     localStorage.setItem('promptCrafterQuickMode', String(quickMode));
@@ -716,21 +724,41 @@ function PromptCrafter() {
       )}
 
       <div style={styles.container}>
-        {/* Header - History Button Only */}
-        {history.length > 0 && !showHistory && (
+        {/* Header - History Button and Start Over */}
+        {!showHistory && (
           <div style={styles.header}>
-            <button
-              onClick={() => {
-                setShowHistory(true);
-                analytics.track('History_Viewed', {
-                  historyCount: history.length
-                });
-              }}
-              style={styles.historyButton}
-              aria-label={`View prompt history, ${history.length} saved ${history.length === 1 ? 'prompt' : 'prompts'}`}
-            >
-              📜 Previous Listings ({history.length})
-            </button>
+            {history.length > 0 && (
+              <button
+                onClick={() => {
+                  setShowHistory(true);
+                  analytics.track('History_Viewed', {
+                    historyCount: history.length
+                  });
+                }}
+                style={styles.historyButton}
+                aria-label={`View prompt history, ${history.length} saved ${history.length === 1 ? 'prompt' : 'prompts'}`}
+              >
+                📜 Previous Listings ({history.length})
+              </button>
+            )}
+            {state.step > 0 && (
+              <button
+                onClick={() => {
+                  if (window.confirm('Start over? This will clear your current progress.')) {
+                    handleReset();
+                  }
+                }}
+                style={{
+                  ...styles.historyButton,
+                  background: 'rgba(239, 68, 68, 0.1)',
+                  border: '1px solid rgba(239, 68, 68, 0.3)',
+                  color: '#f87171'
+                }}
+                aria-label="Start over and clear current progress"
+              >
+                🔄 Start Over
+              </button>
+            )}
           </div>
         )}
 
@@ -989,6 +1017,7 @@ function PromptCrafter() {
           onBack={() => setState({ ...state, step: Math.max(0, state.step - 1) })}
           onGenerate={handleGenerate}
           fetchListingData={fetchListingData}
+          clearListingData={clearListingData}
           isFetchingListing={isFetchingListing}
           listingData={listingData}
           listingNotFound={listingNotFound}
@@ -1378,6 +1407,7 @@ function QuestionFlow({
   onBack,
   onGenerate,
   fetchListingData,
+  clearListingData,
   isFetchingListing,
   listingData,
   listingNotFound,
@@ -1394,6 +1424,7 @@ function QuestionFlow({
   onBack: () => void;
   onGenerate: () => void;
   fetchListingData?: (address: string, propertyType?: string) => Promise<void>;
+  clearListingData?: () => void;
   isFetchingListing?: boolean;
   listingData?: any;
   listingNotFound?: boolean;
@@ -1443,9 +1474,17 @@ function QuestionFlow({
 
   // Show listing confirmation UI if we've fetched data for virtual tour
   if (isVirtualTourAddress && (isFetchingListing || listingData || listingNotFound)) {
+    // Custom back handler to clear listing states
+    const handleBackFromListing = () => {
+      if (clearListingData) {
+        clearListingData();
+      }
+      onBack();
+    };
+
     return (
       <div style={styles.stepContainer}>
-        <button onClick={onBack} style={styles.backButton}>
+        <button onClick={handleBackFromListing} style={styles.backButton}>
           ← Back
         </button>
 
@@ -4310,7 +4349,11 @@ const styles: Record<string, React.CSSProperties> = {
     lineHeight: 1.5, // Reduced from 1.6
   },
   header: {
-    textAlign: 'center',
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: '12px',
+    flexWrap: 'wrap',
     marginBottom: '12px', // Reduced from 24px
     paddingTop: '8px' // Reduced from 16px
   },
