@@ -2004,10 +2004,11 @@ function getQuestionsForUseCase(useCaseId: string): Question[] {
       // listing-data-confirmation handled by custom UI (auto-fetch from MLS/Zillow)
       // listing-manual-paste is fallback if not found
       {
-        id: 'basic-specs',
-        type: 'text' as const,
-        question: 'Beds, baths, sq ft, year built',
-        placeholder: 'Example: 4 bed, 3 bath, 2,400 sqft, built 2015...'
+        id: 'three-best-features',
+        type: 'textarea' as const,
+        question: 'What are the 3 BEST features of this property?',
+        subtitle: 'What makes buyers fall in love? What sets it apart?',
+        placeholder: 'Example:\n1. Completely renovated chef\'s kitchen with Wolf appliances and quartz waterfall island\n2. Stunning backyard oasis with pool, outdoor kitchen, and mature landscaping\n3. Prime location - walk to top-rated elementary school and trendy coffee district'
       },
       {
         id: 'location',
@@ -3268,7 +3269,6 @@ ${listing.description ? `\nCurrent Description:\n${listing.description}` : ''}`;
     // Fallback to individual fields
     const propertyType = answers['property-type'] || 'single-family';
     const address = answers.address || '';
-    const basicSpecs = answers['basic-specs'] || '';
     const location = answers.location || '';
     const price = answers.price || '';
     const existingDescription = answers['existing-description'] || '';
@@ -3276,12 +3276,12 @@ ${listing.description ? `\nCurrent Description:\n${listing.description}` : ''}`;
     propertyDetails = `PROPERTY INFORMATION:
 ${address ? `Address: ${address}` : ''}
 ${propertyType ? `Type: ${propertyType.replace('-', ' ')}` : ''}
-${basicSpecs ? `Basics: ${basicSpecs}` : ''}
 ${location ? `Location: ${location}` : ''}
 ${price ? `Price: ${price}` : ''}
 ${existingDescription ? `\nExisting Description:\n${existingDescription}` : ''}`;
   }
 
+  const threeBestFeatures = answers['three-best-features'] || '';
   const keyFeatures = answers['key-features'] || '';
   const idealBuyer = answers['ideal-buyer'] || '';
 
@@ -3289,8 +3289,12 @@ ${existingDescription ? `\nExisting Description:\n${existingDescription}` : ''}`
 
 ${propertyDetails}
 
-ADDITIONAL FEATURES TO HIGHLIGHT:
+${threeBestFeatures ? `TOP 3 FEATURES (MUST EMPHASIZE):
+${threeBestFeatures}
+` : ''}
+${keyFeatures ? `ADDITIONAL FEATURES TO HIGHLIGHT:
 ${keyFeatures}
+` : ''}
 
 ${idealBuyer ? `IDEAL BUYER PROFILE:
 ${idealBuyer}
