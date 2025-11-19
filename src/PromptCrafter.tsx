@@ -2028,9 +2028,7 @@ function getQuestionsForUseCase(useCaseId: string): Question[] {
         options: [
           { value: 'single-family', label: 'Single Family', emoji: '🏡' },
           { value: 'condo', label: 'Condo', emoji: '🏢' },
-          { value: 'townhouse', label: 'Townhouse', emoji: '🏘️' },
-          { value: 'luxury', label: 'Luxury Home', emoji: '💎' },
-          { value: 'land', label: 'Land/Lot', emoji: '🌳' }
+          { value: 'townhouse', label: 'Townhouse', emoji: '🏘️' }
         ]
       },
       {
