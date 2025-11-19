@@ -729,7 +729,7 @@ function PromptCrafter() {
               style={styles.historyButton}
               aria-label={`View prompt history, ${history.length} saved ${history.length === 1 ? 'prompt' : 'prompts'}`}
             >
-              📜 Prompt History ({history.length})
+              📜 Previous Listings ({history.length})
             </button>
           </div>
         )}
@@ -740,7 +740,7 @@ function PromptCrafter() {
           <button onClick={() => setShowHistory(false)} style={styles.backButton}>
             ← Back
           </button>
-          <h2 style={styles.title}>Your Recent Prompts</h2>
+          <h2 style={styles.title}>Your Recent Listing Descriptions</h2>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
             {history.map((item) => (
               <div key={item.id} style={styles.historyCard}>
@@ -777,171 +777,90 @@ function PromptCrafter() {
             ))}
           </div>
           <button onClick={handleReset} style={styles.secondaryButton}>
-            Create New Prompt
+            Create New Description
           </button>
         </div>
       )}
 
-      {/* Step 0: Use Case Selection - Categorized */}
+      {/* Step 0: Welcome Screen */}
       {!showHistory && state.step === 0 && (
         <div style={styles.stepContainer}>
-          <h2 style={styles.title}>WHAT DO YOU NEED HELP WITH?</h2>
+          <div style={{
+            textAlign: 'center' as const,
+            maxWidth: '800px',
+            margin: '0 auto',
+            padding: '60px 20px'
+          }}>
+            <h1 style={{
+              fontSize: '48px',
+              fontWeight: '700',
+              color: '#f1f5f9',
+              marginBottom: '20px',
+              lineHeight: '1.2'
+            }}>
+              Create the Perfect Listing Description
+            </h1>
 
-          {/* Voice Preference Selector - MOVED TO FINAL STEP BEFORE GENERATION */}
+            <p style={{
+              fontSize: '20px',
+              color: '#94a3b8',
+              marginBottom: '40px',
+              lineHeight: '1.6'
+            }}>
+              Powered by a 6-expert review system that transforms property details into compelling descriptions that sell
+            </p>
 
-          {/* Quick Mode Toggle - TEMPORARILY HIDDEN (functionality preserved) */}
+            <div style={{
+              background: 'rgba(16, 185, 129, 0.1)',
+              border: '1px solid rgba(16, 185, 129, 0.3)',
+              borderRadius: '12px',
+              padding: '30px',
+              marginBottom: '40px',
+              textAlign: 'left' as const
+            }}>
+              <h3 style={{
+                fontSize: '18px',
+                fontWeight: '600',
+                color: '#10b981',
+                marginBottom: '20px'
+              }}>
+                How It Works:
+              </h3>
+              <div style={{ color: '#cbd5e1', lineHeight: '1.8' }}>
+                <div style={{ marginBottom: '12px' }}>
+                  <strong style={{ color: '#f1f5f9' }}>1. Junior Copywriter</strong> - Creates energetic, engaging draft
+                </div>
+                <div style={{ marginBottom: '12px' }}>
+                  <strong style={{ color: '#f1f5f9' }}>2. Senior Copy Editor</strong> - Refines for clarity and impact
+                </div>
+                <div style={{ marginBottom: '12px' }}>
+                  <strong style={{ color: '#f1f5f9' }}>3. Literary Author</strong> - Adds vivid, sensory storytelling
+                </div>
+                <div style={{ marginBottom: '12px' }}>
+                  <strong style={{ color: '#f1f5f9' }}>4. Investigative Journalist</strong> - Fact-checks and adds credibility
+                </div>
+                <div style={{ marginBottom: '12px' }}>
+                  <strong style={{ color: '#f1f5f9' }}>5. Persuasion Expert</strong> - Optimizes for conversion psychology
+                </div>
+                <div>
+                  <strong style={{ color: '#f1f5f9' }}>6. Veteran Realtor</strong> - Final polish with real-world selling expertise
+                </div>
+              </div>
+            </div>
 
-          {/* CONTENT CREATION */}
-          <div style={styles.categorySection}>
-            <div style={styles.categoryHeader}>
-              <h3 style={styles.categoryTitle}>Content Creation</h3>
-            </div>
-            <div style={styles.useCaseGrid}>
-              {USE_CASES.filter(u => u.category === 'content').map(useCase => (
-                <button
-                  key={useCase.id}
-                  onClick={() => handleUseCaseSelect(useCase.id)}
-                  style={{ ...styles.useCaseCard, position: 'relative' as const }}
-                >
-                  {useCase.exampleOutput && (
-                    <div
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setExpandedExample(useCase.id);
-                      }}
-                      style={{
-                        position: 'absolute' as const,
-                        top: '8px',
-                        right: '8px',
-                        fontSize: '18px',
-                        cursor: 'pointer',
-                        transition: 'all 0.2s',
-                        zIndex: 10
-                      }}
-                      onMouseEnter={(e) => {
-                        e.currentTarget.style.transform = 'scale(1.15)';
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.transform = 'scale(1)';
-                      }}
-                    >
-                      💡
-                    </div>
-                  )}
-                  <div style={{ fontSize: '32px', marginBottom: '10px' }}>
-                    {useCase.emoji}
-                  </div>
-                  <div style={{ fontSize: '13px', fontWeight: '600', marginBottom: '6px', color: '#f1f5f9', textTransform: 'uppercase' as const, lineHeight: '1.3', whiteSpace: 'nowrap' as const }}>
-                    {useCase.name}
-                  </div>
-                  <div style={{ fontSize: '12px', color: '#94a3b8', lineHeight: '1.4', textTransform: 'lowercase' as const }}>
-                    {useCase.description}
-                  </div>
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* SALES & PROSPECTING */}
-          <div style={styles.categorySection}>
-            <div style={styles.categoryHeader}>
-              <h3 style={styles.categoryTitle}>Sales & Prospecting</h3>
-            </div>
-            <div style={styles.useCaseGrid}>
-              {USE_CASES.filter(u => u.category === 'sales').map(useCase => (
-                <button
-                  key={useCase.id}
-                  onClick={() => handleUseCaseSelect(useCase.id)}
-                  style={{ ...styles.useCaseCard, position: 'relative' as const }}
-                >
-                  {useCase.exampleOutput && (
-                    <div
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setExpandedExample(useCase.id);
-                      }}
-                      style={{
-                        position: 'absolute' as const,
-                        top: '8px',
-                        right: '8px',
-                        fontSize: '18px',
-                        cursor: 'pointer',
-                        transition: 'all 0.2s',
-                        zIndex: 10
-                      }}
-                      onMouseEnter={(e) => {
-                        e.currentTarget.style.transform = 'scale(1.15)';
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.transform = 'scale(1)';
-                      }}
-                    >
-                      💡
-                    </div>
-                  )}
-                  <div style={{ fontSize: '32px', marginBottom: '10px' }}>
-                    {useCase.emoji}
-                  </div>
-                  <div style={{ fontSize: '13px', fontWeight: '600', marginBottom: '6px', color: '#f1f5f9', textTransform: 'uppercase' as const, lineHeight: '1.3', whiteSpace: 'nowrap' as const }}>
-                    {useCase.name}
-                  </div>
-                  <div style={{ fontSize: '12px', color: '#94a3b8', lineHeight: '1.4', textTransform: 'lowercase' as const }}>
-                    {useCase.description}
-                  </div>
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* CLIENT SERVICE */}
-          <div style={styles.categorySection}>
-            <div style={styles.categoryHeader}>
-              <h3 style={styles.categoryTitle}>Client Service</h3>
-            </div>
-            <div style={styles.useCaseGrid}>
-              {USE_CASES.filter(u => u.category === 'service').map(useCase => (
-                <button
-                  key={useCase.id}
-                  onClick={() => handleUseCaseSelect(useCase.id)}
-                  style={{ ...styles.useCaseCard, position: 'relative' as const }}
-                >
-                  {useCase.exampleOutput && (
-                    <div
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setExpandedExample(useCase.id);
-                      }}
-                      style={{
-                        position: 'absolute' as const,
-                        top: '8px',
-                        right: '8px',
-                        fontSize: '18px',
-                        cursor: 'pointer',
-                        transition: 'all 0.2s',
-                        zIndex: 10
-                      }}
-                      onMouseEnter={(e) => {
-                        e.currentTarget.style.transform = 'scale(1.15)';
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.transform = 'scale(1)';
-                      }}
-                    >
-                      💡
-                    </div>
-                  )}
-                  <div style={{ fontSize: '32px', marginBottom: '10px' }}>
-                    {useCase.emoji}
-                  </div>
-                  <div style={{ fontSize: '13px', fontWeight: '600', marginBottom: '6px', color: '#f1f5f9', textTransform: 'uppercase' as const, lineHeight: '1.3', whiteSpace: 'nowrap' as const }}>
-                    {useCase.name}
-                  </div>
-                  <div style={{ fontSize: '12px', color: '#94a3b8', lineHeight: '1.4', textTransform: 'lowercase' as const }}>
-                    {useCase.description}
-                  </div>
-                </button>
-              ))}
-            </div>
+            <button
+              onClick={() => {
+                setState({ ...state, selectedUseCase: 'listing-description', step: 1, answers: {} });
+              }}
+              style={{
+                ...styles.primaryButton,
+                fontSize: '20px',
+                padding: '18px 48px',
+                minWidth: '200px'
+              }}
+            >
+              Get Started
+            </button>
           </div>
         </div>
       )}
@@ -1821,7 +1740,7 @@ const ESSENTIAL_QUESTIONS: Record<string, string[]> = {
   'market-report': ['market-location', 'audience', 'actionable-insight', 'specific-data'],
   'social-content': ['topic', 'market-location', 'cta'],
   'sphere-script': ['who', 'goal', 'relationship'],
-  'listing-description': ['property-type', 'property-address', 'key-features'],
+  'listing-description': ['property-type', 'property-address', 'key-features', 'ideal-buyer'],
   'email-sequence': ['audience', 'problem', 'goal'],
   'consultation-script': ['type', 'client-background', 'motivation'],
   'objection-handling': ['objection', 'exact-wording', 'when-in-process'],
@@ -2130,6 +2049,13 @@ function getQuestionsForUseCase(useCaseId: string): Question[] {
           { value: 'remote-worker', label: 'Remote Workers', emoji: '💻' },
           { value: 'investor', label: 'Investors', emoji: '💰' }
         ]
+      },
+      {
+        id: 'ideal-buyer',
+        type: 'textarea' as const,
+        question: 'Describe the ideal buyer for this property',
+        subtitle: 'Who would love living here? (helps our experts tailor the description)',
+        placeholder: 'Example: Young families who want walkable schools, professionals seeking a home office, downsizers looking for low-maintenance living, entertainers who need a great backyard...'
       },
       {
         id: 'urgency',
@@ -3325,75 +3251,115 @@ Write all ${emails} emails. Number them clearly.`;
 }
 
 function generateListingDescriptionPrompt(answers: Record<string, string>): string {
-  const propertyType = answers['property-type'] || 'single-family';
-  const address = answers.address || '';
-  const basicSpecs = answers['basic-specs'] || '';
-  const location = answers.location || '';
-  const price = answers.price || '';
-  const keyFeatures = answers['key-features'] || '';
-  const existingDescription = answers['existing-description'] || '';
-  const lifestyleAppeal = answers['lifestyle-appeal'] || 'family';
-  const urgency = answers.urgency || 'new-listing';
-  const vibe = answers.vibe || 'professional';
+  // Extract listing data (auto-fetched or manual)
+  let propertyDetails = '';
+  if (answers['listing-data']) {
+    const listing = JSON.parse(answers['listing-data']);
+    propertyDetails = `PROPERTY DETAILS (from ${listing.source || 'MLS'}):
+- Address: ${listing.address}
+- Type: ${listing.propertyType}
+- Specs: ${listing.bedrooms} bed, ${listing.bathrooms} bath, ${listing.squareFeet} sq ft
+${listing.price ? `- Price: $${listing.price.toLocaleString()}` : ''}
+${listing.features?.join(', ') || ''}
+${listing.description ? `\nCurrent Description:\n${listing.description}` : ''}`;
+  } else if (answers['manual-listing-paste']) {
+    propertyDetails = answers['manual-listing-paste'];
+  } else {
+    // Fallback to individual fields
+    const propertyType = answers['property-type'] || 'single-family';
+    const address = answers.address || '';
+    const basicSpecs = answers['basic-specs'] || '';
+    const location = answers.location || '';
+    const price = answers.price || '';
+    const existingDescription = answers['existing-description'] || '';
 
-  const toneGuidance = {
-    professional: 'Clean, clear, factual - focus on features and benefits',
-    storytelling: 'Paint a picture of the lifestyle, use sensory details',
-    luxury: 'Sophisticated vocabulary, emphasize exclusivity and quality',
-    casual: 'Friendly and warm, like you\'re describing it to a friend'
-  };
-
-  let prompt = `You are a real estate copywriter who writes listing descriptions that make buyers want to schedule a showing immediately.
-
-Act as a master journalist, author, poet, advertising copywriter, and book editor to craft an accessible, yet engaging listing description that doesn't read like all the other listing descriptions, but captures the emotion of the reader without being over the top or cheesy, but professional and fun. Let's make it so a buyer sees it and says, "WOW - I have to go see this property!" Let's also respect all NAR rules about listing descriptions as well as Fair Housing rules.
-
-TASK: Write an MLS listing description for a ${propertyType.replace('-', ' ')}.
-
-PROPERTY INFORMATION:`;
-
-  if (address) {
-    prompt += `\nAddress: ${address}
-IMPORTANT: Research this address online to find accurate neighborhood details, school ratings, nearby amenities, and property history. Incorporate relevant findings naturally into the description.`;
-  }
-
-  prompt += `\n${basicSpecs ? `Basics: ${basicSpecs}` : ''}
+    propertyDetails = `PROPERTY INFORMATION:
+${address ? `Address: ${address}` : ''}
+${propertyType ? `Type: ${propertyType.replace('-', ' ')}` : ''}
+${basicSpecs ? `Basics: ${basicSpecs}` : ''}
 ${location ? `Location: ${location}` : ''}
 ${price ? `Price: ${price}` : ''}
-${keyFeatures ? `Key Features:\n${keyFeatures}` : ''}`;
-
-  if (existingDescription) {
-    prompt += `\n\nEXISTING DESCRIPTION (improve/rewrite this):
-${existingDescription}
-
-TASK: Rewrite the above description to be more compelling. Keep accurate details but improve flow, remove clichés, add sensory language, and create urgency.`;
+${existingDescription ? `\nExisting Description:\n${existingDescription}` : ''}`;
   }
 
-  prompt += `\n\nTARGET BUYER: ${lifestyleAppeal.replace('-', ' ')}
-URGENCY FACTOR: ${urgency.replace('-', ' ')}
+  const keyFeatures = answers['key-features'] || '';
+  const idealBuyer = answers['ideal-buyer'] || '';
 
-STYLE: ${vibe}
-${toneGuidance[vibe as keyof typeof toneGuidance]}
+  return `You are a world-class listing description creation system powered by a panel of 6 expert reviewers.
 
-CONSTRAINTS:
-- Lead with the most compelling feature (not the address)
-- Use specific details, not generic adjectives (not "beautiful kitchen" - instead "chef's kitchen with quartz waterfall island and commercial-grade appliances")
-- Create urgency without being pushy
-- Paint a picture of the lifestyle, not just the house
-- Keep it under 250 words (buyers skim)
-- DO NOT use: "charming", "cozy" (code for small), "unique" (code for weird), "motivated seller", "won't last long"
-- DO NOT list every single feature - highlight what makes it special
-${address ? '- Use online research about the address to add credible neighborhood/area details' : ''}
+${propertyDetails}
 
-OUTPUT FORMAT:
-Headline: [Attention-grabbing first sentence]
-Body: [2-3 paragraphs with sensory details and lifestyle benefits - MAXIMUM 1300 CHARACTERS for this section only]
-Key Features: [Bulleted list of top 5-7 features]
+ADDITIONAL FEATURES TO HIGHLIGHT:
+${keyFeatures}
 
-CRITICAL: The Body section MUST be 1300 characters or less (as close to 1300 as possible, but never exceed it). The Headline and Key Features are separate and don't count toward this limit.
+${idealBuyer ? `IDEAL BUYER PROFILE:
+${idealBuyer}
 
-Write this to sell the lifestyle, not just the house.`;
+(Tailor the description to resonate with this buyer's needs, lifestyle, and aspirations)
+` : ''}
+## MULTI-EXPERT REVIEW PROCESS
 
-  return prompt;
+Your task is to create a listing description through a 6-stage expert review process:
+
+**STAGE 1: Junior Copywriter (Ad Agency)**
+- Writes the initial draft
+- Focus: Energetic, engaging language
+- Highlights key features and benefits
+- Creates emotional connection
+
+**STAGE 2: Senior Copy Editor (Ad Agency)**
+- Reviews and refines Stage 1
+- Focus: Clarity, flow, and impact
+- Removes clichés and weak language
+- Strengthens calls-to-action
+
+**STAGE 3: Literary Author (Bestseller Writer)**
+- Adds narrative and sensory details
+- Focus: Paint a vivid picture
+- Create desire through storytelling
+- Elevate language without being flowery
+
+**STAGE 4: Investigative Journalist (Traditional Media)**
+- Fact-checks and adds credibility
+- Focus: Specific details over generalizations
+- Removes hyperbole, adds substance
+- Ensures accuracy and trustworthiness
+
+**STAGE 5: Persuasion Expert (Marketing Psychology)**
+- Optimizes for conversion
+- Focus: Hooks, urgency, social proof
+- Strategic word choice for maximum impact
+- Creates FOMO (Fear of Missing Out)
+
+**STAGE 6: Veteran Realtor (30 years, 1000s of transactions)**
+- Final polish from real-world experience
+- Focus: What actually sells properties
+- Removes anything that doesn't move buyers
+- Ensures Fair Housing compliance
+
+## CRITICAL CONSTRAINTS
+
+1. **Character Limit:** EXACTLY 1300 characters (not including headline or bullet points)
+2. **Fair Housing:** NO references to familial status, religion, race, national origin, disability, or age
+3. **Avoid Banned Words:** "charming", "cozy" (small), "unique" (weird), "motivated seller"
+4. **Specificity:** Use exact details ("quartz waterfall island" not "beautiful kitchen")
+
+## OUTPUT FORMAT
+
+**Headline:** [Attention-grabbing first sentence - 10 words max]
+
+**Description:** [Main body - MUST be exactly 1300 characters or less]
+
+**Key Features:**
+• [Feature 1]
+• [Feature 2]
+• [Feature 3]
+• [Feature 4]
+• [Feature 5]
+
+**Expert Panel Notes:** [Brief note about what each expert contributed]
+
+Generate the listing description now.`;
 }
 
 function generateConsultationScriptPrompt(answers: Record<string, string>): string {
