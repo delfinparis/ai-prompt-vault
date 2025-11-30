@@ -1,5 +1,5 @@
-import ListingRewriter from "./ListingRewriter";
+import ZillowRewriter from "./ZillowRewriter";
 
 export default function Home() {
-  return <ListingRewriter />;
+  return <ZillowRewriter />;
 }
