@@ -61,6 +61,9 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({
       success: true,
       message: 'Processing complete! Check your email in the next 5 minutes.',
+      description: finalDescription,
+      characterCount: finalDescription.length,
+      address: fullAddress,
     });
 
   } catch (error) {

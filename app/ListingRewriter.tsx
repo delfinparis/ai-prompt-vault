@@ -80,6 +80,20 @@ export default function ListingRewriter() {
   const [success, setSuccess] = useState(false);
   const [currentStageIndex, setCurrentStageIndex] = useState(0);
   const [queryCount, setQueryCount] = useState(0);
+  const [copied, setCopied] = useState(false);
+
+  // Load query count from localStorage on mount
+  useEffect(() => {
+    const stored = localStorage.getItem('listingRewriterQueryCount');
+    if (stored) {
+      setQueryCount(parseInt(stored, 10));
+    }
+  }, []);
+
+  // Save query count to localStorage whenever it changes
+  useEffect(() => {
+    localStorage.setItem('listingRewriterQueryCount', queryCount.toString());
+  }, [queryCount]);
 
   // Cycle through stages during loading
   useEffect(() => {
@@ -167,6 +181,19 @@ export default function ListingRewriter() {
     setResult(null);
     setSuccess(false);
     setError("");
+    setCopied(false);
+  };
+
+  const handleCopyToClipboard = async () => {
+    if (result?.description) {
+      try {
+        await navigator.clipboard.writeText(result.description);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+      } catch (err) {
+        console.error('Failed to copy:', err);
+      }
+    }
   };
 
   return (
@@ -573,56 +600,147 @@ export default function ListingRewriter() {
         </div>
       )}
 
-      {/* Success Message */}
-      {success && !loading && (
-        <div
-          style={{
-            maxWidth: 700,
-            margin: "0 auto 40px",
-            padding: 32,
-            borderRadius: 16,
-            background: "linear-gradient(135deg, #10b981 0%, #059669 100%)",
-            color: "#fff",
-            textAlign: "center",
-          }}
-        >
-          <div style={{ fontSize: 48, marginBottom: 16 }}>✓</div>
-          <h2 style={{ fontSize: 28, fontWeight: 700, marginBottom: 12 }}>
-            Success! Check Your Email
-          </h2>
-          <p style={{ fontSize: 16, lineHeight: 1.6, marginBottom: 20 }}>
-            Our AI team has crafted your listing description through our 5-expert pipeline.
-            You'll receive the final result at <strong>{email}</strong> within the next 5 minutes.
-          </p>
-          <p style={{ fontSize: 14, opacity: 0.9 }}>
-            Property: {address}
-          </p>
-          <button
-            onClick={handleStartOver}
+      {/* Result Display */}
+      {success && !loading && result && (
+        <div style={{ maxWidth: 900, margin: "0 auto 40px" }}>
+          {/* Success Header */}
+          <div
             style={{
-              marginTop: 24,
-              height: 48,
-              borderRadius: 12,
-              border: "2px solid #fff",
-              padding: "0 32px",
-              background: "transparent",
+              padding: 24,
+              borderRadius: 16,
+              background: "linear-gradient(135deg, #10b981 0%, #059669 100%)",
               color: "#fff",
-              fontSize: 16,
-              fontWeight: 600,
-              cursor: "pointer",
-              transition: "all 0.2s",
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.background = "#fff";
-              e.currentTarget.style.color = "#10b981";
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.background = "transparent";
-              e.currentTarget.style.color = "#fff";
+              textAlign: "center",
+              marginBottom: 24,
             }}
           >
-            Rewrite Another Listing
-          </button>
+            <div style={{ fontSize: 48, marginBottom: 12 }}>✓</div>
+            <h2 style={{ fontSize: 28, fontWeight: 700, marginBottom: 8 }}>
+              Your AI-Enhanced Description is Ready!
+            </h2>
+            <p style={{ fontSize: 16, opacity: 0.9 }}>
+              Also sent to <strong>{email}</strong> • {result.characterCount || 0} characters
+            </p>
+          </div>
+
+          {/* Description Display */}
+          <div
+            style={{
+              background: "#fff",
+              border: "2px solid #e2e8f0",
+              borderRadius: 16,
+              padding: 32,
+              marginBottom: 24,
+            }}
+          >
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+              <h3 style={{ fontSize: 20, fontWeight: 600, color: "#0f172a" }}>
+                Final Description
+              </h3>
+              <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                {/* Character Count Badge */}
+                <div
+                  style={{
+                    padding: "6px 12px",
+                    borderRadius: 8,
+                    background: result.characterCount >= 950 && result.characterCount <= 1000
+                      ? "#dcfce7"
+                      : result.characterCount > 1000
+                      ? "#fee2e2"
+                      : "#fef3c7",
+                    color: result.characterCount >= 950 && result.characterCount <= 1000
+                      ? "#166534"
+                      : result.characterCount > 1000
+                      ? "#991b1b"
+                      : "#92400e",
+                    fontSize: 13,
+                    fontWeight: 600,
+                  }}
+                >
+                  {result.characterCount || 0} / 1000 chars
+                  {result.characterCount >= 950 && result.characterCount <= 1000 && " ✓"}
+                  {result.characterCount > 1000 && " ⚠️ Over limit"}
+                  {result.characterCount < 950 && " ⚡ Room to grow"}
+                </div>
+              </div>
+            </div>
+
+            <div
+              style={{
+                fontSize: 16,
+                lineHeight: 1.8,
+                color: "#334155",
+                padding: 20,
+                background: "#f8fafc",
+                borderRadius: 12,
+                whiteSpace: "pre-wrap",
+                fontFamily: "inherit",
+              }}
+            >
+              {result.description}
+            </div>
+
+            {/* Action Buttons */}
+            <div style={{ display: "flex", gap: 12, marginTop: 24 }}>
+              <button
+                onClick={handleCopyToClipboard}
+                style={{
+                  flex: 1,
+                  height: 48,
+                  borderRadius: 12,
+                  border: "2px solid #0f172a",
+                  background: copied ? "#10b981" : "#0f172a",
+                  color: "#fff",
+                  fontSize: 16,
+                  fontWeight: 600,
+                  cursor: "pointer",
+                  transition: "all 0.2s",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: 8,
+                }}
+              >
+                {copied ? "✓ Copied!" : "📋 Copy to Clipboard"}
+              </button>
+              <button
+                onClick={handleStartOver}
+                style={{
+                  flex: 1,
+                  height: 48,
+                  borderRadius: 12,
+                  border: "2px solid #e2e8f0",
+                  background: "#fff",
+                  color: "#0f172a",
+                  fontSize: 16,
+                  fontWeight: 600,
+                  cursor: queryCount >= MAX_QUERIES ? "not-allowed" : "pointer",
+                  opacity: queryCount >= MAX_QUERIES ? 0.5 : 1,
+                  transition: "all 0.2s",
+                }}
+                disabled={queryCount >= MAX_QUERIES}
+              >
+                {queryCount >= MAX_QUERIES ? "Limit Reached" : "Rewrite Another Listing"}
+              </button>
+            </div>
+          </div>
+
+          {/* Info Box */}
+          <div
+            style={{
+              padding: 20,
+              borderRadius: 12,
+              background: "#eff6ff",
+              border: "1px solid #bfdbfe",
+              color: "#1e40af",
+              fontSize: 14,
+              lineHeight: 1.6,
+            }}
+          >
+            <strong>💌 Email Sent!</strong> You'll also receive this description at <strong>{email}</strong> within 5 minutes.
+            {queryCount < MAX_QUERIES && ` You have ${MAX_QUERIES - queryCount} ${MAX_QUERIES - queryCount === 1 ? 'query' : 'queries'} remaining.`}
+            {queryCount >= MAX_QUERIES && " Contact us for unlimited access!"}
+          </div>
         </div>
       )}
     </div>
