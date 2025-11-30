@@ -90,15 +90,23 @@ export async function POST(req: NextRequest) {
  */
 async function fetchZillowData(url: string): Promise<ZillowData> {
   try {
-    // Fetch the Zillow page
+    // Fetch the Zillow page with realistic browser headers
     const response = await fetch(url, {
       headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
+        'Accept-Language': 'en-US,en;q=0.9',
+        'Accept-Encoding': 'gzip, deflate, br',
+        'Referer': 'https://www.google.com/',
+        'Sec-Fetch-Dest': 'document',
+        'Sec-Fetch-Mode': 'navigate',
+        'Sec-Fetch-Site': 'cross-site',
+        'Upgrade-Insecure-Requests': '1',
       },
     });
 
     if (!response.ok) {
-      throw new Error('Failed to fetch Zillow listing');
+      throw new Error(`Zillow returned status ${response.status}. Please ensure the URL is valid and publicly accessible.`);
     }
 
     const html = await response.text();
@@ -134,6 +142,11 @@ async function fetchZillowData(url: string): Promise<ZillowData> {
       lotSize: extractText(/([\d,]+(?:\.\d+)?)\s*(?:acres?|sq\.?\s*ft\.?)(?:\s+lot)?/i) || '',
       propertyType: extractText(/Property Type:\s*([^<]+)/) || '',
     };
+
+    // Validate we got at least some core data
+    if (!data.address && !data.price) {
+      throw new Error('Could not extract property data from Zillow. The page structure may have changed or the listing may be unavailable.');
+    }
 
     return data;
   } catch (error) {
