@@ -1,21 +1,66 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 
-interface PipelineStage {
-  stage: string;
-  expert: string;
-  status: 'pending' | 'processing' | 'complete';
+interface ProcessingStage {
+  icon: string;
+  title: string;
+  subtitle: string;
+  funFact: string;
 }
 
-const PIPELINE_STAGES: PipelineStage[] = [
-  { stage: 'Researching Property', expert: 'Research Expert', status: 'pending' },
-  { stage: 'Real Estate Agent Review', expert: 'Top 1% Agent (30 yrs)', status: 'pending' },
-  { stage: 'Copywriting Enhancement', expert: 'Master Copywriter', status: 'pending' },
-  { stage: 'Narrative Polish', expert: 'Best-Selling Novelist', status: 'pending' },
-  { stage: 'Editorial Review', expert: 'Editor-in-Chief', status: 'pending' },
-  { stage: 'Final Hollywood Polish', expert: 'Script Polisher', status: 'pending' },
+const PROCESSING_STAGES: ProcessingStage[] = [
+  {
+    icon: "🔍",
+    title: "Researching Your Property",
+    subtitle: "Analyzing recent listings & property details",
+    funFact: "Did you know? Properties with detailed descriptions sell 30% faster than generic listings."
+  },
+  {
+    icon: "🏘️",
+    title: "Mapping the Neighborhood",
+    subtitle: "Finding nearby amenities & attractions",
+    funFact: "Fun fact: Mentioning nearby parks increases buyer interest by 25%."
+  },
+  {
+    icon: "📊",
+    title: "Analyzing Comparables",
+    subtitle: "Reviewing recently sold properties",
+    funFact: "Insight: The best listings borrow winning elements from successful nearby sales."
+  },
+  {
+    icon: "🏆",
+    title: "Real Estate Expert Review",
+    subtitle: "30 years of experience at work",
+    funFact: "Pro tip: Top agents focus on lifestyle benefits, not just features."
+  },
+  {
+    icon: "✍️",
+    title: "Master Copywriter Enhancement",
+    subtitle: "Crafting irresistible sales copy",
+    funFact: "Secret: Action-oriented language creates urgency and drives faster decisions."
+  },
+  {
+    icon: "📖",
+    title: "Narrative Polish",
+    subtitle: "Adding storytelling magic",
+    funFact: "Psychology: Emotional connections drive 70% of home buying decisions."
+  },
+  {
+    icon: "✂️",
+    title: "Editorial Perfection",
+    subtitle: "Every word earns its place",
+    funFact: "Quality over quantity: The average buyer spends just 15 seconds reading a listing."
+  },
+  {
+    icon: "🎬",
+    title: "Hollywood Final Polish",
+    subtitle: "Adding that wow factor",
+    funFact: "Magic: We're optimizing to hit exactly 1,000 characters for maximum impact!"
+  }
 ];
+
+const MAX_QUERIES = 2;
 
 export default function ListingRewriter() {
   // Form fields
@@ -33,24 +78,26 @@ export default function ListingRewriter() {
   const [error, setError] = useState("");
   const [result, setResult] = useState<any>(null);
   const [success, setSuccess] = useState(false);
-  const [stages, setStages] = useState<PipelineStage[]>(PIPELINE_STAGES);
-  const [currentStageIndex, setCurrentStageIndex] = useState(-1);
+  const [currentStageIndex, setCurrentStageIndex] = useState(0);
+  const [queryCount, setQueryCount] = useState(0);
 
-  const resetPipeline = () => {
-    setStages(PIPELINE_STAGES.map(s => ({ ...s, status: 'pending' })));
-    setCurrentStageIndex(-1);
-  };
-
-  const updateStage = (index: number, status: 'pending' | 'processing' | 'complete') => {
-    setStages(prev => prev.map((stage, i) =>
-      i === index ? { ...stage, status } : stage
-    ));
-    if (status === 'processing') {
-      setCurrentStageIndex(index);
+  // Cycle through stages during loading
+  useEffect(() => {
+    if (loading) {
+      const interval = setInterval(() => {
+        setCurrentStageIndex((prev) => (prev + 1) % PROCESSING_STAGES.length);
+      }, 4000); // Change stage every 4 seconds
+      return () => clearInterval(interval);
     }
-  };
+  }, [loading]);
 
   const handleRewrite = async () => {
+    // Check query limit
+    if (queryCount >= MAX_QUERIES) {
+      setError(`You've reached the limit of ${MAX_QUERIES} queries. Please contact us for more access.`);
+      return;
+    }
+
     // Validation
     if (!address.trim()) {
       setError("Please enter the property address");
@@ -71,7 +118,7 @@ export default function ListingRewriter() {
     setError("");
     setResult(null);
     setSuccess(false);
-    resetPipeline();
+    setCurrentStageIndex(0);
 
     try {
       const response = await fetch("/api/listing-rewrite", {
@@ -96,20 +143,13 @@ export default function ListingRewriter() {
         throw new Error(data.error || "Failed to rewrite listing");
       }
 
-      // Simulate stage completions
-      for (let i = 0; i < stages.length; i++) {
-        updateStage(i, 'processing');
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        updateStage(i, 'complete');
-      }
-
       const data = await response.json();
       setResult(data);
       setSuccess(true);
+      setQueryCount(prev => prev + 1);
 
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong");
-      resetPipeline();
     } finally {
       setLoading(false);
     }
@@ -127,7 +167,6 @@ export default function ListingRewriter() {
     setResult(null);
     setSuccess(false);
     setError("");
-    resetPipeline();
   };
 
   return (
@@ -378,25 +417,28 @@ export default function ListingRewriter() {
 
           <button
             onClick={handleRewrite}
-            disabled={loading || !address.trim() || !description.trim() || !email.trim()}
+            disabled={loading || !address.trim() || !description.trim() || !email.trim() || queryCount >= MAX_QUERIES}
             style={{
               width: "100%",
               height: 56,
               borderRadius: 12,
               border: "none",
-              background: loading || !address.trim() || !description.trim() || !email.trim() ? "#cbd5e1" : "#0f172a",
+              background: loading || !address.trim() || !description.trim() || !email.trim() || queryCount >= MAX_QUERIES ? "#cbd5e1" : "#0f172a",
               color: "#fff",
               fontSize: 16,
               fontWeight: 600,
-              cursor: loading || !address.trim() || !description.trim() || !email.trim() ? "not-allowed" : "pointer",
+              cursor: loading || !address.trim() || !description.trim() || !email.trim() || queryCount >= MAX_QUERIES ? "not-allowed" : "pointer",
               transition: "all 0.2s",
             }}
           >
-            {loading ? "Processing..." : "Generate My Listing Description"}
+            {loading ? "Processing..." : queryCount >= MAX_QUERIES ? "Limit Reached" : "Generate My Listing Description"}
           </button>
 
           <p style={{ fontSize: 13, color: "#64748b", marginTop: 12, textAlign: "center" }}>
-            We'll email you the AI-enhanced description within 5 minutes
+            {queryCount >= MAX_QUERIES ?
+              `You've used all ${MAX_QUERIES} free queries. Contact us for more access.` :
+              `We'll email you the AI-enhanced description within 5 minutes (${queryCount}/${MAX_QUERIES} uses)`
+            }
           </p>
         </div>
       )}
@@ -418,38 +460,116 @@ export default function ListingRewriter() {
         </div>
       )}
 
-      {/* Pipeline Visualization */}
+      {/* Animated Processing Interstitial */}
       {loading && (
-        <div style={{ maxWidth: 900, margin: "0 auto 40px" }}>
-          <h3 style={{ fontSize: 20, fontWeight: 600, marginBottom: 24, textAlign: "center" }}>
-            AI Processing Pipeline
-          </h3>
-          <div style={{ display: "grid", gap: 16 }}>
-            {stages.map((stage, index) => (
-              <div
-                key={index}
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  padding: 20,
-                  borderRadius: 12,
-                  background: stage.status === 'complete' ? '#f0fdf4' : stage.status === 'processing' ? '#eff6ff' : '#f8fafc',
-                  border: `2px solid ${stage.status === 'complete' ? '#86efac' : stage.status === 'processing' ? '#60a5fa' : '#e2e8f0'}`,
-                  transition: "all 0.3s",
-                }}
-              >
-                <div style={{ marginRight: 16 }}>
-                  {stage.status === 'complete' && <div style={{ fontSize: 24 }}>✓</div>}
-                  {stage.status === 'processing' && <div style={{ fontSize: 24 }}>⚙️</div>}
-                  {stage.status === 'pending' && <div style={{ fontSize: 24, opacity: 0.3 }}>○</div>}
-                </div>
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontWeight: 600, fontSize: 16 }}>{stage.stage}</div>
-                  <div style={{ fontSize: 14, color: "#64748b", marginTop: 4 }}>{stage.expert}</div>
-                </div>
+        <div style={{
+          position: "fixed",
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: "rgba(15, 23, 42, 0.95)",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          zIndex: 1000,
+          backdropFilter: "blur(10px)"
+        }}>
+          <div style={{
+            maxWidth: 600,
+            padding: 40,
+            textAlign: "center",
+            color: "#fff"
+          }}>
+            {/* Animated Icon */}
+            <div style={{
+              fontSize: 80,
+              marginBottom: 24,
+              animation: "bounce 2s infinite",
+              display: "inline-block"
+            }}>
+              {PROCESSING_STAGES[currentStageIndex].icon}
+            </div>
+
+            {/* Stage Title */}
+            <h2 style={{
+              fontSize: 32,
+              fontWeight: 700,
+              marginBottom: 12,
+              color: "#fff"
+            }}>
+              {PROCESSING_STAGES[currentStageIndex].title}
+            </h2>
+
+            {/* Stage Subtitle */}
+            <p style={{
+              fontSize: 18,
+              color: "#94a3b8",
+              marginBottom: 32
+            }}>
+              {PROCESSING_STAGES[currentStageIndex].subtitle}
+            </p>
+
+            {/* Fun Fact */}
+            <div style={{
+              background: "rgba(59, 130, 246, 0.1)",
+              border: "1px solid rgba(59, 130, 246, 0.3)",
+              borderRadius: 12,
+              padding: 20,
+              marginBottom: 32
+            }}>
+              <div style={{ fontSize: 14, color: "#60a5fa", marginBottom: 8, fontWeight: 600 }}>
+                💡 INSIDER TIP
               </div>
-            ))}
+              <div style={{ fontSize: 15, color: "#e2e8f0", lineHeight: 1.6 }}>
+                {PROCESSING_STAGES[currentStageIndex].funFact}
+              </div>
+            </div>
+
+            {/* Progress Indicator */}
+            <div style={{
+              display: "flex",
+              gap: 8,
+              justifyContent: "center",
+              marginTop: 24
+            }}>
+              {PROCESSING_STAGES.map((_, index) => (
+                <div
+                  key={index}
+                  style={{
+                    width: index === currentStageIndex ? 32 : 8,
+                    height: 8,
+                    borderRadius: 4,
+                    background: index === currentStageIndex ? "#3b82f6" : "rgba(255, 255, 255, 0.2)",
+                    transition: "all 0.3s"
+                  }}
+                />
+              ))}
+            </div>
+
+            {/* Estimated time */}
+            <p style={{
+              fontSize: 13,
+              color: "#64748b",
+              marginTop: 24
+            }}>
+              This usually takes 45-60 seconds...
+            </p>
           </div>
+
+          {/* CSS Animation */}
+          <style dangerouslySetInnerHTML={{
+            __html: `
+              @keyframes bounce {
+                0%, 100% {
+                  transform: translateY(0);
+                }
+                50% {
+                  transform: translateY(-20px);
+                }
+              }
+            `
+          }} />
         </div>
       )}
 

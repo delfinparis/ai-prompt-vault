@@ -37,6 +37,7 @@ export async function POST(req: NextRequest) {
       comparableListings,
     }, apiKey);
 
+    console.log('Saving to Google Sheets...');
     await saveToGoogleSheets({
       email,
       address: fullAddress,
@@ -46,6 +47,7 @@ export async function POST(req: NextRequest) {
       timestamp: new Date().toISOString(),
     });
 
+    console.log('Sending email to user:', email);
     await sendEmailToUser(email, {
       address: fullAddress,
       price: price || 'N/A',
@@ -53,6 +55,7 @@ export async function POST(req: NextRequest) {
       baths: baths || 'N/A',
     }, finalDescription);
 
+    console.log('Notifying admin...');
     await notifyAdmin(email, fullAddress);
 
     return NextResponse.json({
@@ -79,12 +82,35 @@ async function researchProperty(address: string, apiKey: string): Promise<string
       },
       body: JSON.stringify({
         model: 'gpt-4o',
-        messages: [{
-          role: 'user',
-          content: `Find recent public real estate listings (last 30 days) for: ${address}. Search for active or recently sold listings for this exact address. Find property details like year built, lot size, HOA, features, upgrades. Return ONLY verified facts. If no listings found, say so.`,
-        }],
+        messages: [
+          {
+            role: 'system',
+            content: 'You are a real estate data research specialist. Extract ONLY factual, verified information from public MLS listings and real estate databases. Never fabricate or assume details.'
+          },
+          {
+            role: 'user',
+            content: `Task: Research property at ${address}
+
+Search scope:
+- Recent public listings (last 30 days only)
+- Active OR recently sold status
+- Exact address match required
+
+Extract these details if available:
+1. Year built
+2. Lot size
+3. HOA fees/restrictions
+4. Notable features (hardwood, updated kitchen, etc.)
+5. Recent upgrades/renovations
+
+Output format:
+- Bullet points for found details
+- State "No public listing data available" if nothing found
+- Never invent information`
+          }
+        ],
         max_tokens: 500,
-        temperature: 0.3,
+        temperature: 0.1,
       }),
     });
 
@@ -107,12 +133,35 @@ async function researchNeighborhood(address: string, apiKey: string): Promise<st
       },
       body: JSON.stringify({
         model: 'gpt-4o',
-        messages: [{
-          role: 'user',
-          content: `Research the neighborhood around: ${address}. Find nearby parks, shopping, public transit, attractions, schools, restaurants within 1 mile. Return ONLY factual information with names and distances.`,
-        }],
+        messages: [
+          {
+            role: 'system',
+            content: 'You are a neighborhood amenities researcher specializing in real estate location analysis. Provide accurate, factual information about local amenities with specific names and verified distances.'
+          },
+          {
+            role: 'user',
+            content: `Task: Map amenities near ${address}
+
+Search radius: 1 mile maximum
+
+Categories to research:
+1. Parks & Recreation (names + distance)
+2. Shopping & Retail centers
+3. Public transit stops/stations
+4. Notable attractions/landmarks
+5. Highly-rated schools
+6. Popular restaurants/dining
+
+Output requirements:
+- Include specific names (e.g., "Lincoln Park - 0.3 miles")
+- Group by category
+- Maximum 3 items per category
+- Factual distances only
+- Omit category if nothing notable within 1 mile`
+          }
+        ],
         max_tokens: 500,
-        temperature: 0.3,
+        temperature: 0.1,
       }),
     });
 
@@ -135,12 +184,35 @@ async function findComparableListings(address: string, apiKey: string): Promise<
       },
       body: JSON.stringify({
         model: 'gpt-4o',
-        messages: [{
-          role: 'user',
-          content: `Find recently closed listings (last 30 days) near: ${address}. Look for sold properties within 0.5 miles. Review their descriptions for standout features. Note neighborhood highlights. Identify what attracted buyers.`,
-        }],
+        messages: [
+          {
+            role: 'system',
+            content: 'You are a comparative market analysis expert. Analyze recently sold properties to identify winning description patterns and buyer attraction factors.'
+          },
+          {
+            role: 'user',
+            content: `Task: Analyze comparable sales near ${address}
+
+Search criteria:
+- Recently SOLD (last 30 days)
+- Within 0.5 mile radius
+- Similar property types preferred
+
+Extract insights:
+1. Most emphasized features in descriptions
+2. Neighborhood selling points mentioned
+3. Lifestyle benefits highlighted
+4. Urgency triggers used
+
+Deliver:
+- 2-3 key patterns from successful listings
+- Specific phrases/angles that worked
+- Neighborhood themes that resonated
+- Skip if no recent comparables found`
+          }
+        ],
         max_tokens: 400,
-        temperature: 0.3,
+        temperature: 0.2,
       }),
     });
 
@@ -157,45 +229,123 @@ async function runExpertPipeline(data: any, apiKey: string): Promise<string> {
   const experts = [
     {
       name: 'Real Estate Agent',
-      systemPrompt: 'You are a top 1% real estate agent with 30 years of experience.',
-      userPrompt: `Analyze this property and create a compelling listing foundation.
+      systemPrompt: `You are a top 1% real estate agent with 30 years of proven sales success. Your listings consistently generate multiple offers and sell above asking price because you focus on BENEFITS over features and create emotional urgency.`,
+      userPrompt: `Create a compelling listing foundation that sells.
 
-Property: ${data.address}
-Price: ${data.price}
-Beds/Baths: ${data.beds}/${data.baths}
-Sq Ft: ${data.sqft}
+PROPERTY DATA:
+Address: ${data.address}
+Price: ${data.price} | Beds: ${data.beds} | Baths: ${data.baths} | Sq Ft: ${data.sqft}
 
-Current Description: ${data.description}
+ORIGINAL DESCRIPTION:
+${data.description}
 
-Research: ${data.propertyResearch}
+RESEARCH INSIGHTS:
+Property Details: ${data.propertyResearch}
 Neighborhood: ${data.neighborhoodInfo}
-Comparable Listings: ${data.comparableListings}
+Successful Comparables: ${data.comparableListings}
 
-Highlight best features, incorporate verified amenities, use insights from nearby listings, create urgency, remain 100% factual.`,
+YOUR MISSION:
+1. Lead with the most powerful selling point (what makes buyers NEED to see this NOW)
+2. Transform features into lifestyle benefits (don't just say "granite counters"—say what that MEANS for their life)
+3. Weave in verified amenities naturally (parks, schools, shopping) as lifestyle perks
+4. Apply winning patterns from comparable sales
+5. Create urgency without being pushy
+6. Stay 100% factual—never embellish
+
+OUTPUT: A factual but irresistible listing foundation (400-600 words).`,
       temperature: 0.7,
     },
     {
       name: 'Master Copywriter',
-      systemPrompt: 'You are a master copywriter who creates irresistible sales copy.',
-      userPrompt: 'Enhance this with powerful, benefit-driven copy. Make it benefit-focused, emotionally compelling, action-oriented, concise.\n\n[PREVIOUS_OUTPUT]',
+      systemPrompt: `You are a master copywriter specializing in high-conversion sales copy. You've written copy that generated millions in real estate sales. You understand psychological triggers, power words, and benefit-driven language.`,
+      userPrompt: `Transform this into sales copy that compels action.
+
+CURRENT DRAFT:
+[PREVIOUS_OUTPUT]
+
+APPLY THESE TECHNIQUES:
+1. Replace passive voice with active, vivid language
+2. Convert every feature into a tangible benefit (What does the buyer GET? How does their life improve?)
+3. Add sensory details that help buyers visualize living there
+4. Use power words that trigger emotion (imagine, discover, retreat, sanctuary, haven)
+5. Create micro-urgencies (opportunities don't last, rare find, etc.)
+6. Keep it punchy—eliminate fluff
+
+OUTPUT: Benefit-driven copy that makes buyers think "I need to see this NOW" (400-600 words).`,
       temperature: 0.8,
     },
     {
       name: 'Best-Selling Novelist',
-      systemPrompt: 'You are a best-selling novelist who knows captivating stories.',
-      userPrompt: 'Add narrative appeal. Create lifestyle aspiration, vivid sensory language, emotional connection, a story buyers want.\n\n[PREVIOUS_OUTPUT]',
+      systemPrompt: `You are a best-selling novelist known for vivid, emotionally resonant storytelling. You make readers FEEL the scene. You create desire through narrative, not just description.`,
+      userPrompt: `Add narrative magic that makes buyers fall in love.
+
+CURRENT COPY:
+[PREVIOUS_OUTPUT]
+
+ENHANCE WITH:
+1. Paint a "day in the life" moment (morning coffee on the deck, Sunday brunch in the kitchen, evening relaxation)
+2. Use sensory language (warm sunlight, spacious feel, quiet neighborhood)
+3. Create emotional connection to the lifestyle this home enables
+4. Build aspiration—what version of themselves do buyers become here?
+5. Keep it authentic and grounded in reality
+
+CONSTRAINTS:
+- Don't overwrite—maintain professional real estate tone
+- Enhance, don't replace the factual foundation
+- Avoid clichés ("dream home," "must see")
+
+OUTPUT: Emotionally compelling copy that tells a story (400-600 words).`,
       temperature: 0.7,
     },
     {
       name: 'Editor-in-Chief',
-      systemPrompt: 'You are an Editor-in-Chief ensuring perfection.',
-      userPrompt: 'Edit for maximum impact. Every word earns its place, perfect flow, no redundancy, professional yet engaging.\n\n[PREVIOUS_OUTPUT]',
+      systemPrompt: `You are a ruthless Editor-in-Chief for a premium real estate publication. Every word must earn its place. You cut mercilessly to achieve maximum impact per word.`,
+      userPrompt: `Edit this for maximum impact and efficiency.
+
+CURRENT DRAFT:
+[PREVIOUS_OUTPUT]
+
+EDITORIAL STANDARDS:
+1. Delete redundancies and filler words
+2. Tighten every sentence—make each one punchy
+3. Ensure perfect flow and rhythm
+4. Verify tone is professional yet engaging (not stuffy, not too casual)
+5. Check that benefits outweigh features 3:1
+6. Confirm every claim is factual
+
+FIX:
+- Weak verbs → Strong verbs
+- Long sentences → Mix of short punchy + medium flow
+- Repetitive words → Varied vocabulary
+- Generic phrases → Specific, memorable language
+
+OUTPUT: Polished, tight copy (350-500 words).`,
       temperature: 0.5,
     },
     {
       name: 'Hollywood Script Polisher',
-      systemPrompt: 'You are a Hollywood script polisher adding the wow factor.',
-      userPrompt: 'Final polish. CRITICAL: Maximum 1000 characters. Get close to 1000 without going over. Exciting but not dramatic, professional, unique, powerful.\n\n[PREVIOUS_OUTPUT]',
+      systemPrompt: `You are a Hollywood script polisher who adds that final "wow factor" to million-dollar productions. You know how to hook an audience in seconds and keep them captivated.`,
+      userPrompt: `Final polish—make this IRRESISTIBLE.
+
+CURRENT DRAFT:
+[PREVIOUS_OUTPUT]
+
+CRITICAL REQUIREMENTS:
+🎯 Maximum 1000 characters (hard limit—listings get cut off!)
+🎯 Aim for 950-1000 for maximum real estate value
+🎯 Maintain professional tone (exciting but not overhyped)
+🎯 Preserve all factual accuracy
+🎯 Front-load the hook—grab attention in the first sentence
+
+POLISH CHECKLIST:
+✓ Opening line is irresistible
+✓ Every sentence drives desire
+✓ Rhythm and pacing are perfect
+✓ Benefits dominate features
+✓ Ends with subtle urgency
+✓ Character count: 950-1000
+
+OUTPUT: The final, market-ready listing description (950-1000 characters exactly). Count characters carefully.`,
       temperature: 0.5,
     },
   ];
@@ -233,13 +383,20 @@ Highlight best features, incorporate verified amenities, use insights from nearb
 async function saveToGoogleSheets(data: any) {
   try {
     const googleScriptUrl = process.env.GOOGLE_SHEETS_WEBHOOK_URL;
-    if (!googleScriptUrl) return;
+    if (!googleScriptUrl) {
+      console.error('Google Sheets webhook URL not configured');
+      return;
+    }
 
-    await fetch(googleScriptUrl, {
+    console.log('Calling Google Sheets webhook for saveLead...');
+    const response = await fetch(googleScriptUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ action: 'saveLead', data }),
     });
+
+    const result = await response.text();
+    console.log('Google Sheets saveLead response:', result);
   } catch (error) {
     console.error('Failed to save to Google Sheets:', error);
   }
@@ -248,9 +405,13 @@ async function saveToGoogleSheets(data: any) {
 async function sendEmailToUser(email: string, property: any, description: string) {
   try {
     const googleScriptUrl = process.env.GOOGLE_SHEETS_WEBHOOK_URL;
-    if (!googleScriptUrl) return;
+    if (!googleScriptUrl) {
+      console.error('Google Sheets webhook URL not configured');
+      return;
+    }
 
-    await fetch(googleScriptUrl, {
+    console.log('Calling Google Sheets webhook for sendUserEmail to:', email);
+    const response = await fetch(googleScriptUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -268,6 +429,9 @@ async function sendEmailToUser(email: string, property: any, description: string
         },
       }),
     });
+
+    const result = await response.text();
+    console.log('Google Sheets sendUserEmail response:', result);
   } catch (error) {
     console.error('Failed to send email:', error);
   }
@@ -276,9 +440,13 @@ async function sendEmailToUser(email: string, property: any, description: string
 async function notifyAdmin(userEmail: string, address: string) {
   try {
     const googleScriptUrl = process.env.GOOGLE_SHEETS_WEBHOOK_URL;
-    if (!googleScriptUrl) return;
+    if (!googleScriptUrl) {
+      console.error('Google Sheets webhook URL not configured');
+      return;
+    }
 
-    await fetch(googleScriptUrl, {
+    console.log('Calling Google Sheets webhook for notifyAdmin...');
+    const response = await fetch(googleScriptUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -293,6 +461,9 @@ async function notifyAdmin(userEmail: string, address: string) {
         },
       }),
     });
+
+    const result = await response.text();
+    console.log('Google Sheets notifyAdmin response:', result);
   } catch (error) {
     console.error('Failed to notify admin:', error);
   }
