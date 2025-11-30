@@ -4,7 +4,6 @@ export async function POST(req: NextRequest) {
   try {
     const { address, unit, price, beds, baths, sqft, description, email } = await req.json();
 
-    // Validation
     if (!address || !description || !email) {
       return NextResponse.json(
         { error: 'Address, description, and email are required' },
@@ -22,16 +21,10 @@ export async function POST(req: NextRequest) {
 
     const fullAddress = unit ? `${address}, Unit ${unit}` : address;
 
-    // STAGE 1: Research property with web search
     const propertyResearch = await researchProperty(fullAddress, apiKey);
-
-    // STAGE 2: Research neighborhood amenities
     const neighborhoodInfo = await researchNeighborhood(fullAddress, apiKey);
-
-    // STAGE 3: Find comparable listings
     const comparableListings = await findComparableListings(fullAddress, apiKey);
 
-    // STAGE 4: Run 5-expert pipeline
     const finalDescription = await runExpertPipeline({
       address: fullAddress,
       price,
@@ -44,7 +37,6 @@ export async function POST(req: NextRequest) {
       comparableListings,
     }, apiKey);
 
-    // STAGE 5: Save to Google Sheets and send emails
     await saveToGoogleSheets({
       email,
       address: fullAddress,
@@ -77,9 +69,6 @@ export async function POST(req: NextRequest) {
   }
 }
 
-/**
- * Research property using OpenAI web search
- */
 async function researchProperty(address: string, apiKey: string): Promise<string> {
   try {
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
@@ -92,24 +81,14 @@ async function researchProperty(address: string, apiKey: string): Promise<string
         model: 'gpt-4o',
         messages: [{
           role: 'user',
-          content: `Find recent public real estate listings (last 30 days) for the property at: ${address}
-
-Search for:
-1. Any active or recently sold listings for this exact address
-2. Property details (year built, lot size, HOA, special features, upgrades)
-3. ONLY factual information - NO speculation or assumptions
-
-Return ONLY verified facts you find. If no listings found, say so.`,
+          content: `Find recent public real estate listings (last 30 days) for: ${address}. Search for active or recently sold listings for this exact address. Find property details like year built, lot size, HOA, features, upgrades. Return ONLY verified facts. If no listings found, say so.`,
         }],
         max_tokens: 500,
         temperature: 0.3,
       }),
     });
 
-    if (!response.ok) {
-      throw new Error('Failed to research property');
-    }
-
+    if (!response.ok) throw new Error('Failed to research property');
     const data = await response.json();
     return data.choices[0]?.message?.content || 'No additional property information found.';
   } catch (error) {
@@ -118,9 +97,6 @@ Return ONLY verified facts you find. If no listings found, say so.`,
   }
 }
 
-/**
- * Research neighborhood amenities
- */
 async function researchNeighborhood(address: string, apiKey: string): Promise<string> {
   try {
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
@@ -133,27 +109,14 @@ async function researchNeighborhood(address: string, apiKey: string): Promise<st
         model: 'gpt-4o',
         messages: [{
           role: 'user',
-          content: `Research the immediate neighborhood around: ${address}
-
-Find:
-1. Nearby parks and green spaces (within 1 mile)
-2. Shopping centers and retail (within 1 mile)
-3. Public transportation access
-4. Notable attractions or amenities
-5. Highly-rated schools
-6. Restaurants and entertainment
-
-Return ONLY factual, verifiable information about what's near this address. Be specific with names and distances.`,
+          content: `Research the neighborhood around: ${address}. Find nearby parks, shopping, public transit, attractions, schools, restaurants within 1 mile. Return ONLY factual information with names and distances.`,
         }],
         max_tokens: 500,
         temperature: 0.3,
       }),
     });
 
-    if (!response.ok) {
-      throw new Error('Failed to research neighborhood');
-    }
-
+    if (!response.ok) throw new Error('Failed to research neighborhood');
     const data = await response.json();
     return data.choices[0]?.message?.content || 'No neighborhood information found.';
   } catch (error) {
@@ -162,9 +125,6 @@ Return ONLY factual, verifiable information about what's near this address. Be s
   }
 }
 
-/**
- * Find comparable listings
- */
 async function findComparableListings(address: string, apiKey: string): Promise<string> {
   try {
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
@@ -177,25 +137,14 @@ async function findComparableListings(address: string, apiKey: string): Promise<
         model: 'gpt-4o',
         messages: [{
           role: 'user',
-          content: `Find recently closed real estate listings (last 30 days) NEAR: ${address}
-
-Look for:
-1. Sold properties within 0.5 miles
-2. Review their listing descriptions for standout features
-3. Note any neighborhood highlights they mentioned
-4. Identify what made them attractive to buyers
-
-Return insights about what nearby sellers emphasized in their descriptions. Focus on area features that attracted buyers.`,
+          content: `Find recently closed listings (last 30 days) near: ${address}. Look for sold properties within 0.5 miles. Review their descriptions for standout features. Note neighborhood highlights. Identify what attracted buyers.`,
         }],
         max_tokens: 400,
         temperature: 0.3,
       }),
     });
 
-    if (!response.ok) {
-      throw new Error('Failed to research comparable listings');
-    }
-
+    if (!response.ok) throw new Error('Failed to research comparable listings');
     const data = await response.json();
     return data.choices[0]?.message?.content || 'No comparable listings found.';
   } catch (error) {
@@ -204,14 +153,11 @@ Return insights about what nearby sellers emphasized in their descriptions. Focu
   }
 }
 
-/**
- * Run the 5-expert pipeline
- */
 async function runExpertPipeline(data: any, apiKey: string): Promise<string> {
   const experts = [
     {
       name: 'Real Estate Agent',
-      systemPrompt: `You are a top 1% real estate agent with 30 years of experience. You know what sells homes.`,
+      systemPrompt: 'You are a top 1% real estate agent with 30 years of experience.',
       userPrompt: `Analyze this property and create a compelling listing foundation.
 
 Property: ${data.address}
@@ -219,89 +165,37 @@ Price: ${data.price}
 Beds/Baths: ${data.beds}/${data.baths}
 Sq Ft: ${data.sqft}
 
-Current Description:
-${data.description}
+Current Description: ${data.description}
 
-Research Findings:
-${data.propertyResearch}
+Research: ${data.propertyResearch}
+Neighborhood: ${data.neighborhoodInfo}
+Comparable Listings: ${data.comparableListings}
 
-Neighborhood Amenities:
-${data.neighborhoodInfo}
-
-Comparable Listings Insights:
-${data.comparableListings}
-
-Create a strong foundation that:
-1. Highlights the property's best features
-2. Incorporates verified neighborhood amenities
-3. Uses insights from successful nearby listings
-4. Creates urgency and desire
-5. Remains 100% factual - NO embellishment`,
+Highlight best features, incorporate verified amenities, use insights from nearby listings, create urgency, remain 100% factual.`,
       temperature: 0.7,
     },
     {
       name: 'Master Copywriter',
-      systemPrompt: `You are a master copywriter who creates irresistible sales copy.`,
-      userPrompt: `Enhance this listing description with powerful, benefit-driven copy.
-
-Current draft:
-[PREVIOUS_OUTPUT]
-
-Make it:
-- Benefit-focused (what the buyer gains)
-- Emotionally compelling
-- Action-oriented
-- Concise and impactful`,
+      systemPrompt: 'You are a master copywriter who creates irresistible sales copy.',
+      userPrompt: 'Enhance this with powerful, benefit-driven copy. Make it benefit-focused, emotionally compelling, action-oriented, concise.\n\n[PREVIOUS_OUTPUT]',
       temperature: 0.8,
     },
     {
       name: 'Best-Selling Novelist',
-      systemPrompt: `You are a best-selling novelist who knows how to tell captivating stories.`,
-      userPrompt: `Add narrative appeal to this listing.
-
-Current draft:
-[PREVIOUS_OUTPUT]
-
-Create:
-- A sense of lifestyle and aspiration
-- Vivid, sensory language
-- Emotional connection
-- A story buyers want to be part of`,
+      systemPrompt: 'You are a best-selling novelist who knows captivating stories.',
+      userPrompt: 'Add narrative appeal. Create lifestyle aspiration, vivid sensory language, emotional connection, a story buyers want.\n\n[PREVIOUS_OUTPUT]',
       temperature: 0.7,
     },
     {
       name: 'Editor-in-Chief',
-      systemPrompt: `You are an Editor-in-Chief who ensures perfection in every word.`,
-      userPrompt: `Edit this listing for maximum impact.
-
-Current draft:
-[PREVIOUS_OUTPUT]
-
-Ensure:
-- Every word earns its place
-- Perfect flow and rhythm
-- No redundancy
-- Professional yet engaging tone
-- Grammatically flawless`,
+      systemPrompt: 'You are an Editor-in-Chief ensuring perfection.',
+      userPrompt: 'Edit for maximum impact. Every word earns its place, perfect flow, no redundancy, professional yet engaging.\n\n[PREVIOUS_OUTPUT]',
       temperature: 0.5,
     },
     {
       name: 'Hollywood Script Polisher',
-      systemPrompt: `You are a Hollywood script polisher who adds the final wow factor.`,
-      userPrompt: `Give this listing the final Hollywood polish.
-
-Current draft:
-[PREVIOUS_OUTPUT]
-
-CRITICAL: Maximum 1000 characters. Get as close to 1000 as possible without going over.
-
-Make it:
-- Exciting but not overly dramatic
-- Professional and unique
-- Powerful and minimal
-- Engaging with perfect pacing
-
-Count every character including spaces. This is the final pass.`,
+      systemPrompt: 'You are a Hollywood script polisher adding the wow factor.',
+      userPrompt: 'Final polish. CRITICAL: Maximum 1000 characters. Get close to 1000 without going over. Exciting but not dramatic, professional, unique, powerful.\n\n[PREVIOUS_OUTPUT]',
       temperature: 0.5,
     },
   ];
@@ -328,10 +222,7 @@ Count every character including spaces. This is the final pass.`,
       }),
     });
 
-    if (!response.ok) {
-      throw new Error(`Failed at ${expert.name} stage`);
-    }
-
+    if (!response.ok) throw new Error(`Failed at ${expert.name} stage`);
     const result = await response.json();
     currentOutput = result.choices[0]?.message?.content || currentOutput;
   }
@@ -339,40 +230,25 @@ Count every character including spaces. This is the final pass.`,
   return currentOutput;
 }
 
-/**
- * Save to Google Sheets
- */
 async function saveToGoogleSheets(data: any) {
   try {
     const googleScriptUrl = process.env.GOOGLE_SHEETS_WEBHOOK_URL;
-    if (!googleScriptUrl) {
-      console.warn('Google Sheets webhook URL not configured');
-      return;
-    }
+    if (!googleScriptUrl) return;
 
     await fetch(googleScriptUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        action: 'saveLead',
-        data,
-      }),
+      body: JSON.stringify({ action: 'saveLead', data }),
     });
   } catch (error) {
     console.error('Failed to save to Google Sheets:', error);
   }
 }
 
-/**
- * Send email to user
- */
 async function sendEmailToUser(email: string, property: any, description: string) {
   try {
     const googleScriptUrl = process.env.GOOGLE_SHEETS_WEBHOOK_URL;
-    if (!googleScriptUrl) {
-      console.warn('Email webhook URL not configured');
-      return;
-    }
+    if (!googleScriptUrl) return;
 
     await fetch(googleScriptUrl, {
       method: 'POST',
@@ -393,20 +269,14 @@ async function sendEmailToUser(email: string, property: any, description: string
       }),
     });
   } catch (error) {
-    console.error('Failed to send email to user:', error);
+    console.error('Failed to send email:', error);
   }
 }
 
-/**
- * Notify admin
- */
 async function notifyAdmin(userEmail: string, address: string) {
   try {
     const googleScriptUrl = process.env.GOOGLE_SHEETS_WEBHOOK_URL;
-    if (!googleScriptUrl) {
-      console.warn('Admin notification webhook URL not configured');
-      return;
-    }
+    if (!googleScriptUrl) return;
 
     await fetch(googleScriptUrl, {
       method: 'POST',
@@ -415,7 +285,7 @@ async function notifyAdmin(userEmail: string, address: string) {
         action: 'notifyAdmin',
         data: {
           to: 'dj@kalerealty.com',
-          subject: '<¯ New Listing Rewriter Lead!',
+          subject: 'New Listing Rewriter Lead!',
           userEmail,
           propertyAddress: address,
           propertyPrice: 'See Google Sheet',
