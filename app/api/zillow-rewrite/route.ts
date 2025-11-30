@@ -23,11 +23,18 @@ interface PipelineStage {
 
 export async function POST(req: NextRequest) {
   try {
-    const { zillowUrl } = await req.json();
+    const { zillowUrl, email } = await req.json();
 
     if (!zillowUrl || typeof zillowUrl !== 'string') {
       return NextResponse.json(
         { error: 'Zillow URL is required' },
+        { status: 400 }
+      );
+    }
+
+    if (!email || typeof email !== 'string' || !email.includes('@')) {
+      return NextResponse.json(
+        { error: 'Valid email is required' },
         { status: 400 }
       );
     }
@@ -49,12 +56,24 @@ export async function POST(req: NextRequest) {
     // STAGE 3: Multi-expert pipeline
     const finalDescription = await runExpertPipeline(zillowData, additionalInfo, apiKey);
 
+    // STAGE 4: Save to Google Sheets and send emails
+    await saveToGoogleSheets({
+      email,
+      zillowUrl,
+      address: zillowData.address,
+      price: zillowData.price,
+      originalDescription: zillowData.description,
+      rewrittenDescription: finalDescription,
+      timestamp: new Date().toISOString(),
+    });
+
+    await sendEmailToUser(email, zillowData, finalDescription);
+    await notifyAdmin(email, zillowData);
+
     return NextResponse.json({
       success: true,
-      original: zillowData.description,
-      rewritten: finalDescription,
+      message: 'Processing complete! Check your email in the next 5 minutes.',
       propertyData: zillowData,
-      additionalInfo,
     });
 
   } catch (error) {
@@ -297,7 +316,9 @@ Polish it for a magazine audience. Make it exciting but professional.`,
 Current draft:
 [PREVIOUS_OUTPUT]
 
-This is the final pass. Make it shine without overdoing it. Every word should earn its place.`,
+CRITICAL: The final output MUST be a maximum of 1000 characters. Get as close to 1000 as possible without going over. Count every character including spaces and punctuation.
+
+This is the final pass. Make it shine without overdoing it. Every word should earn its place. Maximize impact within the 1000 character limit.`,
       temperature: 0.5,
     },
   ];
@@ -354,4 +375,111 @@ function formatPropertyData(data: ZillowData): string {
 - Property Type: ${data.propertyType}
 - Key Features: ${data.features.slice(0, 10).join(', ')}
 `.trim();
+}
+
+/**
+ * Save lead data to Google Sheets
+ */
+async function saveToGoogleSheets(data: {
+  email: string;
+  zillowUrl: string;
+  address: string;
+  price: string;
+  originalDescription: string;
+  rewrittenDescription: string;
+  timestamp: string;
+}) {
+  try {
+    const googleScriptUrl = process.env.GOOGLE_SHEETS_WEBHOOK_URL;
+
+    if (!googleScriptUrl) {
+      console.warn('Google Sheets webhook URL not configured');
+      return;
+    }
+
+    await fetch(googleScriptUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        action: 'saveLead',
+        data,
+      }),
+    });
+  } catch (error) {
+    console.error('Failed to save to Google Sheets:', error);
+    // Don't throw - we don't want to fail the request if sheets fails
+  }
+}
+
+/**
+ * Send the rewritten description to the user
+ */
+async function sendEmailToUser(email: string, property: ZillowData, description: string) {
+  try {
+    const googleScriptUrl = process.env.GOOGLE_SHEETS_WEBHOOK_URL;
+
+    if (!googleScriptUrl) {
+      console.warn('Email webhook URL not configured');
+      return;
+    }
+
+    await fetch(googleScriptUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        action: 'sendUserEmail',
+        data: {
+          to: email,
+          from: 'dj@kalerealty.com',
+          subject: `Your AI-Enhanced Listing Description for ${property.address}`,
+          propertyAddress: property.address,
+          propertyPrice: property.price,
+          propertyBeds: property.beds,
+          propertyBaths: property.baths,
+          description,
+          characterCount: description.length,
+        },
+      }),
+    });
+  } catch (error) {
+    console.error('Failed to send email to user:', error);
+  }
+}
+
+/**
+ * Notify admin (DJ) about new lead
+ */
+async function notifyAdmin(userEmail: string, property: ZillowData) {
+  try {
+    const googleScriptUrl = process.env.GOOGLE_SHEETS_WEBHOOK_URL;
+
+    if (!googleScriptUrl) {
+      console.warn('Admin notification webhook URL not configured');
+      return;
+    }
+
+    await fetch(googleScriptUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        action: 'notifyAdmin',
+        data: {
+          to: 'dj@kalerealty.com',
+          subject: '🎯 New Listing Rewriter Lead!',
+          userEmail,
+          propertyAddress: property.address,
+          propertyPrice: property.price,
+          timestamp: new Date().toLocaleString('en-US', { timeZone: 'America/Los_Angeles' }),
+        },
+      }),
+    });
+  } catch (error) {
+    console.error('Failed to notify admin:', error);
+  }
 }

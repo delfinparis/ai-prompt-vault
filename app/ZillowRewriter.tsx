@@ -20,9 +20,11 @@ const PIPELINE_STAGES: PipelineStage[] = [
 
 export default function ZillowRewriter() {
   const [zillowUrl, setZillowUrl] = useState("");
+  const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [result, setResult] = useState<any>(null);
+  const [success, setSuccess] = useState(false);
   const [copied, setCopied] = useState(false);
   const [stages, setStages] = useState<PipelineStage[]>(PIPELINE_STAGES);
   const [currentStageIndex, setCurrentStageIndex] = useState(-1);
@@ -52,9 +54,15 @@ export default function ZillowRewriter() {
       return;
     }
 
+    if (!email.trim() || !email.includes('@')) {
+      setError("Please enter a valid email address");
+      return;
+    }
+
     setLoading(true);
     setError("");
     setResult(null);
+    setSuccess(false);
     resetPipeline();
 
     try {
@@ -66,7 +74,7 @@ export default function ZillowRewriter() {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ zillowUrl }),
+        body: JSON.stringify({ zillowUrl, email }),
       });
 
       if (!response.ok) {
@@ -83,6 +91,7 @@ export default function ZillowRewriter() {
 
       const data = await response.json();
       setResult(data);
+      setSuccess(true);
 
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong");
@@ -112,7 +121,9 @@ export default function ZillowRewriter() {
 
   const handleStartOver = () => {
     setZillowUrl("");
+    setEmail("");
     setResult(null);
+    setSuccess(false);
     setError("");
     resetPipeline();
   };
@@ -149,63 +160,101 @@ export default function ZillowRewriter() {
       </div>
 
       {/* Input Section */}
-      {!result && (
+      {!result && !success && (
         <div style={{ maxWidth: 700, margin: "0 auto 40px" }}>
-          <label
-            style={{
-              display: "block",
-              fontSize: 15,
-              fontWeight: 600,
-              color: "#334155",
-              marginBottom: 12,
-            }}
-          >
-            Enter Zillow Listing URL
-          </label>
-          <div style={{ display: "flex", gap: 12 }}>
-            <input
-              type="url"
-              value={zillowUrl}
-              onChange={(e) => setZillowUrl(e.target.value)}
-              placeholder="https://www.zillow.com/homedetails/..."
-              disabled={loading}
-              style={{
-                flex: 1,
-                height: 52,
-                borderRadius: 12,
-                border: "2px solid #e2e8f0",
-                padding: "0 16px",
-                fontSize: 15,
-                fontFamily: "inherit",
-                outline: "none",
-                transition: "border-color 0.2s",
-              }}
-              onFocus={(e) => e.target.style.borderColor = "#0f172a"}
-              onBlur={(e) => e.target.style.borderColor = "#e2e8f0"}
-            />
-            <button
-              onClick={handleRewrite}
-              disabled={loading || !zillowUrl.trim()}
-              style={{
-                height: 52,
-                borderRadius: 12,
-                border: "none",
-                padding: "0 32px",
-                background: loading || !zillowUrl.trim() ? "#cbd5e1" : "#0f172a",
-                color: "#fff",
-                fontSize: 15,
-                fontWeight: 600,
-                cursor: loading || !zillowUrl.trim() ? "not-allowed" : "pointer",
-                whiteSpace: "nowrap",
-                transition: "all 0.2s",
-              }}
-            >
-              {loading ? "Processing..." : "Rewrite Listing"}
-            </button>
+          <div style={{ display: "grid", gap: 20, marginBottom: 16 }}>
+            {/* Zillow URL Input */}
+            <div>
+              <label
+                style={{
+                  display: "block",
+                  fontSize: 15,
+                  fontWeight: 600,
+                  color: "#334155",
+                  marginBottom: 8,
+                }}
+              >
+                Zillow Listing URL
+              </label>
+              <input
+                type="url"
+                value={zillowUrl}
+                onChange={(e) => setZillowUrl(e.target.value)}
+                placeholder="https://www.zillow.com/homedetails/..."
+                disabled={loading}
+                style={{
+                  width: "100%",
+                  height: 52,
+                  borderRadius: 12,
+                  border: "2px solid #e2e8f0",
+                  padding: "0 16px",
+                  fontSize: 15,
+                  fontFamily: "inherit",
+                  outline: "none",
+                  transition: "border-color 0.2s",
+                }}
+                onFocus={(e) => e.target.style.borderColor = "#0f172a"}
+                onBlur={(e) => e.target.style.borderColor = "#e2e8f0"}
+              />
+            </div>
+
+            {/* Email Input */}
+            <div>
+              <label
+                style={{
+                  display: "block",
+                  fontSize: 15,
+                  fontWeight: 600,
+                  color: "#334155",
+                  marginBottom: 8,
+                }}
+              >
+                Your Email (to receive the rewritten description)
+              </label>
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="you@example.com"
+                disabled={loading}
+                style={{
+                  width: "100%",
+                  height: 52,
+                  borderRadius: 12,
+                  border: "2px solid #e2e8f0",
+                  padding: "0 16px",
+                  fontSize: 15,
+                  fontFamily: "inherit",
+                  outline: "none",
+                  transition: "border-color 0.2s",
+                }}
+                onFocus={(e) => e.target.style.borderColor = "#0f172a"}
+                onBlur={(e) => e.target.style.borderColor = "#e2e8f0"}
+              />
+            </div>
           </div>
 
-          <p style={{ fontSize: 13, color: "#64748b", marginTop: 8 }}>
-            Paste any Zillow listing URL and our AI will extract all data and rewrite the description
+          <button
+            onClick={handleRewrite}
+            disabled={loading || !zillowUrl.trim() || !email.trim()}
+            style={{
+              width: "100%",
+              height: 56,
+              borderRadius: 12,
+              border: "none",
+              background: loading || !zillowUrl.trim() || !email.trim() ? "#cbd5e1" : "#0f172a",
+              color: "#fff",
+              fontSize: 16,
+              fontWeight: 600,
+              cursor: loading || !zillowUrl.trim() || !email.trim() ? "not-allowed" : "pointer",
+              transition: "all 0.2s",
+            }}
+          >
+            {loading ? "Processing..." : "Generate My Listing Description"}
+          </button>
+
+          <p style={{ fontSize: 13, color: "#64748b", marginTop: 12, textAlign: "center" }}>
+            We'll email you the AI-enhanced description within 5 minutes
           </p>
         </div>
       )}
@@ -290,8 +339,61 @@ export default function ZillowRewriter() {
         </div>
       )}
 
+      {/* Success Message */}
+      {success && !loading && (
+        <div
+          style={{
+            maxWidth: 700,
+            margin: "0 auto 40px",
+            padding: 32,
+            borderRadius: 16,
+            background: "linear-gradient(135deg, #10b981 0%, #059669 100%)",
+            color: "#fff",
+            textAlign: "center",
+          }}
+        >
+          <div style={{ fontSize: 48, marginBottom: 16 }}>✓</div>
+          <h2 style={{ fontSize: 28, fontWeight: 700, marginBottom: 12 }}>
+            Success! Check Your Email
+          </h2>
+          <p style={{ fontSize: 16, lineHeight: 1.6, marginBottom: 20 }}>
+            Our AI team is crafting your listing description through our 5-expert pipeline.
+            You'll receive the final result at <strong>{email}</strong> within the next 5 minutes.
+          </p>
+          <p style={{ fontSize: 14, opacity: 0.9 }}>
+            Property: {result?.propertyData?.address}
+          </p>
+          <button
+            onClick={handleStartOver}
+            style={{
+              marginTop: 24,
+              height: 48,
+              borderRadius: 12,
+              border: "2px solid #fff",
+              padding: "0 32px",
+              background: "transparent",
+              color: "#fff",
+              fontSize: 16,
+              fontWeight: 600,
+              cursor: "pointer",
+              transition: "all 0.2s",
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = "#fff";
+              e.currentTarget.style.color = "#10b981";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = "transparent";
+              e.currentTarget.style.color = "#fff";
+            }}
+          >
+            Rewrite Another Listing
+          </button>
+        </div>
+      )}
+
       {/* Results */}
-      {result && (
+      {result && !success && (
         <div style={{ display: "grid", gap: 24 }}>
           {/* Property Info Card */}
           <div
