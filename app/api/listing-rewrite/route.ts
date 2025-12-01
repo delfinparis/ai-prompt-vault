@@ -1,38 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import { verifyToken } from "@/lib/auth";
-import { updateUserCredits, addUsageRecord } from "@/lib/db";
 
 export async function POST(req: NextRequest) {
   try {
-    // Verify authentication
-    const authHeader = req.headers.get('authorization');
-
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
-    }
-
-    const token = authHeader.substring(7);
-    const user = verifyToken(token);
-
-    if (!user) {
-      return NextResponse.json(
-        { error: 'Invalid token' },
-        { status: 401 }
-      );
-    }
-
-    // Check credits (from token - may be slightly stale but good enough)
-    if (user.credits <= 0) {
-      return NextResponse.json(
-        { error: 'Insufficient credits. Please purchase more to continue.' },
-        { status: 403 }
-      );
-    }
-
-    const { address, unit, price, beds, baths, sqft, description } = await req.json();
+    const { address, unit, price, beds, baths, sqft, description, email } = await req.json();
 
     if (!address || !description) {
       return NextResponse.json(
@@ -50,12 +20,7 @@ export async function POST(req: NextRequest) {
     }
 
     const fullAddress = unit ? `${address}, Unit ${unit}` : address;
-
-    // Deduct credit BEFORE processing (to prevent double usage if process fails midway)
-    await updateUserCredits(user.id, user.credits - 1, user.email);
-
-    // Record usage
-    await addUsageRecord(user.id, fullAddress);
+    const userEmail = email || 'anonymous@user.com';
 
     const propertyResearch = await researchProperty(fullAddress, apiKey);
     const neighborhoodInfo = await researchNeighborhood(fullAddress, apiKey);
@@ -75,7 +40,7 @@ export async function POST(req: NextRequest) {
 
     console.log('Saving to Google Sheets...');
     await saveToGoogleSheets({
-      email: user.email,
+      email: userEmail,
       address: fullAddress,
       price: price || 'N/A',
       originalDescription: description,
@@ -83,8 +48,8 @@ export async function POST(req: NextRequest) {
       timestamp: new Date().toISOString(),
     });
 
-    console.log('Sending email to user:', user.email);
-    await sendEmailToUser(user.email, {
+    console.log('Sending email to user:', userEmail);
+    await sendEmailToUser(userEmail, {
       address: fullAddress,
       price: price || 'N/A',
       beds: beds || 'N/A',
@@ -92,7 +57,7 @@ export async function POST(req: NextRequest) {
     }, finalDescription);
 
     console.log('Notifying admin...');
-    await notifyAdmin(user.email, fullAddress);
+    await notifyAdmin(userEmail, fullAddress);
 
     return NextResponse.json({
       success: true,
