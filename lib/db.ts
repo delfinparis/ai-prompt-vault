@@ -1,9 +1,4 @@
-import fs from 'fs/promises';
-import path from 'path';
-
-const DATA_DIR = path.join(process.cwd(), 'data');
-const USERS_FILE = path.join(DATA_DIR, 'users.json');
-const USAGE_FILE = path.join(DATA_DIR, 'usage.json');
+// Serverless-compatible database using Google Sheets as backend
 
 export interface User {
   id: string;
@@ -22,114 +17,148 @@ export interface UsageRecord {
   creditsUsed: number;
 }
 
-// Ensure data directory exists
-async function ensureDataDir() {
+// In-memory cache (resets on cold starts, but Google Sheets is source of truth)
+const usersCache = new Map<string, User>();
+const usageCache: UsageRecord[] = [];
+
+// Google Sheets webhook for persistence
+async function callGoogleSheets(action: string, data: Record<string, unknown>) {
+  const webhookUrl = process.env.GOOGLE_SHEETS_WEBHOOK_URL;
+  if (!webhookUrl) {
+    console.warn('Google Sheets webhook not configured');
+    return null;
+  }
+
   try {
-    await fs.access(DATA_DIR);
-  } catch {
-    await fs.mkdir(DATA_DIR, { recursive: true });
+    const response = await fetch(webhookUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action, data }),
+    });
+    return await response.json();
+  } catch (error) {
+    console.error('Google Sheets error:', error);
+    return null;
   }
 }
 
-// Read users from file
-export async function getUsers(): Promise<User[]> {
-  await ensureDataDir();
-  try {
-    const data = await fs.readFile(USERS_FILE, 'utf-8');
-    return JSON.parse(data);
-  } catch {
-    return [];
-  }
-}
-
-// Save users to file
-async function saveUsers(users: User[]): Promise<void> {
-  await ensureDataDir();
-  await fs.writeFile(USERS_FILE, JSON.stringify(users, null, 2));
-}
-
-// Get user by email
+// Get user by email (check cache first, then Google Sheets)
 export async function getUserByEmail(email: string): Promise<User | null> {
-  const users = await getUsers();
-  return users.find(u => u.email.toLowerCase() === email.toLowerCase()) || null;
+  const normalizedEmail = email.toLowerCase();
+
+  // Check cache
+  for (const user of usersCache.values()) {
+    if (user.email.toLowerCase() === normalizedEmail) {
+      return user;
+    }
+  }
+
+  // Try to fetch from Google Sheets
+  const result = await callGoogleSheets('getUser', { email: normalizedEmail });
+  if (result?.user) {
+    const user = result.user as User;
+    usersCache.set(user.id, user);
+    return user;
+  }
+
+  return null;
 }
 
 // Get user by ID
 export async function getUserById(id: string): Promise<User | null> {
-  const users = await getUsers();
-  return users.find(u => u.id === id) || null;
+  // Check cache
+  if (usersCache.has(id)) {
+    return usersCache.get(id)!;
+  }
+
+  // Try to fetch from Google Sheets
+  const result = await callGoogleSheets('getUserById', { id });
+  if (result?.user) {
+    const user = result.user as User;
+    usersCache.set(user.id, user);
+    return user;
+  }
+
+  return null;
 }
 
 // Create user
 export async function createUser(email: string, passwordHash: string): Promise<User> {
-  const users = await getUsers();
+  const normalizedEmail = email.toLowerCase();
 
   // Check if user exists
-  if (users.find(u => u.email.toLowerCase() === email.toLowerCase())) {
+  const existing = await getUserByEmail(normalizedEmail);
+  if (existing) {
     throw new Error('User already exists');
   }
 
   const newUser: User = {
     id: generateId(),
-    email: email.toLowerCase(),
+    email: normalizedEmail,
     passwordHash,
     credits: 1, // Start with 1 free credit
     createdAt: new Date().toISOString(),
   };
 
-  users.push(newUser);
-  await saveUsers(users);
+  // Save to cache
+  usersCache.set(newUser.id, newUser);
+
+  // Persist to Google Sheets
+  await callGoogleSheets('createUser', {
+    id: newUser.id,
+    email: newUser.email,
+    passwordHash: newUser.passwordHash,
+    credits: newUser.credits,
+    createdAt: newUser.createdAt,
+  });
+
   return newUser;
 }
 
 // Update user credits
 export async function updateUserCredits(userId: string, credits: number): Promise<User> {
-  const users = await getUsers();
-  const userIndex = users.findIndex(u => u.id === userId);
+  let user: User | undefined = usersCache.get(userId);
 
-  if (userIndex === -1) {
+  if (!user) {
+    const fetched = await getUserById(userId);
+    if (fetched) user = fetched;
+  }
+
+  if (!user) {
     throw new Error('User not found');
   }
 
-  users[userIndex].credits = credits;
-  await saveUsers(users);
-  return users[userIndex];
+  user.credits = credits;
+  usersCache.set(userId, user);
+
+  // Persist to Google Sheets
+  await callGoogleSheets('updateUserCredits', { id: userId, credits });
+
+  return user;
 }
 
 // Update last login
 export async function updateLastLogin(userId: string): Promise<void> {
-  const users = await getUsers();
-  const userIndex = users.findIndex(u => u.id === userId);
+  let user: User | undefined = usersCache.get(userId);
 
-  if (userIndex === -1) {
+  if (!user) {
+    const fetched = await getUserById(userId);
+    if (fetched) user = fetched;
+  }
+
+  if (!user) {
     throw new Error('User not found');
   }
 
-  users[userIndex].lastLogin = new Date().toISOString();
-  await saveUsers(users);
-}
+  user.lastLogin = new Date().toISOString();
+  usersCache.set(userId, user);
 
-// Read usage records
-export async function getUsageRecords(): Promise<UsageRecord[]> {
-  await ensureDataDir();
-  try {
-    const data = await fs.readFile(USAGE_FILE, 'utf-8');
-    return JSON.parse(data);
-  } catch {
-    return [];
-  }
-}
-
-// Save usage records
-async function saveUsageRecords(records: UsageRecord[]): Promise<void> {
-  await ensureDataDir();
-  await fs.writeFile(USAGE_FILE, JSON.stringify(records, null, 2));
+  // Persist to Google Sheets
+  await callGoogleSheets('updateLastLogin', { id: userId, lastLogin: user.lastLogin });
 }
 
 // Add usage record
 export async function addUsageRecord(userId: string, address: string): Promise<void> {
-  const records = await getUsageRecords();
-
   const newRecord: UsageRecord = {
     id: generateId(),
     userId,
@@ -138,16 +167,21 @@ export async function addUsageRecord(userId: string, address: string): Promise<v
     creditsUsed: 1,
   };
 
-  records.push(newRecord);
-  await saveUsageRecords(records);
+  usageCache.push(newRecord);
+
+  // Persist to Google Sheets (already handled by saveLead in route.ts)
 }
 
 // Get user usage history
 export async function getUserUsage(userId: string): Promise<UsageRecord[]> {
-  const records = await getUsageRecords();
-  return records.filter(r => r.userId === userId).sort((a, b) =>
+  return usageCache.filter(r => r.userId === userId).sort((a, b) =>
     new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
   );
+}
+
+// Get all users (for admin)
+export async function getUsers(): Promise<User[]> {
+  return Array.from(usersCache.values());
 }
 
 // Generate simple ID
