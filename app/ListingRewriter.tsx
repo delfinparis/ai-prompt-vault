@@ -579,7 +579,7 @@ export default function ListingRewriter({ user, token, onCreditsUsed }: ListingR
               Your AI-Enhanced Description is Ready!
             </h2>
             <p style={{ fontSize: 16, opacity: 0.9 }}>
-              Also sent to <strong>{email}</strong> • {result.characterCount || 0} characters
+              Also sent to <strong>{user?.email}</strong> • {result.characterCount || 0} characters
             </p>
           </div>
 
