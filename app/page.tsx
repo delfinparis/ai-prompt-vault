@@ -498,7 +498,7 @@ export default function Home() {
           {/* Submit Button */}
           <button
             onClick={handleSubmit}
-            disabled={user && user.credits < 1}
+            disabled={user ? user.credits < 1 : false}
             style={{
               width: "100%",
               background: (user && user.credits < 1) ? "#9ca3af" : "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
