@@ -153,7 +153,11 @@ Output format:
       }),
     });
 
-    if (!response.ok) throw new Error('Failed to research property');
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('Property research error:', response.status, errorText);
+      throw new Error(`Failed to research property: ${response.status}`);
+    }
     const data = await response.json();
     return data.choices[0]?.message?.content || 'No additional property information found.';
   } catch (error) {
@@ -204,7 +208,11 @@ Output requirements:
       }),
     });
 
-    if (!response.ok) throw new Error('Failed to research neighborhood');
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('Neighborhood research error:', response.status, errorText);
+      throw new Error(`Failed to research neighborhood: ${response.status}`);
+    }
     const data = await response.json();
     return data.choices[0]?.message?.content || 'No neighborhood information found.';
   } catch (error) {
@@ -255,7 +263,11 @@ Deliver:
       }),
     });
 
-    if (!response.ok) throw new Error('Failed to research comparable listings');
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('Comparable listings error:', response.status, errorText);
+      throw new Error(`Failed to research comparable listings: ${response.status}`);
+    }
     const data = await response.json();
     return data.choices[0]?.message?.content || 'No comparable listings found.';
   } catch (error) {
@@ -411,7 +423,11 @@ OUTPUT: The final, market-ready listing description (950-1000 characters exactly
       }),
     });
 
-    if (!response.ok) throw new Error(`Failed at ${expert.name} stage`);
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error(`OpenAI error at ${expert.name}:`, response.status, errorText);
+      throw new Error(`Failed at ${expert.name} stage: ${response.status} - ${errorText.substring(0, 200)}`);
+    }
     const result = await response.json();
     currentOutput = result.choices[0]?.message?.content || currentOutput;
   }
