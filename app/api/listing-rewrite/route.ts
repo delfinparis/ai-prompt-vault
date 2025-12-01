@@ -1,8 +1,44 @@
 import { NextRequest, NextResponse } from "next/server";
+import { verifyToken } from "@/lib/auth";
+import { updateUserCredits } from "@/lib/db";
 
 export async function POST(req: NextRequest) {
   try {
-    const { address, unit, price, beds, baths, sqft, description, email } = await req.json();
+    // Check for auth token
+    const authHeader = req.headers.get('authorization');
+    let userId: string | null = null;
+    let userEmail: string = 'anonymous@user.com';
+    let userCredits: number = 0;
+
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      const token = authHeader.substring(7);
+      const decoded = verifyToken(token);
+
+      if (decoded) {
+        userId = decoded.id;
+        userEmail = decoded.email;
+        userCredits = decoded.credits;
+
+        // Check if user has credits
+        if (userCredits < 1) {
+          return NextResponse.json(
+            { error: 'No credits remaining. Please purchase more credits to continue.' },
+            { status: 402 }
+          );
+        }
+      }
+    }
+
+    // If no valid auth, require email in body (free tier / anonymous)
+    const body = await req.json();
+    const { address, unit, price, beds, baths, sqft, description, email } = body;
+
+    if (!userId && !email) {
+      return NextResponse.json(
+        { error: 'Please log in or provide an email address' },
+        { status: 401 }
+      );
+    }
 
     if (!address || !description) {
       return NextResponse.json(
@@ -20,7 +56,7 @@ export async function POST(req: NextRequest) {
     }
 
     const fullAddress = unit ? `${address}, Unit ${unit}` : address;
-    const userEmail = email || 'anonymous@user.com';
+    const finalEmail = email || userEmail;
 
     // OPTIMIZATION 1: Run all research calls in PARALLEL with gpt-4o-mini
     console.log('Starting parallel research...');
@@ -44,9 +80,16 @@ export async function POST(req: NextRequest) {
       comparableListings,
     }, apiKey);
 
+    // Deduct credit if user is authenticated
+    if (userId) {
+      const newCredits = userCredits - 1;
+      console.log(`Deducting credit for user ${userId}. Credits: ${userCredits} -> ${newCredits}`);
+      await updateUserCredits(userId, newCredits, finalEmail);
+    }
+
     console.log('Saving to Google Sheets...');
     await saveToGoogleSheets({
-      email: userEmail,
+      email: finalEmail,
       address: fullAddress,
       price: price || 'N/A',
       originalDescription: description,
@@ -54,8 +97,8 @@ export async function POST(req: NextRequest) {
       timestamp: new Date().toISOString(),
     });
 
-    console.log('Sending email to user:', userEmail);
-    await sendEmailToUser(userEmail, {
+    console.log('Sending email to user:', finalEmail);
+    await sendEmailToUser(finalEmail, {
       address: fullAddress,
       price: price || 'N/A',
       beds: beds || 'N/A',
@@ -63,7 +106,7 @@ export async function POST(req: NextRequest) {
     }, finalDescription);
 
     console.log('Notifying admin...');
-    await notifyAdmin(userEmail, fullAddress);
+    await notifyAdmin(finalEmail, fullAddress);
 
     return NextResponse.json({
       success: true,
@@ -71,6 +114,7 @@ export async function POST(req: NextRequest) {
       description: finalDescription,
       characterCount: finalDescription.length,
       address: fullAddress,
+      creditsRemaining: userId ? userCredits - 1 : undefined,
     });
 
   } catch (error) {
