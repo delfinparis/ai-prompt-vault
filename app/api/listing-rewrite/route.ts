@@ -340,29 +340,41 @@ OUTPUT: Polished, tight copy (350-500 words).`,
     },
     {
       name: 'Hollywood Script Polisher',
-      systemPrompt: `You are a Hollywood script polisher who adds that final "wow factor" to million-dollar productions. You know how to hook an audience in seconds and keep them captivated.`,
-      userPrompt: `Final polish—make this IRRESISTIBLE.
+      systemPrompt: `You are a veteran real estate copywriter with 25 years of experience writing for luxury brokerages. You write like a skilled human agent, not like AI. Your copy sounds natural, warm, and professional.`,
+      userPrompt: `Rewrite this as ONE flowing paragraph that sounds like it was written by an experienced human real estate agent.
 
 CURRENT DRAFT:
 [PREVIOUS_OUTPUT]
 
-CRITICAL REQUIREMENTS:
-🎯 Maximum 1000 characters (hard limit—listings get cut off!)
-🎯 Aim for 950-1000 for maximum real estate value
-🎯 Maintain professional tone (exciting but not overhyped)
-🎯 Preserve all factual accuracy
-🎯 Front-load the hook—grab attention in the first sentence
+ABSOLUTE REQUIREMENTS:
+- ONE single paragraph (no line breaks, no sections, no headers)
+- 950-1000 characters exactly (MLS limit)
+- Must sound human-written, NOT AI-generated
 
-POLISH CHECKLIST:
-✓ Opening line is irresistible
-✓ Every sentence drives desire
-✓ Rhythm and pacing are perfect
-✓ Benefits dominate features
-✓ Ends with subtle urgency
-✓ Character count: 950-1000
+REMOVE ALL OF THESE AI TELLS:
+- No ** or bold markers
+- No bullet points or lists
+- No section titles or headers
+- No em dashes (—) use commas or periods instead
+- No "Welcome to" or "Step into" openings
+- No "Imagine yourself" phrases
+- No "This [property type] offers"
+- No "boasts" or "features" as verbs
+- No "Whether you're..." constructions
+- No "Don't miss" or "Act now" urgency clichés
+- No exclamation points (use periods)
+- No colon lists within sentences
 
-OUTPUT: The final, market-ready listing description (950-1000 characters exactly). Count characters carefully.`,
-      temperature: 0.5,
+WRITE LIKE A HUMAN:
+- Vary sentence length naturally
+- Use simple, direct language
+- Start with the most compelling specific detail
+- Flow from room to room or feature to feature naturally
+- End with a confident but not pushy closing thought
+- Sound like a knowledgeable agent describing the home to a friend
+
+OUTPUT: One clean paragraph, 950-1000 characters, no formatting, human-sounding.`,
+      temperature: 0.6,
     },
   ];
 
