@@ -115,26 +115,17 @@ export async function createUser(email: string, passwordHash: string): Promise<U
   return newUser;
 }
 
-// Update user credits
-export async function updateUserCredits(userId: string, credits: number): Promise<User> {
-  let user: User | undefined = usersCache.get(userId);
-
-  if (!user) {
-    const fetched = await getUserById(userId);
-    if (fetched) user = fetched;
+// Update user credits (serverless-safe: just persists to Google Sheets)
+export async function updateUserCredits(userId: string, credits: number, email?: string): Promise<void> {
+  // Update cache if user exists there
+  const cachedUser = usersCache.get(userId);
+  if (cachedUser) {
+    cachedUser.credits = credits;
+    usersCache.set(userId, cachedUser);
   }
-
-  if (!user) {
-    throw new Error('User not found');
-  }
-
-  user.credits = credits;
-  usersCache.set(userId, user);
 
   // Persist to Google Sheets
-  await callGoogleSheets('updateUserCredits', { id: userId, credits });
-
-  return user;
+  await callGoogleSheets('updateUserCredits', { id: userId, email, credits });
 }
 
 // Update last login

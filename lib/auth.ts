@@ -8,6 +8,8 @@ export interface AuthUser {
   id: string;
   email: string;
   credits: number;
+  passwordHash: string;
+  createdAt: string;
 }
 
 // Hash password
@@ -20,12 +22,14 @@ export async function verifyPassword(password: string, hash: string): Promise<bo
   return bcrypt.compare(password, hash);
 }
 
-// Generate JWT token
+// Generate JWT token (includes full user data for serverless compatibility)
 export function generateToken(user: User): string {
   const payload: AuthUser = {
     id: user.id,
     email: user.email,
     credits: user.credits,
+    passwordHash: user.passwordHash,
+    createdAt: user.createdAt,
   };
 
   return jwt.sign(payload, JWT_SECRET, { expiresIn: '7d' });

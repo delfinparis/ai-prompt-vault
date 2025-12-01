@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifyToken } from "@/lib/auth";
-import { getUserById, updateUserCredits, addUsageRecord } from "@/lib/db";
+import { updateUserCredits, addUsageRecord } from "@/lib/db";
 
 export async function POST(req: NextRequest) {
   try {
@@ -15,26 +15,16 @@ export async function POST(req: NextRequest) {
     }
 
     const token = authHeader.substring(7);
-    const decoded = verifyToken(token);
+    const user = verifyToken(token);
 
-    if (!decoded) {
+    if (!user) {
       return NextResponse.json(
         { error: 'Invalid token' },
         { status: 401 }
       );
     }
 
-    // Get user
-    const user = await getUserById(decoded.id);
-
-    if (!user) {
-      return NextResponse.json(
-        { error: 'User not found' },
-        { status: 404 }
-      );
-    }
-
-    // Check credits
+    // Check credits (from token - may be slightly stale but good enough)
     if (user.credits <= 0) {
       return NextResponse.json(
         { error: 'Insufficient credits. Please purchase more to continue.' },
@@ -62,7 +52,7 @@ export async function POST(req: NextRequest) {
     const fullAddress = unit ? `${address}, Unit ${unit}` : address;
 
     // Deduct credit BEFORE processing (to prevent double usage if process fails midway)
-    await updateUserCredits(user.id, user.credits - 1);
+    await updateUserCredits(user.id, user.credits - 1, user.email);
 
     // Record usage
     await addUsageRecord(user.id, fullAddress);
