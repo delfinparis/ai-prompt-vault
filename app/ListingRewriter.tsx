@@ -60,9 +60,13 @@ const PROCESSING_STAGES: ProcessingStage[] = [
   }
 ];
 
-const MAX_QUERIES = 2;
+interface ListingRewriterProps {
+  user: any;
+  token: string;
+  onCreditsUsed: () => void;
+}
 
-export default function ListingRewriter() {
+export default function ListingRewriter({ user, token, onCreditsUsed }: ListingRewriterProps) {
   // Form fields
   const [address, setAddress] = useState("");
   const [unit, setUnit] = useState("");
@@ -71,7 +75,6 @@ export default function ListingRewriter() {
   const [baths, setBaths] = useState("");
   const [sqft, setSqft] = useState("");
   const [description, setDescription] = useState("");
-  const [email, setEmail] = useState("");
 
   // UI state
   const [loading, setLoading] = useState(false);
@@ -79,21 +82,7 @@ export default function ListingRewriter() {
   const [result, setResult] = useState<any>(null);
   const [success, setSuccess] = useState(false);
   const [currentStageIndex, setCurrentStageIndex] = useState(0);
-  const [queryCount, setQueryCount] = useState(0);
   const [copied, setCopied] = useState(false);
-
-  // Load query count from localStorage on mount
-  useEffect(() => {
-    const stored = localStorage.getItem('listingRewriterQueryCount');
-    if (stored) {
-      setQueryCount(parseInt(stored, 10));
-    }
-  }, []);
-
-  // Save query count to localStorage whenever it changes
-  useEffect(() => {
-    localStorage.setItem('listingRewriterQueryCount', queryCount.toString());
-  }, [queryCount]);
 
   // Cycle through stages during loading
   useEffect(() => {
@@ -106,9 +95,9 @@ export default function ListingRewriter() {
   }, [loading]);
 
   const handleRewrite = async () => {
-    // Check query limit
-    if (queryCount >= MAX_QUERIES) {
-      setError(`You've reached the limit of ${MAX_QUERIES} queries. Please contact us for more access.`);
+    // Check credits
+    if (user.credits <= 0) {
+      setError("You don't have enough credits. Please purchase more to continue.");
       return;
     }
 
@@ -123,11 +112,6 @@ export default function ListingRewriter() {
       return;
     }
 
-    if (!email.trim() || !email.includes('@')) {
-      setError("Please enter a valid email address");
-      return;
-    }
-
     setLoading(true);
     setError("");
     setResult(null);
@@ -139,6 +123,7 @@ export default function ListingRewriter() {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`,
         },
         body: JSON.stringify({
           address,
@@ -148,7 +133,7 @@ export default function ListingRewriter() {
           baths,
           sqft,
           description,
-          email,
+          email: user.email,
         }),
       });
 
@@ -160,7 +145,9 @@ export default function ListingRewriter() {
       const data = await response.json();
       setResult(data);
       setSuccess(true);
-      setQueryCount(prev => prev + 1);
+
+      // Refresh user credits
+      onCreditsUsed();
 
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong");
@@ -177,7 +164,6 @@ export default function ListingRewriter() {
     setBaths("");
     setSqft("");
     setDescription("");
-    setEmail("");
     setResult(null);
     setSuccess(false);
     setError("");
@@ -414,57 +400,31 @@ export default function ListingRewriter() {
               />
             </div>
 
-            {/* Email */}
-            <div>
-              <label style={{ display: "block", fontSize: 15, fontWeight: 600, color: "#334155", marginBottom: 8 }}>
-                Your Email (to receive the rewritten description) *
-              </label>
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="you@example.com"
-                disabled={loading}
-                style={{
-                  width: "100%",
-                  height: 52,
-                  borderRadius: 12,
-                  border: "2px solid #e2e8f0",
-                  padding: "0 16px",
-                  fontSize: 15,
-                  fontFamily: "inherit",
-                  outline: "none",
-                  transition: "border-color 0.2s",
-                }}
-                onFocus={(e) => e.currentTarget.style.borderColor = "#0f172a"}
-                onBlur={(e) => e.currentTarget.style.borderColor = "#e2e8f0"}
-              />
-            </div>
           </div>
 
           <button
             onClick={handleRewrite}
-            disabled={loading || !address.trim() || !description.trim() || !email.trim() || queryCount >= MAX_QUERIES}
+            disabled={loading || !address.trim() || !description.trim() || user.credits <= 0}
             style={{
               width: "100%",
               height: 56,
               borderRadius: 12,
               border: "none",
-              background: loading || !address.trim() || !description.trim() || !email.trim() || queryCount >= MAX_QUERIES ? "#cbd5e1" : "#0f172a",
+              background: loading || !address.trim() || !description.trim() || user.credits <= 0 ? "#cbd5e1" : "#0f172a",
               color: "#fff",
               fontSize: 16,
               fontWeight: 600,
-              cursor: loading || !address.trim() || !description.trim() || !email.trim() || queryCount >= MAX_QUERIES ? "not-allowed" : "pointer",
+              cursor: loading || !address.trim() || !description.trim() || user.credits <= 0 ? "not-allowed" : "pointer",
               transition: "all 0.2s",
             }}
           >
-            {loading ? "Processing..." : queryCount >= MAX_QUERIES ? "Limit Reached" : "Generate My Listing Description"}
+            {loading ? "Processing..." : user.credits <= 0 ? "No Credits - Buy More" : "Generate 3 AI Variations (1 Credit)"}
           </button>
 
           <p style={{ fontSize: 13, color: "#64748b", marginTop: 12, textAlign: "center" }}>
-            {queryCount >= MAX_QUERIES ?
-              `You've used all ${MAX_QUERIES} free queries. Contact us for more access.` :
-              `We'll email you the AI-enhanced description within 5 minutes (${queryCount}/${MAX_QUERIES} uses)`
+            {user.credits > 0 ?
+              `You have ${user.credits} ${user.credits === 1 ? 'credit' : 'credits'} remaining. Each use generates 3 expert variations.` :
+              "You need credits to continue. Click 'Buy Credits' above to purchase more."
             }
           </p>
         </div>
@@ -714,13 +674,11 @@ export default function ListingRewriter() {
                   color: "#0f172a",
                   fontSize: 16,
                   fontWeight: 600,
-                  cursor: queryCount >= MAX_QUERIES ? "not-allowed" : "pointer",
-                  opacity: queryCount >= MAX_QUERIES ? 0.5 : 1,
+                  cursor: "pointer",
                   transition: "all 0.2s",
                 }}
-                disabled={queryCount >= MAX_QUERIES}
               >
-                {queryCount >= MAX_QUERIES ? "Limit Reached" : "Rewrite Another Listing"}
+                Rewrite Another Listing
               </button>
             </div>
           </div>
@@ -737,9 +695,8 @@ export default function ListingRewriter() {
               lineHeight: 1.6,
             }}
           >
-            <strong>💌 Email Sent!</strong> You'll also receive this description at <strong>{email}</strong> within 5 minutes.
-            {queryCount < MAX_QUERIES && ` You have ${MAX_QUERIES - queryCount} ${MAX_QUERIES - queryCount === 1 ? 'query' : 'queries'} remaining.`}
-            {queryCount >= MAX_QUERIES && " Contact us for unlimited access!"}
+            <strong>💌 Email Sent!</strong> You'll also receive this description at <strong>{user.email}</strong> within 5 minutes.
+            {user.credits > 0 ? ` You have ${user.credits} ${user.credits === 1 ? 'credit' : 'credits'} remaining.` : " Click 'Buy Credits' to purchase more!"}
           </div>
         </div>
       )}

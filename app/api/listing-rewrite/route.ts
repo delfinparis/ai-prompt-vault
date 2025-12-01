@@ -1,12 +1,52 @@
 import { NextRequest, NextResponse } from "next/server";
+import { verifyToken } from "@/lib/auth";
+import { getUserById, updateUserCredits, addUsageRecord } from "@/lib/db";
 
 export async function POST(req: NextRequest) {
   try {
-    const { address, unit, price, beds, baths, sqft, description, email } = await req.json();
+    // Verify authentication
+    const authHeader = req.headers.get('authorization');
 
-    if (!address || !description || !email) {
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
       return NextResponse.json(
-        { error: 'Address, description, and email are required' },
+        { error: 'Unauthorized' },
+        { status: 401 }
+      );
+    }
+
+    const token = authHeader.substring(7);
+    const decoded = verifyToken(token);
+
+    if (!decoded) {
+      return NextResponse.json(
+        { error: 'Invalid token' },
+        { status: 401 }
+      );
+    }
+
+    // Get user
+    const user = await getUserById(decoded.id);
+
+    if (!user) {
+      return NextResponse.json(
+        { error: 'User not found' },
+        { status: 404 }
+      );
+    }
+
+    // Check credits
+    if (user.credits <= 0) {
+      return NextResponse.json(
+        { error: 'Insufficient credits. Please purchase more to continue.' },
+        { status: 403 }
+      );
+    }
+
+    const { address, unit, price, beds, baths, sqft, description } = await req.json();
+
+    if (!address || !description) {
+      return NextResponse.json(
+        { error: 'Address and description are required' },
         { status: 400 }
       );
     }
@@ -20,6 +60,12 @@ export async function POST(req: NextRequest) {
     }
 
     const fullAddress = unit ? `${address}, Unit ${unit}` : address;
+
+    // Deduct credit BEFORE processing (to prevent double usage if process fails midway)
+    await updateUserCredits(user.id, user.credits - 1);
+
+    // Record usage
+    await addUsageRecord(user.id, fullAddress);
 
     const propertyResearch = await researchProperty(fullAddress, apiKey);
     const neighborhoodInfo = await researchNeighborhood(fullAddress, apiKey);
@@ -39,7 +85,7 @@ export async function POST(req: NextRequest) {
 
     console.log('Saving to Google Sheets...');
     await saveToGoogleSheets({
-      email,
+      email: user.email,
       address: fullAddress,
       price: price || 'N/A',
       originalDescription: description,
@@ -47,8 +93,8 @@ export async function POST(req: NextRequest) {
       timestamp: new Date().toISOString(),
     });
 
-    console.log('Sending email to user:', email);
-    await sendEmailToUser(email, {
+    console.log('Sending email to user:', user.email);
+    await sendEmailToUser(user.email, {
       address: fullAddress,
       price: price || 'N/A',
       beds: beds || 'N/A',
@@ -56,7 +102,7 @@ export async function POST(req: NextRequest) {
     }, finalDescription);
 
     console.log('Notifying admin...');
-    await notifyAdmin(email, fullAddress);
+    await notifyAdmin(user.email, fullAddress);
 
     return NextResponse.json({
       success: true,
