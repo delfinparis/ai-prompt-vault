@@ -36,3 +36,10 @@ textarea::placeholder {
   color: #9ca3af;
   opacity: 1;
 }
+
+/* Responsive property details grid - 2 cols on mobile, 4 cols on desktop */
+@media (min-width: 480px) {
+  .property-details-grid {
+    grid-template-columns: repeat(4, 1fr) !important;
+  }
+}

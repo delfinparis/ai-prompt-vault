@@ -564,8 +564,8 @@ export default function Home() {
             />
           </div>
 
-          {/* Property Details Row */}
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: 12, marginBottom: 20 }}>
+          {/* Property Details Row - 2x2 on mobile, 4 cols on desktop */}
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 12, marginBottom: 20 }} className="property-details-grid">
             <div>
               <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#023d85", marginBottom: 6 }}>Price</label>
               <input type="text" value={price} onChange={(e) => setPrice(e.target.value)} placeholder="$450,000" style={{ width: "100%", padding: 12, fontSize: 14, border: "2px solid #e2e8f0", borderRadius: 8, boxSizing: "border-box" }} />
