@@ -25,6 +25,7 @@ export default function Home() {
   const [authPassword, setAuthPassword] = useState("");
   const [authLoading, setAuthLoading] = useState(false);
   const [authError, setAuthError] = useState("");
+  const [showAuthForm, setShowAuthForm] = useState(false);
 
   // Form fields
   const [email, setEmail] = useState("");
@@ -94,6 +95,7 @@ export default function Home() {
       setEmail(data.user.email);
       setAuthEmail("");
       setAuthPassword("");
+      setShowAuthForm(false);
     } catch (err: any) {
       setAuthError(err.message || 'Something went wrong');
     } finally {
@@ -311,7 +313,7 @@ export default function Home() {
             </div>
           ) : (
             <button
-              onClick={() => setAuthMode('login')}
+              onClick={() => setShowAuthForm(true)}
               style={{ background: "rgba(255,255,255,0.2)", border: "none", borderRadius: 8, padding: "8px 16px", color: "white", cursor: "pointer", fontSize: 14 }}
             >
               Login / Sign Up
@@ -320,7 +322,7 @@ export default function Home() {
         </div>
 
         {/* Auth Card (if not logged in and wants to auth) */}
-        {!user && (authEmail || authPassword || authError) && (
+        {!user && showAuthForm && (
           <div style={{ background: "white", borderRadius: 16, padding: 24, marginBottom: 24, boxShadow: "0 10px 30px rgba(0,0,0,0.1)" }}>
             <div style={{ display: "flex", gap: 16, marginBottom: 20 }}>
               <button
@@ -415,11 +417,11 @@ export default function Home() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="you@email.com"
-                onFocus={() => { setAuthEmail(email); setAuthError(""); }}
+                onFocus={() => { setShowAuthForm(true); setAuthEmail(email); setAuthError(""); }}
                 style={{ width: "100%", padding: 14, fontSize: 16, border: "2px solid #e5e7eb", borderRadius: 10, boxSizing: "border-box" }}
               />
               <p style={{ fontSize: 12, color: "#9ca3af", marginTop: 6 }}>
-                Or <button onClick={() => setAuthEmail(" ")} style={{ background: "none", border: "none", color: "#667eea", cursor: "pointer", textDecoration: "underline", fontSize: 12, padding: 0 }}>create an account</button> for credits
+                Or <button onClick={() => { setShowAuthForm(true); setAuthMode('register'); }} style={{ background: "none", border: "none", color: "#667eea", cursor: "pointer", textDecoration: "underline", fontSize: 12, padding: 0 }}>create an account</button> for credits
               </p>
             </div>
           )}
