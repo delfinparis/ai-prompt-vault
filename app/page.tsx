@@ -10,10 +10,10 @@ const PROCESSING_STAGES = [
   { icon: "✨", title: "Final Polish", subtitle: "Perfecting every word", funFact: "Almost there! Your irresistible listing is being finalized." },
 ];
 
-// Before/After example data
-const EXAMPLE_BEFORE = `3 bed 2 bath home in quiet neighborhood. Updated kitchen with granite counters. Hardwood floors throughout. Large backyard with patio. Near schools and shopping. 2 car garage. Move in ready.`;
+// Before/After example data - Real AI-generated result from Uptown Chicago 2-flat
+const EXAMPLE_BEFORE = `Solid brick 2-flat in Uptown. First floor unit has 3 beds 1 bath. Second floor is 2 beds 1 bath. Full basement. 2 car garage. Separate utilities. Good rental history. Near CTA Red Line. Needs some updating but great bones. Sold as-is.`;
 
-const EXAMPLE_AFTER = `Welcome to your dream home in one of the area's most sought-after neighborhoods. This beautifully maintained 3-bedroom, 2-bath residence blends modern elegance with everyday comfort. The chef-inspired kitchen showcases stunning granite countertops and premium finishes, while gleaming hardwood floors flow throughout the main level. Step outside to your private backyard oasis featuring an expansive patio—perfect for entertaining or quiet evenings. Minutes from top-rated schools, shopping, and dining. Your move-in-ready sanctuary awaits.`;
+const EXAMPLE_AFTER = `Discover a timeless 1910 brick 2-flat nestled in the heart of Uptown, where vintage architecture meets modern convenience. This property, with its recently updated kitchen and bathrooms, blends charm and functionality. Picture mornings in the sunlit first-floor unit, where hardwood floors echo with history and stories. Separate utilities and a solid rental history make this a fantastic investment opportunity. Just a short stroll to the CTA Red Line, you'll enjoy easy commutes and vibrant city life at your doorstep. Indulge in the culinary delights of The Chicago Diner or savor a coffee at nearby Cafe Cito. Families will appreciate the proximity to Ravenswood Elementary and Amundsen High School, while Welles and Horner Parks offer green escapes for leisure and play. A new HVAC system ensures comfort year-round. This home is sold as-is, inviting you to infuse your personal touch and continue its storied legacy. Secure your slice of Chicago's rich tapestry with this captivating property.`;
 
 interface User {
   id: string;
@@ -48,6 +48,7 @@ export default function Home() {
   const [result, setResult] = useState<any>(null);
   const [currentStageIndex, setCurrentStageIndex] = useState(0);
   const [copied, setCopied] = useState(false);
+  const [selectedVariation, setSelectedVariation] = useState<'professional' | 'fun' | 'balanced'>('balanced');
 
   // Load token from localStorage on mount
   useEffect(() => {
@@ -185,8 +186,9 @@ export default function Home() {
   };
 
   const handleCopy = () => {
-    if (result?.description) {
-      navigator.clipboard.writeText(result.description);
+    const textToCopy = result?.variations?.[selectedVariation] || result?.description;
+    if (textToCopy) {
+      navigator.clipboard.writeText(textToCopy);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     }
@@ -205,9 +207,17 @@ export default function Home() {
 
   // Show result view
   if (result) {
+    const variations = result.variations || { professional: result.description, fun: result.description, balanced: result.description };
+    const currentDescription = variations[selectedVariation];
+    const variationTabs = [
+      { key: 'professional' as const, label: 'Professional', icon: '💼', desc: 'Formal & sophisticated' },
+      { key: 'balanced' as const, label: 'Balanced', icon: '⚖️', desc: 'Best of both worlds' },
+      { key: 'fun' as const, label: 'Engaging', icon: '✨', desc: 'Warm & inviting' },
+    ];
+
     return (
-      <div style={{ minHeight: "100vh", background: "linear-gradient(135deg, #0f172a 0%, #1e293b 100%)", padding: 24 }}>
-        <div style={{ maxWidth: 800, margin: "0 auto" }}>
+      <div style={{ minHeight: "100vh", background: "linear-gradient(135deg, #012f66 0%, #023d85 100%)", padding: 24 }}>
+        <div style={{ maxWidth: 900, margin: "0 auto" }}>
           {/* Header with credits */}
           {user && (
             <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 16 }}>
@@ -220,16 +230,17 @@ export default function Home() {
           <div style={{ background: "linear-gradient(135deg, #10b981 0%, #059669 100%)", borderRadius: 16, padding: 32, color: "white", textAlign: "center", marginBottom: 24 }}>
             <div style={{ fontSize: 48, marginBottom: 12 }}>✓</div>
             <h2 style={{ fontSize: 28, fontWeight: 700, marginBottom: 8 }}>Your AI-Enhanced Description is Ready!</h2>
-            <p style={{ fontSize: 16, opacity: 0.9 }}>Also sent to <strong>{user?.email || email}</strong> • {result.characterCount || 0} characters</p>
+            <p style={{ fontSize: 16, opacity: 0.9 }}>3 variations sent to <strong>{user?.email || email}</strong></p>
           </div>
 
+          {/* Variation Tabs */}
           <div style={{ background: "#fff", border: "2px solid #e2e8f0", borderRadius: 16, padding: 32, marginBottom: 24 }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
-              <h3 style={{ fontSize: 18, fontWeight: 600, color: "#1e293b" }}>Your New Listing Description</h3>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
+              <h3 style={{ fontSize: 18, fontWeight: 600, color: "#023d85" }}>Choose Your Style</h3>
               <button
                 onClick={handleCopy}
                 style={{
-                  background: copied ? "#10b981" : "#0ea5e9",
+                  background: copied ? "#10b981" : "#012f66",
                   color: "white",
                   border: "none",
                   borderRadius: 8,
@@ -245,8 +256,36 @@ export default function Home() {
                 {copied ? "Copied!" : "Copy to Clipboard"}
               </button>
             </div>
+
+            {/* Tab buttons */}
+            <div style={{ display: "flex", gap: 12, marginBottom: 20 }}>
+              {variationTabs.map((tab) => (
+                <button
+                  key={tab.key}
+                  onClick={() => setSelectedVariation(tab.key)}
+                  style={{
+                    flex: 1,
+                    padding: "16px 12px",
+                    border: selectedVariation === tab.key ? "2px solid #012f66" : "2px solid #e2e8f0",
+                    borderRadius: 12,
+                    background: selectedVariation === tab.key ? "#e6f0fa" : "#fff",
+                    cursor: "pointer",
+                    transition: "all 0.2s",
+                  }}
+                >
+                  <div style={{ fontSize: 24, marginBottom: 4 }}>{tab.icon}</div>
+                  <div style={{ fontSize: 14, fontWeight: 600, color: selectedVariation === tab.key ? "#012f66" : "#023d85" }}>{tab.label}</div>
+                  <div style={{ fontSize: 11, color: "#64748b", marginTop: 2 }}>{tab.desc}</div>
+                </button>
+              ))}
+            </div>
+
+            {/* Description display */}
             <div style={{ background: "#f8fafc", borderRadius: 12, padding: 24, fontSize: 16, lineHeight: 1.7, color: "#334155", whiteSpace: "pre-wrap" }}>
-              {result.description}
+              {currentDescription}
+            </div>
+            <div style={{ marginTop: 12, textAlign: "right", fontSize: 13, color: "#64748b" }}>
+              {currentDescription?.length || 0} characters
             </div>
           </div>
 
@@ -255,8 +294,8 @@ export default function Home() {
             style={{
               width: "100%",
               background: "white",
-              color: "#0ea5e9",
-              border: "2px solid #0ea5e9",
+              color: "#012f66",
+              border: "2px solid #012f66",
               borderRadius: 12,
               padding: 16,
               fontSize: 18,
@@ -275,7 +314,7 @@ export default function Home() {
   if (loading) {
     const stage = PROCESSING_STAGES[currentStageIndex];
     return (
-      <div style={{ minHeight: "100vh", background: "linear-gradient(135deg, #0f172a 0%, #1e293b 100%)", display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }}>
+      <div style={{ minHeight: "100vh", background: "linear-gradient(135deg, #012f66 0%, #023d85 100%)", display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }}>
         <div style={{ maxWidth: 500, textAlign: "center", color: "white" }}>
           <div style={{ fontSize: 80, marginBottom: 24, animation: "bounce 1s infinite" }}>{stage.icon}</div>
           <h2 style={{ fontSize: 28, fontWeight: 700, marginBottom: 8 }}>{stage.title}</h2>
@@ -285,7 +324,7 @@ export default function Home() {
           </div>
           <div style={{ marginTop: 32, display: "flex", justifyContent: "center", gap: 8 }}>
             {PROCESSING_STAGES.map((_, i) => (
-              <div key={i} style={{ width: 8, height: 8, borderRadius: "50%", background: i === currentStageIndex ? "#0ea5e9" : "rgba(255,255,255,0.2)" }} />
+              <div key={i} style={{ width: 8, height: 8, borderRadius: "50%", background: i === currentStageIndex ? "#012f66" : "rgba(255,255,255,0.2)" }} />
             ))}
           </div>
           <style dangerouslySetInnerHTML={{ __html: `@keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }` }} />
@@ -296,11 +335,11 @@ export default function Home() {
 
   // Show main landing page with form
   return (
-    <div style={{ minHeight: "100vh", background: "linear-gradient(135deg, #0f172a 0%, #1e293b 100%)" }}>
+    <div style={{ minHeight: "100vh", background: "linear-gradient(135deg, #012f66 0%, #023d85 100%)" }}>
       {/* Navigation */}
       <nav style={{ padding: "16px 24px", display: "flex", justifyContent: "space-between", alignItems: "center", maxWidth: 1200, margin: "0 auto" }}>
         <div style={{ color: "white", fontWeight: 700, fontSize: 20 }}>
-          <span style={{ color: "#0ea5e9" }}>Kale</span> Listing AI
+          <span style={{ color: "#012f66" }}>Kale</span> Listing AI
         </div>
         {user ? (
           <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
@@ -325,7 +364,7 @@ export default function Home() {
         ) : (
           <button
             onClick={() => setShowAuthForm(true)}
-            style={{ background: "#0ea5e9", border: "none", borderRadius: 8, padding: "10px 20px", color: "white", cursor: "pointer", fontSize: 14, fontWeight: 600 }}
+            style={{ background: "#012f66", border: "none", borderRadius: 8, padding: "10px 20px", color: "white", cursor: "pointer", fontSize: 14, fontWeight: 600 }}
           >
             Login / Sign Up
           </button>
@@ -336,7 +375,7 @@ export default function Home() {
       <section style={{ padding: "60px 24px 40px", textAlign: "center", maxWidth: 800, margin: "0 auto" }}>
         <div style={{
           display: "inline-block",
-          background: "rgba(14, 165, 233, 0.15)",
+          background: "rgba(1, 47, 102, 0.15)",
           color: "#38bdf8",
           fontSize: 13,
           fontWeight: 600,
@@ -353,7 +392,7 @@ export default function Home() {
           lineHeight: 1.1,
           marginBottom: 20
         }}>
-          Transform Boring Listings Into <span style={{ color: "#0ea5e9" }}>Buyer Magnets</span>
+          Transform Boring Listings Into <span style={{ color: "#012f66" }}>Buyer Magnets</span>
         </h1>
         <p style={{
           fontSize: 18,
@@ -378,7 +417,7 @@ export default function Home() {
                   padding: 12,
                   border: "none",
                   borderRadius: 8,
-                  background: authMode === 'login' ? "#0f172a" : "#f1f5f9",
+                  background: authMode === 'login' ? "#012f66" : "#f1f5f9",
                   color: authMode === 'login' ? "white" : "#64748b",
                   fontWeight: 600,
                   cursor: "pointer",
@@ -393,7 +432,7 @@ export default function Home() {
                   padding: 12,
                   border: "none",
                   borderRadius: 8,
-                  background: authMode === 'register' ? "#0f172a" : "#f1f5f9",
+                  background: authMode === 'register' ? "#012f66" : "#f1f5f9",
                   color: authMode === 'register' ? "white" : "#64748b",
                   fontWeight: 600,
                   cursor: "pointer",
@@ -429,7 +468,7 @@ export default function Home() {
               style={{
                 width: "100%",
                 padding: 14,
-                background: "#0f172a",
+                background: "#012f66",
                 color: "white",
                 border: "none",
                 borderRadius: 8,
@@ -472,7 +511,7 @@ export default function Home() {
           {/* Email (only show if not logged in) */}
           {!user && !showAuthForm && (
             <div style={{ marginBottom: 20 }}>
-              <label style={{ display: "block", fontSize: 14, fontWeight: 600, color: "#1e293b", marginBottom: 8 }}>
+              <label style={{ display: "block", fontSize: 14, fontWeight: 600, color: "#023d85", marginBottom: 8 }}>
                 Your Email <span style={{ color: "#ef4444" }}>*</span>
               </label>
               <input
@@ -483,7 +522,7 @@ export default function Home() {
                 style={{ width: "100%", padding: 14, fontSize: 16, border: "2px solid #e2e8f0", borderRadius: 10, boxSizing: "border-box" }}
               />
               <p style={{ fontSize: 13, color: "#64748b", marginTop: 8 }}>
-                <button onClick={() => { setShowAuthForm(true); setAuthMode('register'); }} style={{ background: "none", border: "none", color: "#0ea5e9", cursor: "pointer", textDecoration: "underline", fontSize: 13, padding: 0, fontWeight: 500 }}>Create an account</button> to get 5 free credits and save your history
+                <button onClick={() => { setShowAuthForm(true); setAuthMode('register'); }} style={{ background: "none", border: "none", color: "#012f66", cursor: "pointer", textDecoration: "underline", fontSize: 13, padding: 0, fontWeight: 500 }}>Create an account</button> to get 5 free credits and save your history
               </p>
             </div>
           )}
@@ -499,7 +538,7 @@ export default function Home() {
 
           {/* Address */}
           <div style={{ marginBottom: 20 }}>
-            <label style={{ display: "block", fontSize: 14, fontWeight: 600, color: "#1e293b", marginBottom: 8 }}>
+            <label style={{ display: "block", fontSize: 14, fontWeight: 600, color: "#023d85", marginBottom: 8 }}>
               Property Address <span style={{ color: "#ef4444" }}>*</span>
             </label>
             <input
@@ -513,7 +552,7 @@ export default function Home() {
 
           {/* Unit (optional) */}
           <div style={{ marginBottom: 20 }}>
-            <label style={{ display: "block", fontSize: 14, fontWeight: 600, color: "#1e293b", marginBottom: 8 }}>
+            <label style={{ display: "block", fontSize: 14, fontWeight: 600, color: "#023d85", marginBottom: 8 }}>
               Unit/Apt # <span style={{ color: "#94a3b8", fontWeight: 400 }}>(optional)</span>
             </label>
             <input
@@ -528,26 +567,26 @@ export default function Home() {
           {/* Property Details Row */}
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: 12, marginBottom: 20 }}>
             <div>
-              <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#1e293b", marginBottom: 6 }}>Price</label>
+              <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#023d85", marginBottom: 6 }}>Price</label>
               <input type="text" value={price} onChange={(e) => setPrice(e.target.value)} placeholder="$450,000" style={{ width: "100%", padding: 12, fontSize: 14, border: "2px solid #e2e8f0", borderRadius: 8, boxSizing: "border-box" }} />
             </div>
             <div>
-              <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#1e293b", marginBottom: 6 }}>Beds</label>
+              <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#023d85", marginBottom: 6 }}>Beds</label>
               <input type="text" value={beds} onChange={(e) => setBeds(e.target.value)} placeholder="3" style={{ width: "100%", padding: 12, fontSize: 14, border: "2px solid #e2e8f0", borderRadius: 8, boxSizing: "border-box" }} />
             </div>
             <div>
-              <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#1e293b", marginBottom: 6 }}>Baths</label>
+              <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#023d85", marginBottom: 6 }}>Baths</label>
               <input type="text" value={baths} onChange={(e) => setBaths(e.target.value)} placeholder="2" style={{ width: "100%", padding: 12, fontSize: 14, border: "2px solid #e2e8f0", borderRadius: 8, boxSizing: "border-box" }} />
             </div>
             <div>
-              <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#1e293b", marginBottom: 6 }}>Sq Ft</label>
+              <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#023d85", marginBottom: 6 }}>Sq Ft</label>
               <input type="text" value={sqft} onChange={(e) => setSqft(e.target.value)} placeholder="1,500" style={{ width: "100%", padding: 12, fontSize: 14, border: "2px solid #e2e8f0", borderRadius: 8, boxSizing: "border-box" }} />
             </div>
           </div>
 
           {/* Description */}
           <div style={{ marginBottom: 24 }}>
-            <label style={{ display: "block", fontSize: 14, fontWeight: 600, color: "#1e293b", marginBottom: 8 }}>
+            <label style={{ display: "block", fontSize: 14, fontWeight: 600, color: "#023d85", marginBottom: 8 }}>
               Current Listing Description <span style={{ color: "#ef4444" }}>*</span>
             </label>
             <textarea
@@ -564,7 +603,7 @@ export default function Home() {
             onClick={handleSubmit}
             style={{
               width: "100%",
-              background: "linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%)",
+              background: "linear-gradient(135deg, #012f66 0%, #0284c7 100%)",
               color: "white",
               border: "none",
               borderRadius: 12,
@@ -622,7 +661,7 @@ export default function Home() {
                   {item.icon}
                 </div>
                 <div style={{
-                  color: "#0ea5e9",
+                  color: "#012f66",
                   fontSize: 12,
                   fontWeight: 600,
                   marginBottom: 8,
@@ -717,7 +756,7 @@ export default function Home() {
         <button
           onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
           style={{
-            background: "#0ea5e9",
+            background: "#012f66",
             color: "white",
             border: "none",
             borderRadius: 10,

@@ -67,8 +67,8 @@ export async function POST(req: NextRequest) {
     ]);
     console.log('Research complete.');
 
-    // OPTIMIZATION 2: Reduced to 2-pass pipeline (was 5 passes)
-    const finalDescription = await runOptimizedPipeline({
+    // Generate all 3 variations (professional, fun, balanced)
+    const variations = await generateAllVariations({
       address: fullAddress,
       price,
       beds,
@@ -93,7 +93,7 @@ export async function POST(req: NextRequest) {
       address: fullAddress,
       price: price || 'N/A',
       originalDescription: description,
-      rewrittenDescription: finalDescription,
+      rewrittenDescription: variations.balanced, // Save balanced as default
       timestamp: new Date().toISOString(),
     });
 
@@ -103,7 +103,7 @@ export async function POST(req: NextRequest) {
       price: price || 'N/A',
       beds: beds || 'N/A',
       baths: baths || 'N/A',
-    }, finalDescription);
+    }, variations);
 
     console.log('Notifying admin...');
     await notifyAdmin(finalEmail, fullAddress);
@@ -111,8 +111,9 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({
       success: true,
       message: 'Processing complete! Check your email in the next 5 minutes.',
-      description: finalDescription,
-      characterCount: finalDescription.length,
+      variations,
+      description: variations.balanced, // Keep for backwards compatibility
+      characterCount: variations.balanced.length,
       address: fullAddress,
       creditsRemaining: userId ? userCredits - 1 : undefined,
     });
@@ -247,14 +248,18 @@ EXAMPLE 2 (Suburban home, 912 chars):
 "Original owner, meticulously maintained brick colonial on a quiet cul-de-sac in award-winning District 34. Hardwood floors throughout the main level lead to a remodeled kitchen with soft-close cabinetry, granite surfaces, and breakfast bar overlooking the family room. Four generous bedrooms upstairs include a primary with renovated en-suite. The finished basement adds flexible space for a home office, playroom, or gym. Mature landscaping surrounds the private backyard with bluestone patio, perfect for summer evenings. Walk to Avoca West Elementary. New roof 2022, HVAC 2021. Attached two-car garage with epoxy floors and built-in storage."
 `;
 
-// OPTIMIZED 2-PASS PIPELINE (was 5 passes)
-async function runOptimizedPipeline(data: any, apiKey: string): Promise<string> {
+// Types for variations
+interface DescriptionVariations {
+  professional: string;
+  fun: string;
+  balanced: string;
+}
 
-  // PASS 1: Master Writer (combines agent + copywriter + novelist roles)
-  console.log('Pass 1: Master Writer...');
-  const masterWriterPrompt = `You are an elite real estate copywriter who has written thousands of MLS descriptions that sell homes fast and above asking price. You combine market expertise, persuasive copywriting, and storytelling into one compelling description.
+// Generate all 3 variations in parallel (same cost - one API call each but run simultaneously)
+async function generateAllVariations(data: any, apiKey: string): Promise<DescriptionVariations> {
+  console.log('Generating 3 variations in parallel...');
 
-PROPERTY DATA:
+  const baseContext = `PROPERTY DATA:
 Address: ${data.address}
 Price: ${data.price || 'Contact for price'} | Beds: ${data.beds || 'N/A'} | Baths: ${data.baths || 'N/A'} | Sq Ft: ${data.sqft || 'N/A'}
 
@@ -266,12 +271,9 @@ Property: ${data.propertyResearch}
 Neighborhood: ${data.neighborhoodInfo}
 Market Insights: ${data.comparableListings}
 
-${FEW_SHOT_EXAMPLES}
+${FEW_SHOT_EXAMPLES}`;
 
-YOUR TASK:
-Write a compelling listing description following these principles:
-
-DO NOT:
+  const baseRules = `DO NOT:
 - Use "Welcome to" or "Step into" openings
 - Use "boasts," "features," or "offers" as main verbs
 - Use "Whether you're..." constructions
@@ -282,16 +284,74 @@ DO NOT:
 
 DO:
 - Lead with the most specific, compelling detail (not generic praise)
-- Convert features to lifestyle benefits (not "granite counters" but what that enables)
-- Flow naturally from space to space like describing to a friend
+- Convert features to lifestyle benefits
+- Flow naturally from space to space
 - Include 1-2 neighborhood highlights woven naturally into the text
-- Vary sentence length (mix short punchy with medium flow)
-- End confidently but not pushy
 - Keep factual and authentic
+- Output exactly 800-900 characters, one paragraph, no line breaks`;
 
-OUTPUT: One flowing paragraph, approximately 800-900 characters. No formatting, no line breaks.`;
+  // Professional tone prompt
+  const professionalPrompt = `You are an elite real estate copywriter writing for luxury brokerages and high-end MLS listings.
 
-  const pass1Response = await fetch('https://api.openai.com/v1/chat/completions', {
+${baseContext}
+
+TONE: Professional & Sophisticated
+- Formal but not stuffy
+- Emphasize investment value, quality finishes, and prestige
+- Use precise, elevated language
+- Appeal to discerning buyers who value quality and exclusivity
+- Subtle confidence, understated elegance
+
+${baseRules}`;
+
+  // Fun/Engaging tone prompt
+  const funPrompt = `You are a creative real estate copywriter known for engaging, personality-filled listings that stand out.
+
+${baseContext}
+
+TONE: Fun & Engaging
+- Warm, conversational, and inviting
+- Paint vivid lifestyle pictures (weekend BBQs, morning coffee on the patio)
+- Use sensory language and emotional hooks
+- Make readers smile and imagine themselves living there
+- Energetic but not over-the-top
+
+${baseRules}`;
+
+  // Balanced tone prompt
+  const balancedPrompt = `You are an experienced real estate copywriter who blends professionalism with warmth.
+
+${baseContext}
+
+TONE: Balanced (Professional + Engaging)
+- Professional enough for MLS, warm enough to connect emotionally
+- Mix practical details with lifestyle benefits
+- Confident but approachable
+- Appeal to a broad range of buyers
+- The sweet spot between formal and friendly
+
+${baseRules}`;
+
+  // Run all 3 in parallel
+  const [professionalResult, funResult, balancedResult] = await Promise.all([
+    generateSingleVariation(professionalPrompt, apiKey, 'Professional'),
+    generateSingleVariation(funPrompt, apiKey, 'Fun'),
+    generateSingleVariation(balancedPrompt, apiKey, 'Balanced'),
+  ]);
+
+  console.log('All 3 variations generated successfully.');
+
+  return {
+    professional: professionalResult,
+    fun: funResult,
+    balanced: balancedResult,
+  };
+}
+
+async function generateSingleVariation(prompt: string, apiKey: string, label: string): Promise<string> {
+  console.log(`Generating ${label} variation...`);
+
+  const response = await fetch('https://api.openai.com/v1/chat/completions', {
     method: 'POST',
     headers: {
       'Authorization': `Bearer ${apiKey}`,
@@ -299,72 +359,20 @@ OUTPUT: One flowing paragraph, approximately 800-900 characters. No formatting, 
     },
     body: JSON.stringify({
       model: 'gpt-4o',
-      messages: [
-        { role: 'user', content: masterWriterPrompt }
-      ],
-      max_tokens: 1000,
+      messages: [{ role: 'user', content: prompt }],
+      max_tokens: 600,
       temperature: 0.7,
     }),
   });
 
-  if (!pass1Response.ok) {
-    const errorText = await pass1Response.text();
-    console.error('Master Writer error:', pass1Response.status, errorText);
-    throw new Error(`Failed at Master Writer stage: ${pass1Response.status}`);
+  if (!response.ok) {
+    const errorText = await response.text();
+    console.error(`${label} variation error:`, response.status, errorText);
+    throw new Error(`Failed to generate ${label} variation: ${response.status}`);
   }
 
-  const pass1Result = await pass1Response.json();
-  const draftDescription = pass1Result.choices[0]?.message?.content || data.description;
-
-  // PASS 2: Final Polish (character count + human sound check)
-  console.log('Pass 2: Final Polish...');
-  const finalPolishPrompt = `You are a veteran MLS editor. Your only job is to polish this draft to exactly 950-1000 characters while ensuring it sounds completely human-written.
-
-CURRENT DRAFT:
-${draftDescription}
-
-REQUIREMENTS:
-1. Output must be exactly 950-1000 characters (count carefully)
-2. ONE paragraph, no line breaks
-3. Must sound like an experienced human agent wrote it, not AI
-
-FINAL CHECKS - Remove if present:
-- Em dashes (—) → use commas or periods
-- Exclamation points → use periods
-- "Welcome to" / "Step into" openings
-- "boasts" / "features" / "offers" as verbs
-- "Whether you're..." / "Imagine yourself..."
-- Any ** or formatting markers
-- Colon lists within sentences
-
-If the draft is good, just adjust length. If it has AI tells, rewrite those phrases naturally.
-
-OUTPUT: One clean paragraph, 950-1000 characters exactly, human-sounding.`;
-
-  const pass2Response = await fetch('https://api.openai.com/v1/chat/completions', {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${apiKey}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      model: 'gpt-4o',
-      messages: [
-        { role: 'user', content: finalPolishPrompt }
-      ],
-      max_tokens: 500,
-      temperature: 0.4,
-    }),
-  });
-
-  if (!pass2Response.ok) {
-    const errorText = await pass2Response.text();
-    console.error('Final Polish error:', pass2Response.status, errorText);
-    throw new Error(`Failed at Final Polish stage: ${pass2Response.status}`);
-  }
-
-  const pass2Result = await pass2Response.json();
-  return pass2Result.choices[0]?.message?.content || draftDescription;
+  const result = await response.json();
+  return result.choices[0]?.message?.content || '';
 }
 
 async function saveToGoogleSheets(data: any) {
@@ -389,7 +397,7 @@ async function saveToGoogleSheets(data: any) {
   }
 }
 
-async function sendEmailToUser(email: string, property: any, description: string) {
+async function sendEmailToUser(email: string, property: any, variations: DescriptionVariations) {
   try {
     const googleScriptUrl = process.env.GOOGLE_SHEETS_WEBHOOK_URL;
     if (!googleScriptUrl) {
@@ -406,13 +414,18 @@ async function sendEmailToUser(email: string, property: any, description: string
         data: {
           to: email,
           from: 'dj@kalerealty.com',
-          subject: `Your AI-Enhanced Listing Description for ${property.address}`,
+          subject: `Your 3 AI-Enhanced Listing Descriptions for ${property.address}`,
           propertyAddress: property.address,
           propertyPrice: property.price,
           propertyBeds: property.beds,
           propertyBaths: property.baths,
-          description,
-          characterCount: description.length,
+          // Send all 3 variations
+          professionalDescription: variations.professional,
+          funDescription: variations.fun,
+          balancedDescription: variations.balanced,
+          // Keep backward compatibility
+          description: variations.balanced,
+          characterCount: variations.balanced.length,
         },
       }),
     });
