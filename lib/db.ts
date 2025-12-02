@@ -96,7 +96,7 @@ export async function createUser(email: string, passwordHash: string): Promise<U
     id: generateId(),
     email: normalizedEmail,
     passwordHash,
-    credits: 1, // Start with 1 free credit
+    credits: 5, // Testing: 5 free credits
     createdAt: new Date().toISOString(),
   };
 

@@ -48,8 +48,6 @@ export default function Home() {
   const [result, setResult] = useState<any>(null);
   const [currentStageIndex, setCurrentStageIndex] = useState(0);
   const [copied, setCopied] = useState(false);
-  const [showBuyCredits, setShowBuyCredits] = useState(false);
-  const [buyingCredits, setBuyingCredits] = useState(false);
 
   // Load token from localStorage on mount
   useEffect(() => {
@@ -118,34 +116,6 @@ export default function Home() {
     setEmail("");
   };
 
-  const handleBuyCredits = async (quantity: number) => {
-    if (!token) return;
-
-    setBuyingCredits(true);
-    try {
-      const response = await fetch('/api/stripe/create-checkout', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
-        body: JSON.stringify({ quantity }),
-      });
-
-      const data = await response.json();
-
-      if (data.url) {
-        window.location.href = data.url;
-      } else {
-        throw new Error('Failed to create checkout session');
-      }
-    } catch (err: any) {
-      setError(err.message || 'Failed to start checkout');
-    } finally {
-      setBuyingCredits(false);
-    }
-  };
-
   const handleSubmit = async () => {
     // Validation for non-logged-in users
     if (!user && (!email.trim() || !email.includes("@"))) {
@@ -163,7 +133,7 @@ export default function Home() {
 
     // Check credits for logged-in users
     if (user && user.credits < 1) {
-      setShowBuyCredits(true);
+      setError("No credits remaining. Please contact us for more credits during the testing period.");
       return;
     }
 
@@ -232,96 +202,6 @@ export default function Home() {
     setSqft("");
     setDescription("");
   };
-
-  // Buy Credits Modal
-  const BuyCreditsModal = () => (
-    <div style={{
-      position: "fixed",
-      inset: 0,
-      background: "rgba(0,0,0,0.6)",
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "center",
-      zIndex: 1000,
-      padding: 24,
-    }}>
-      <div style={{
-        background: "white",
-        borderRadius: 20,
-        padding: 32,
-        maxWidth: 440,
-        width: "100%",
-        boxShadow: "0 25px 50px rgba(0,0,0,0.25)",
-      }}>
-        <div style={{ textAlign: "center", marginBottom: 24 }}>
-          <div style={{ fontSize: 48, marginBottom: 12 }}>🎯</div>
-          <h2 style={{ fontSize: 24, fontWeight: 700, color: "#1e293b", marginBottom: 8 }}>Get More Credits</h2>
-          <p style={{ color: "#64748b", fontSize: 15 }}>Each credit generates one AI-enhanced listing description</p>
-        </div>
-
-        <div style={{ display: "flex", flexDirection: "column", gap: 12, marginBottom: 24 }}>
-          {[
-            { qty: 1, price: "$4.99", popular: false },
-            { qty: 5, price: "$19.99", popular: true, save: "Save 20%" },
-            { qty: 10, price: "$34.99", popular: false, save: "Save 30%" },
-          ].map((option) => (
-            <button
-              key={option.qty}
-              onClick={() => handleBuyCredits(option.qty)}
-              disabled={buyingCredits}
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-                padding: "16px 20px",
-                border: option.popular ? "2px solid #0ea5e9" : "2px solid #e2e8f0",
-                borderRadius: 12,
-                background: option.popular ? "#f0f9ff" : "white",
-                cursor: buyingCredits ? "wait" : "pointer",
-                position: "relative",
-              }}
-            >
-              {option.popular && (
-                <span style={{
-                  position: "absolute",
-                  top: -10,
-                  right: 16,
-                  background: "#0ea5e9",
-                  color: "white",
-                  fontSize: 11,
-                  fontWeight: 600,
-                  padding: "2px 8px",
-                  borderRadius: 4,
-                }}>MOST POPULAR</span>
-              )}
-              <div style={{ textAlign: "left" }}>
-                <div style={{ fontWeight: 600, color: "#1e293b", fontSize: 16 }}>{option.qty} Credit{option.qty > 1 ? 's' : ''}</div>
-                {option.save && <div style={{ fontSize: 12, color: "#10b981", fontWeight: 500 }}>{option.save}</div>}
-              </div>
-              <div style={{ fontWeight: 700, color: "#0ea5e9", fontSize: 18 }}>{option.price}</div>
-            </button>
-          ))}
-        </div>
-
-        <button
-          onClick={() => setShowBuyCredits(false)}
-          style={{
-            width: "100%",
-            padding: 14,
-            background: "transparent",
-            border: "2px solid #e2e8f0",
-            borderRadius: 10,
-            color: "#64748b",
-            fontSize: 15,
-            fontWeight: 500,
-            cursor: "pointer",
-          }}
-        >
-          Maybe Later
-        </button>
-      </div>
-    </div>
-  );
 
   // Show result view
   if (result) {
@@ -417,8 +297,6 @@ export default function Home() {
   // Show main landing page with form
   return (
     <div style={{ minHeight: "100vh", background: "linear-gradient(135deg, #0f172a 0%, #1e293b 100%)" }}>
-      {showBuyCredits && <BuyCreditsModal />}
-
       {/* Navigation */}
       <nav style={{ padding: "16px 24px", display: "flex", justifyContent: "space-between", alignItems: "center", maxWidth: 1200, margin: "0 auto" }}>
         <div style={{ color: "white", fontWeight: 700, fontSize: 20 }}>
@@ -426,21 +304,17 @@ export default function Home() {
         </div>
         {user ? (
           <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-            <button
-              onClick={() => setShowBuyCredits(true)}
-              style={{
-                background: user.credits < 1 ? "#0ea5e9" : "rgba(255,255,255,0.1)",
-                border: "none",
-                borderRadius: 8,
-                padding: "8px 16px",
-                color: "white",
-                cursor: "pointer",
-                fontSize: 14,
-                fontWeight: 500,
-              }}
-            >
-              {user.credits} Credit{user.credits !== 1 ? 's' : ''} {user.credits < 1 && '- Buy More'}
-            </button>
+            <div style={{
+              background: "rgba(255,255,255,0.1)",
+              border: "none",
+              borderRadius: 8,
+              padding: "8px 16px",
+              color: "white",
+              fontSize: 14,
+              fontWeight: 500,
+            }}>
+              {user.credits} Credit{user.credits !== 1 ? 's' : ''}
+            </div>
             <button
               onClick={handleLogout}
               style={{ background: "rgba(255,255,255,0.1)", border: "none", borderRadius: 8, padding: "8px 16px", color: "#94a3b8", cursor: "pointer", fontSize: 14 }}
@@ -470,7 +344,7 @@ export default function Home() {
           borderRadius: 20,
           marginBottom: 20
         }}>
-          Trusted by 500+ Real Estate Agents
+          Beta Testing - 5 Free Credits on Signup
         </div>
         <h1 style={{
           fontSize: "clamp(32px, 5vw, 52px)",
@@ -565,7 +439,7 @@ export default function Home() {
                 opacity: authLoading ? 0.7 : 1,
               }}
             >
-              {authLoading ? "Please wait..." : (authMode === 'login' ? 'Login' : 'Create Account (1 Free Credit)')}
+              {authLoading ? "Please wait..." : (authMode === 'login' ? 'Login' : 'Create Account (5 Free Credits)')}
             </button>
             <button
               onClick={() => setShowAuthForm(false)}
@@ -609,7 +483,7 @@ export default function Home() {
                 style={{ width: "100%", padding: 14, fontSize: 16, border: "2px solid #e2e8f0", borderRadius: 10, boxSizing: "border-box" }}
               />
               <p style={{ fontSize: 13, color: "#64748b", marginTop: 8 }}>
-                <button onClick={() => { setShowAuthForm(true); setAuthMode('register'); }} style={{ background: "none", border: "none", color: "#0ea5e9", cursor: "pointer", textDecoration: "underline", fontSize: 13, padding: 0, fontWeight: 500 }}>Create an account</button> to get 1 free credit and save your history
+                <button onClick={() => { setShowAuthForm(true); setAuthMode('register'); }} style={{ background: "none", border: "none", color: "#0ea5e9", cursor: "pointer", textDecoration: "underline", fontSize: 13, padding: 0, fontWeight: 500 }}>Create an account</button> to get 5 free credits and save your history
               </p>
             </div>
           )}
@@ -619,14 +493,6 @@ export default function Home() {
             <div style={{ background: "#f0fdf4", border: "1px solid #86efac", borderRadius: 12, padding: 16, marginBottom: 20 }}>
               <p style={{ color: "#166534", fontSize: 14, fontWeight: 500 }}>
                 Logged in as <strong>{user.email}</strong> • <strong>{user.credits}</strong> credit{user.credits !== 1 ? 's' : ''} remaining
-                {user.credits < 1 && (
-                  <button
-                    onClick={() => setShowBuyCredits(true)}
-                    style={{ marginLeft: 8, background: "#10b981", color: "white", border: "none", borderRadius: 6, padding: "4px 10px", fontSize: 12, fontWeight: 600, cursor: "pointer" }}
-                  >
-                    Buy Credits
-                  </button>
-                )}
               </p>
             </div>
           )}
@@ -846,7 +712,7 @@ export default function Home() {
           Ready to Transform Your Listings?
         </h2>
         <p style={{ color: "#94a3b8", marginBottom: 24, fontSize: 16 }}>
-          Join 500+ agents already using AI to sell homes faster
+          Sign up now and get 5 free credits to try it out
         </p>
         <button
           onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
