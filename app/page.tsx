@@ -324,7 +324,7 @@ export default function Home() {
           </div>
           <div style={{ marginTop: 32, display: "flex", justifyContent: "center", gap: 8 }}>
             {PROCESSING_STAGES.map((_, i) => (
-              <div key={i} style={{ width: 8, height: 8, borderRadius: "50%", background: i === currentStageIndex ? "#012f66" : "rgba(255,255,255,0.2)" }} />
+              <div key={i} style={{ width: 8, height: 8, borderRadius: "50%", background: i === currentStageIndex ? "#38bdf8" : "rgba(255,255,255,0.2)" }} />
             ))}
           </div>
           <style dangerouslySetInnerHTML={{ __html: `@keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }` }} />
@@ -339,7 +339,7 @@ export default function Home() {
       {/* Navigation */}
       <nav style={{ padding: "16px 24px", display: "flex", justifyContent: "space-between", alignItems: "center", maxWidth: 1200, margin: "0 auto" }}>
         <div style={{ color: "white", fontWeight: 700, fontSize: 20 }}>
-          <span style={{ color: "#012f66" }}>Kale</span> Listing AI
+          <span style={{ color: "#38bdf8" }}>Kale</span> Listing AI
         </div>
         {user ? (
           <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
@@ -392,7 +392,7 @@ export default function Home() {
           lineHeight: 1.1,
           marginBottom: 20
         }}>
-          Transform Boring Listings Into <span style={{ color: "#012f66" }}>Buyer Magnets</span>
+          Transform Boring Listings Into <span style={{ color: "#38bdf8" }}>Buyer Magnets</span>
         </h1>
         <p style={{
           fontSize: 18,
@@ -661,7 +661,7 @@ export default function Home() {
                   {item.icon}
                 </div>
                 <div style={{
-                  color: "#012f66",
+                  color: "#38bdf8",
                   fontSize: 12,
                   fontWeight: 600,
                   marginBottom: 8,
@@ -707,7 +707,7 @@ export default function Home() {
               }}>
                 BEFORE
               </div>
-              <p style={{ color: "#fca5a5", fontSize: 15, lineHeight: 1.7 }}>
+              <p style={{ color: "#fecaca", fontSize: 15, lineHeight: 1.8 }}>
                 {EXAMPLE_BEFORE}
               </p>
               <div style={{ marginTop: 16, color: "#f87171", fontSize: 13 }}>
@@ -734,7 +734,7 @@ export default function Home() {
               }}>
                 AFTER
               </div>
-              <p style={{ color: "#6ee7b7", fontSize: 15, lineHeight: 1.7 }}>
+              <p style={{ color: "#86efac", fontSize: 15, lineHeight: 1.8 }}>
                 {EXAMPLE_AFTER}
               </p>
               <div style={{ marginTop: 16, color: "#34d399", fontSize: 13 }}>
