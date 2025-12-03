@@ -453,14 +453,14 @@ export default function Home() {
               value={authEmail}
               onChange={(e) => setAuthEmail(e.target.value)}
               placeholder="Email"
-              style={{ width: "100%", padding: 12, fontSize: 16, border: "2px solid #e2e8f0", borderRadius: 8, marginBottom: 12, boxSizing: "border-box" }}
+              style={{ width: "100%", padding: 12, fontSize: 16, border: "2px solid #e2e8f0", borderRadius: 8, marginBottom: 12, boxSizing: "border-box", color: "#1e293b", background: "white" }}
             />
             <input
               type="password"
               value={authPassword}
               onChange={(e) => setAuthPassword(e.target.value)}
               placeholder="Password"
-              style={{ width: "100%", padding: 12, fontSize: 16, border: "2px solid #e2e8f0", borderRadius: 8, marginBottom: 16, boxSizing: "border-box" }}
+              style={{ width: "100%", padding: 12, fontSize: 16, border: "2px solid #e2e8f0", borderRadius: 8, marginBottom: 16, boxSizing: "border-box", color: "#1e293b", background: "white" }}
             />
             <button
               onClick={handleAuth}
@@ -519,7 +519,7 @@ export default function Home() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="you@email.com"
-                style={{ width: "100%", padding: 14, fontSize: 16, border: "2px solid #e2e8f0", borderRadius: 10, boxSizing: "border-box" }}
+                style={{ width: "100%", padding: 14, fontSize: 16, border: "2px solid #e2e8f0", borderRadius: 10, boxSizing: "border-box", color: "#1e293b", background: "white" }}
               />
               <p style={{ fontSize: 13, color: "#64748b", marginTop: 8 }}>
                 <button onClick={() => { setShowAuthForm(true); setAuthMode('register'); }} style={{ background: "none", border: "none", color: "#012f66", cursor: "pointer", textDecoration: "underline", fontSize: 13, padding: 0, fontWeight: 500 }}>Create an account</button> to get 5 free credits and save your history
@@ -546,7 +546,7 @@ export default function Home() {
               value={address}
               onChange={(e) => setAddress(e.target.value)}
               placeholder="123 Main St, Chicago, IL 60601"
-              style={{ width: "100%", padding: 14, fontSize: 16, border: "2px solid #e2e8f0", borderRadius: 10, boxSizing: "border-box" }}
+              style={{ width: "100%", padding: 14, fontSize: 16, border: "2px solid #e2e8f0", borderRadius: 10, boxSizing: "border-box", color: "#1e293b", background: "white" }}
             />
           </div>
 
@@ -560,7 +560,7 @@ export default function Home() {
               value={unit}
               onChange={(e) => setUnit(e.target.value)}
               placeholder="2B"
-              style={{ width: "100%", padding: 14, fontSize: 16, border: "2px solid #e2e8f0", borderRadius: 10, boxSizing: "border-box" }}
+              style={{ width: "100%", padding: 14, fontSize: 16, border: "2px solid #e2e8f0", borderRadius: 10, boxSizing: "border-box", color: "#1e293b", background: "white" }}
             />
           </div>
 
@@ -568,19 +568,19 @@ export default function Home() {
           <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 12, marginBottom: 20 }} className="property-details-grid">
             <div>
               <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#023d85", marginBottom: 6 }}>Price</label>
-              <input type="text" value={price} onChange={(e) => setPrice(e.target.value)} placeholder="$450,000" style={{ width: "100%", padding: 12, fontSize: 14, border: "2px solid #e2e8f0", borderRadius: 8, boxSizing: "border-box" }} />
+              <input type="text" value={price} onChange={(e) => setPrice(e.target.value)} placeholder="$450,000" style={{ width: "100%", padding: 12, fontSize: 14, border: "2px solid #e2e8f0", borderRadius: 8, boxSizing: "border-box", color: "#1e293b", background: "white" }} />
             </div>
             <div>
               <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#023d85", marginBottom: 6 }}>Beds</label>
-              <input type="text" value={beds} onChange={(e) => setBeds(e.target.value)} placeholder="3" style={{ width: "100%", padding: 12, fontSize: 14, border: "2px solid #e2e8f0", borderRadius: 8, boxSizing: "border-box" }} />
+              <input type="text" value={beds} onChange={(e) => setBeds(e.target.value)} placeholder="3" style={{ width: "100%", padding: 12, fontSize: 14, border: "2px solid #e2e8f0", borderRadius: 8, boxSizing: "border-box", color: "#1e293b", background: "white" }} />
             </div>
             <div>
               <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#023d85", marginBottom: 6 }}>Baths</label>
-              <input type="text" value={baths} onChange={(e) => setBaths(e.target.value)} placeholder="2" style={{ width: "100%", padding: 12, fontSize: 14, border: "2px solid #e2e8f0", borderRadius: 8, boxSizing: "border-box" }} />
+              <input type="text" value={baths} onChange={(e) => setBaths(e.target.value)} placeholder="2" style={{ width: "100%", padding: 12, fontSize: 14, border: "2px solid #e2e8f0", borderRadius: 8, boxSizing: "border-box", color: "#1e293b", background: "white" }} />
             </div>
             <div>
               <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#023d85", marginBottom: 6 }}>Sq Ft</label>
-              <input type="text" value={sqft} onChange={(e) => setSqft(e.target.value)} placeholder="1,500" style={{ width: "100%", padding: 12, fontSize: 14, border: "2px solid #e2e8f0", borderRadius: 8, boxSizing: "border-box" }} />
+              <input type="text" value={sqft} onChange={(e) => setSqft(e.target.value)} placeholder="1,500" style={{ width: "100%", padding: 12, fontSize: 14, border: "2px solid #e2e8f0", borderRadius: 8, boxSizing: "border-box", color: "#1e293b", background: "white" }} />
             </div>
           </div>
 
@@ -594,7 +594,7 @@ export default function Home() {
               onChange={(e) => setDescription(e.target.value)}
               placeholder="Paste your current MLS listing description here..."
               rows={6}
-              style={{ width: "100%", padding: 14, fontSize: 16, border: "2px solid #e2e8f0", borderRadius: 10, resize: "vertical", boxSizing: "border-box" }}
+              style={{ width: "100%", padding: 14, fontSize: 16, border: "2px solid #e2e8f0", borderRadius: 10, resize: "vertical", boxSizing: "border-box", color: "#1e293b", background: "white" }}
             />
           </div>
 

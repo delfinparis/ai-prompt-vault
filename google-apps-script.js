@@ -448,3 +448,8 @@ function addCreditsToUser(email, creditsToAdd) {
 function giveUnlimitedCredits() {
   addCreditsToUser('delfinparis@gmail.com', 9999);
 }
+
+// Give test account credits for testing
+function giveTestAccountCredits() {
+  addCreditsToUser('test@kalerealty.com', 100);
+}
