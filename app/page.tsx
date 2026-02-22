@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Image from "next/image";
 
 const PROCESSING_STAGES = [
   { icon: "\u270d\ufe0f", title: "Crafting Your Descriptions", subtitle: "Three expert writers working in parallel", funFact: "Each variation uses a different writing style to give you real options." },
@@ -269,9 +270,7 @@ export default function Home() {
     <div style={{ minHeight: "100vh", background: "linear-gradient(135deg, #012f66 0%, #023d85 100%)" }}>
       {/* Navigation */}
       <nav style={{ padding: "16px 24px", display: "flex", justifyContent: "space-between", alignItems: "center", maxWidth: 1200, margin: "0 auto" }}>
-        <div style={{ color: "white", fontWeight: 700, fontSize: 20 }}>
-          <span style={{ color: "#38bdf8" }}>Kale</span> Listing AI
-        </div>
+        <Image src="/logo.png" alt="Listing Rewriter" width={200} height={35} priority />
       </nav>
 
       {/* Hero Section */}
