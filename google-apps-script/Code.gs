@@ -1,269 +1,250 @@
-// Google Apps Script for Listing Rewriter Lead Capture & Email
-// Deploy this as a Web App and use the URL as GOOGLE_SHEETS_WEBHOOK_URL
+/**
+ * Google Apps Script for Listing Rewriter
+ *
+ * SETUP INSTRUCTIONS:
+ * 1. Go to https://script.google.com and create a new project
+ * 2. Copy this entire script into the Code.gs file
+ * 3. Click "Deploy" > "New deployment"
+ * 4. Select "Web app" as the type
+ * 5. Set "Execute as" to "Me"
+ * 6. Set "Who has access" to "Anyone"
+ * 7. Click "Deploy" and copy the Web app URL
+ * 8. Add the URL to Vercel as GOOGLE_SHEETS_WEBHOOK_URL
+ *
+ * SPREADSHEET SETUP:
+ * Create a Google Sheet with these tabs:
+ * 1. "Leads" - columns: timestamp, email, address, price, originalDescription, rewrittenDescription
+ * 2. "EmailLog" - columns: timestamp, to, subject, status
+ */
 
-// CONFIGURATION
-const SPREADSHEET_ID = 'YOUR_SPREADSHEET_ID'; // Replace with your Google Sheet ID
-const SHEET_NAME = 'Leads';
+// Your Google Sheet ID (from the URL: docs.google.com/spreadsheets/d/THIS_IS_THE_ID/edit)
+const SPREADSHEET_ID = '1tfHZc10MQ8ltW4rlaaWhoPeJ6oe3ds_wjBaoK0Rh2QY';
+
+// Admin email for notifications
 const ADMIN_EMAIL = 'dj@kalerealty.com';
 
-/**
- * Handle POST requests from the Next.js app
- */
 function doPost(e) {
   try {
     const data = JSON.parse(e.postData.contents);
+    const action = data.action;
+    const payload = data.data;
 
-    switch (data.action) {
+    let result;
+
+    switch (action) {
       case 'saveLead':
-        saveLead(data.data);
+        result = saveLead(payload);
         break;
       case 'sendUserEmail':
-        sendUserEmail(data.data);
+        result = sendUserEmail(payload);
         break;
       case 'notifyAdmin':
-        notifyAdmin(data.data);
+        result = notifyAdmin(payload);
         break;
       default:
-        return ContentService.createTextOutput(JSON.stringify({error: 'Unknown action'}));
+        result = { error: 'Unknown action: ' + action };
     }
 
-    return ContentService.createTextOutput(JSON.stringify({success: true}));
+    return ContentService.createTextOutput(JSON.stringify(result))
+      .setMimeType(ContentService.MimeType.JSON);
+
   } catch (error) {
-    Logger.log('Error: ' + error.toString());
-    return ContentService.createTextOutput(JSON.stringify({error: error.toString()}));
+    return ContentService.createTextOutput(JSON.stringify({ error: error.toString() }))
+      .setMimeType(ContentService.MimeType.JSON);
   }
 }
 
-/**
- * Save lead data to Google Sheets
- */
-function saveLead(data) {
+// For testing via GET request
+function doGet(e) {
+  return ContentService.createTextOutput(JSON.stringify({
+    status: 'ok',
+    message: 'Listing Rewriter webhook is running',
+    timestamp: new Date().toISOString()
+  })).setMimeType(ContentService.MimeType.JSON);
+}
+
+// ============ LEAD MANAGEMENT ============
+
+function saveLead(leadData) {
   const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-  let sheet = ss.getSheetByName(SHEET_NAME);
+  let sheet = ss.getSheetByName('Leads');
 
-  // Create sheet if it doesn't exist
+  // Create Leads sheet if it doesn't exist
   if (!sheet) {
-    sheet = ss.insertSheet(SHEET_NAME);
-    sheet.appendRow(['Timestamp', 'Email', 'Zillow URL', 'Address', 'Price', 'Original Description', 'Rewritten Description']);
+    sheet = ss.insertSheet('Leads');
+    sheet.appendRow(['timestamp', 'email', 'address', 'price', 'originalDescription', 'rewrittenDescription']);
+    sheet.setFrozenRows(1);
   }
 
-  // Append the lead data
   sheet.appendRow([
-    data.timestamp,
-    data.email,
-    data.zillowUrl,
-    data.address,
-    data.price,
-    data.originalDescription,
-    data.rewrittenDescription
+    leadData.timestamp || new Date().toISOString(),
+    leadData.email,
+    leadData.address,
+    leadData.price || 'N/A',
+    leadData.originalDescription,
+    leadData.rewrittenDescription
   ]);
+
+  return { success: true };
 }
 
-/**
- * Send the rewritten description to the user
- */
-function sendUserEmail(data) {
-  const subject = data.subject;
-  const htmlBody = `
-<!DOCTYPE html>
-<html>
-<head>
-  <style>
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      line-height: 1.6;
-      color: #333;
-      max-width: 600px;
-      margin: 0 auto;
-      padding: 20px;
-    }
-    .header {
-      background: linear-gradient(135deg, #0f172a 0%, #334155 100%);
-      color: white;
-      padding: 30px;
-      border-radius: 12px 12px 0 0;
-      text-align: center;
-    }
-    .content {
-      background: #f8fafc;
-      padding: 30px;
-      border-radius: 0 0 12px 12px;
-    }
-    .property-info {
-      background: white;
-      padding: 20px;
-      border-radius: 8px;
-      margin-bottom: 20px;
-      border-left: 4px solid #10b981;
-    }
-    .description {
-      background: white;
-      padding: 20px;
-      border-radius: 8px;
-      border: 2px solid #10b981;
-      margin-bottom: 20px;
-    }
-    .stats {
-      background: #e0f2fe;
-      padding: 15px;
-      border-radius: 8px;
-      margin-bottom: 20px;
-      text-align: center;
-    }
-    .footer {
-      text-align: center;
-      color: #64748b;
-      font-size: 14px;
-      margin-top: 30px;
-      padding-top: 20px;
-      border-top: 1px solid #e2e8f0;
-    }
-    .cta-button {
-      display: inline-block;
-      background: #10b981;
-      color: white;
-      padding: 12px 30px;
-      text-decoration: none;
-      border-radius: 8px;
-      font-weight: 600;
-      margin-top: 15px;
-    }
-  </style>
-</head>
-<body>
-  <div class="header">
-    <h1 style="margin: 0; font-size: 28px;">✨ Your AI-Enhanced Listing Description</h1>
-  </div>
+// ============ EMAIL FUNCTIONS ============
 
-  <div class="content">
-    <div class="property-info">
-      <h2 style="margin-top: 0; color: #0f172a;">Property Details</h2>
-      <p><strong>Address:</strong> ${data.propertyAddress}</p>
-      <p><strong>Price:</strong> ${data.propertyPrice}</p>
-      <p><strong>Beds/Baths:</strong> ${data.propertyBeds} beds, ${data.propertyBaths} baths</p>
-    </div>
+function sendUserEmail(emailData) {
+  try {
+    const subject = emailData.subject || `Your 3 AI-Enhanced Listing Descriptions for ${emailData.propertyAddress}`;
 
-    <div class="stats">
-      <p style="margin: 0;"><strong>Character Count:</strong> ${data.characterCount} / 1000</p>
-      <p style="margin: 5px 0 0 0; font-size: 14px; color: #64748b;">Optimized for maximum impact</p>
-    </div>
+    const descriptionsHtml = `
+          <!-- Professional Version -->
+          <div style="margin-bottom: 25px;">
+            <h3 style="color: #1e293b; margin-bottom: 10px; display: flex; align-items: center;">
+              <span style="font-size: 20px; margin-right: 8px;">&#x1f4bc;</span> Professional Version
+            </h3>
+            <p style="color: #64748b; font-size: 13px; margin-bottom: 8px;">Formal &amp; sophisticated tone</p>
+            <div style="background: white; padding: 20px; border-radius: 8px; border: 2px solid #3b82f6;">
+              <p style="color: #334155; line-height: 1.6; margin: 0;">${emailData.professionalDescription}</p>
+            </div>
+            <p style="color: #94a3b8; font-size: 12px; margin-top: 5px;">${emailData.professionalDescription.length} characters</p>
+          </div>
 
-    <div class="description">
-      <h3 style="margin-top: 0; color: #10b981;">Your New Listing Description</h3>
-      <p style="line-height: 1.8; font-size: 15px;">${data.description}</p>
-    </div>
+          <!-- Balanced Version -->
+          <div style="margin-bottom: 25px;">
+            <h3 style="color: #1e293b; margin-bottom: 10px; display: flex; align-items: center;">
+              <span style="font-size: 20px; margin-right: 8px;">&#x2696;&#xfe0f;</span> Balanced Version
+              <span style="background: #10b981; color: white; font-size: 11px; padding: 2px 8px; border-radius: 10px; margin-left: 10px;">RECOMMENDED</span>
+            </h3>
+            <p style="color: #64748b; font-size: 13px; margin-bottom: 8px;">Best of both worlds</p>
+            <div style="background: white; padding: 20px; border-radius: 8px; border: 2px solid #10b981;">
+              <p style="color: #334155; line-height: 1.6; margin: 0;">${emailData.balancedDescription}</p>
+            </div>
+            <p style="color: #94a3b8; font-size: 12px; margin-top: 5px;">${emailData.balancedDescription.length} characters</p>
+          </div>
 
-    <div style="background: #fef3c7; padding: 15px; border-radius: 8px; border-left: 4px solid #f59e0b;">
-      <strong style="color: #92400e;">⚡ Pro Tip:</strong>
-      <p style="margin: 8px 0 0 0; color: #78350f;">
-        This description was crafted by our 5-expert AI pipeline to create urgency and desire.
-        Copy it directly to your listing to see faster showings and higher engagement!
-      </p>
-    </div>
+          <!-- Engaging Version -->
+          <div style="margin-bottom: 15px;">
+            <h3 style="color: #1e293b; margin-bottom: 10px; display: flex; align-items: center;">
+              <span style="font-size: 20px; margin-right: 8px;">&#x2728;</span> Engaging Version
+            </h3>
+            <p style="color: #64748b; font-size: 13px; margin-bottom: 8px;">Warm &amp; inviting tone</p>
+            <div style="background: white; padding: 20px; border-radius: 8px; border: 2px solid #f59e0b;">
+              <p style="color: #334155; line-height: 1.6; margin: 0;">${emailData.funDescription}</p>
+            </div>
+            <p style="color: #94a3b8; font-size: 12px; margin-top: 5px;">${emailData.funDescription.length} characters</p>
+          </div>
+      `;
 
-    <div class="footer">
-      <p>Need help with more listings? Visit our tool anytime!</p>
-      <a href="https://ai-prompt-vault-two.vercel.app/" class="cta-button">Rewrite Another Listing</a>
+    const htmlBody = `
+      <div style="font-family: Inter, Arial, sans-serif; max-width: 700px; margin: 0 auto;">
+        <div style="background: linear-gradient(135deg, #012f66 0%, #023d85 100%); padding: 30px; text-align: center; border-radius: 10px 10px 0 0;">
+          <h1 style="color: white; margin: 0; font-size: 24px;">3 AI-Enhanced Descriptions Ready!</h1>
+          <p style="color: #94a3b8; margin-top: 10px; font-size: 14px;">Pick your favorite style below</p>
+        </div>
 
-      <p style="margin-top: 30px; font-size: 13px;">
-        Questions? Reply to this email or contact us at<br/>
-        <a href="mailto:${data.from}" style="color: #10b981;">${data.from}</a>
-      </p>
-    </div>
-  </div>
-</body>
-</html>
-  `;
+        <div style="background: #f8fafc; padding: 30px; border: 1px solid #e2e8f0;">
+          <h2 style="color: #1e293b; margin-top: 0;">Property Details</h2>
+          <p style="color: #64748b;">
+            <strong>Address:</strong> ${emailData.propertyAddress}<br>
+            <strong>Price:</strong> ${emailData.propertyPrice}<br>
+            <strong>Beds:</strong> ${emailData.propertyBeds} | <strong>Baths:</strong> ${emailData.propertyBaths}
+          </p>
 
-  MailApp.sendEmail({
-    to: data.to,
-    subject: subject,
-    htmlBody: htmlBody,
-    replyTo: data.from,
-    name: 'Kale Realty - AI Listing Tools'
-  });
+          <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 25px 0;">
+
+          ${descriptionsHtml}
+        </div>
+
+        <div style="background: #012f66; padding: 20px; text-align: center; border-radius: 0 0 10px 10px;">
+          <a href="https://listing.joinkale.com" style="display: inline-block; background: #10b981; color: white; padding: 12px 30px; text-decoration: none; border-radius: 8px; font-weight: 600;">Rewrite Another Listing</a>
+          <p style="color: #94a3b8; margin: 15px 0 0 0; font-size: 13px;">
+            &copy; 2026 DJP3 Consulting Inc. Powered by AI.
+          </p>
+        </div>
+      </div>
+    `;
+
+    MailApp.sendEmail({
+      to: emailData.to,
+      subject: subject,
+      htmlBody: htmlBody,
+      name: 'Listing Rewriter'
+    });
+
+    // Log the email
+    logEmail(emailData.to, subject, 'sent');
+
+    return { success: true };
+  } catch (error) {
+    logEmail(emailData.to, emailData.subject, 'failed: ' + error.toString());
+    return { error: error.toString() };
+  }
 }
 
-/**
- * Notify admin about new lead
- */
-function notifyAdmin(data) {
-  const subject = data.subject;
-  const htmlBody = `
-<!DOCTYPE html>
-<html>
-<head>
-  <style>
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      line-height: 1.6;
-      color: #333;
-      max-width: 600px;
-      margin: 0 auto;
-      padding: 20px;
-    }
-    .header {
-      background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-      color: white;
-      padding: 20px;
-      border-radius: 8px;
-      margin-bottom: 20px;
-    }
-    .lead-info {
-      background: #f8fafc;
-      padding: 20px;
-      border-radius: 8px;
-      margin-bottom: 15px;
-    }
-    .info-row {
-      padding: 10px 0;
-      border-bottom: 1px solid #e2e8f0;
-    }
-    .info-row:last-child {
-      border-bottom: none;
-    }
-  </style>
-</head>
-<body>
-  <div class="header">
-    <h1 style="margin: 0; font-size: 24px;">🎯 New Listing Rewriter Lead!</h1>
-  </div>
+function notifyAdmin(notifyData) {
+  try {
+    const subject = notifyData.subject || 'New Listing Rewriter Lead!';
 
-  <div class="lead-info">
-    <div class="info-row">
-      <strong>Email:</strong> <a href="mailto:${data.userEmail}">${data.userEmail}</a>
-    </div>
-    <div class="info-row">
-      <strong>Property:</strong> ${data.propertyAddress}
-    </div>
-    <div class="info-row">
-      <strong>Price:</strong> ${data.propertyPrice}
-    </div>
-    <div class="info-row">
-      <strong>Timestamp:</strong> ${data.timestamp}
-    </div>
-  </div>
+    const htmlBody = `
+      <div style="font-family: Arial, sans-serif; padding: 20px;">
+        <h2 style="color: #10b981;">New Lead Alert!</h2>
+        <p><strong>User Email:</strong> ${notifyData.userEmail}</p>
+        <p><strong>Property:</strong> ${notifyData.propertyAddress}</p>
+        <p><strong>Time:</strong> ${notifyData.timestamp}</p>
+        <hr>
+        <p style="color: #64748b; font-size: 12px;">
+          View all leads in your <a href="https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}">Google Sheet</a>
+        </p>
+      </div>
+    `;
 
-  <p style="background: #e0f2fe; padding: 15px; border-radius: 8px; margin-top: 20px;">
-    <strong>Action:</strong> The user has been sent their AI-enhanced listing description.
-    Check the Google Sheet for full details and follow up if needed.
-  </p>
+    MailApp.sendEmail({
+      to: notifyData.to || ADMIN_EMAIL,
+      subject: subject,
+      htmlBody: htmlBody,
+      name: 'Listing Rewriter'
+    });
 
-  <p style="text-align: center; margin-top: 30px;">
-    <a href="https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}"
-       style="display: inline-block; background: #10b981; color: white; padding: 12px 30px;
-              text-decoration: none; border-radius: 8px; font-weight: 600;">
-      View Lead in Google Sheets
-    </a>
-  </p>
-</body>
-</html>
-  `;
+    return { success: true };
+  } catch (error) {
+    return { error: error.toString() };
+  }
+}
 
-  MailApp.sendEmail({
-    to: data.to,
-    subject: subject,
-    htmlBody: htmlBody,
-    name: 'AI Listing Tool - Lead Notification'
-  });
+function logEmail(to, subject, status) {
+  try {
+    const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+    let sheet = ss.getSheetByName('EmailLog');
+
+    if (!sheet) {
+      sheet = ss.insertSheet('EmailLog');
+      sheet.appendRow(['timestamp', 'to', 'subject', 'status']);
+      sheet.setFrozenRows(1);
+    }
+
+    sheet.appendRow([new Date().toISOString(), to, subject, status]);
+  } catch (e) {
+    // Silent fail for logging
+  }
+}
+
+// ============ SETUP ============
+
+// Run this once manually to create the spreadsheet structure
+function setupSpreadsheet() {
+  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+
+  let leadsSheet = ss.getSheetByName('Leads');
+  if (!leadsSheet) {
+    leadsSheet = ss.insertSheet('Leads');
+    leadsSheet.appendRow(['timestamp', 'email', 'address', 'price', 'originalDescription', 'rewrittenDescription']);
+    leadsSheet.setFrozenRows(1);
+  }
+
+  let emailLogSheet = ss.getSheetByName('EmailLog');
+  if (!emailLogSheet) {
+    emailLogSheet = ss.insertSheet('EmailLog');
+    emailLogSheet.appendRow(['timestamp', 'to', 'subject', 'status']);
+    emailLogSheet.setFrozenRows(1);
+  }
+
+  Logger.log('Spreadsheet setup complete!');
 }
