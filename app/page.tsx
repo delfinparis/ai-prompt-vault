@@ -271,13 +271,13 @@ export default function Home() {
   return (
     <div style={{ minHeight: "100vh", background: "linear-gradient(135deg, #012f66 0%, #023d85 100%)" }}>
       {/* Hero Section */}
-      <section style={{ padding: "40px 24px 32px", textAlign: "center", maxWidth: 800, margin: "0 auto" }}>
-        <Image src="/logo.png" alt="Listing Rewriter - AI-powered listing descriptions" width={1200} height={210} priority style={{ margin: "0 auto 24px", maxWidth: "100%", height: "auto" }} />
+      <section style={{ padding: "24px 24px 16px", textAlign: "center", maxWidth: 800, margin: "0 auto" }}>
+        <Image src="/logo.png" alt="Listing Rewriter - AI-powered listing descriptions" width={1200} height={210} priority style={{ margin: "0 auto 16px", maxWidth: "100%", height: "auto" }} />
         <p style={{
           fontSize: 18,
           color: "#94a3b8",
           maxWidth: 600,
-          margin: "0 auto 32px",
+          margin: "0 auto 20px",
           lineHeight: 1.6
         }}>
           Paste your listing description and get three professionally rewritten variations in seconds. Free to use, no account needed.
@@ -381,7 +381,7 @@ export default function Home() {
               style={{ marginTop: 3, width: 18, height: 18, accentColor: "#012f66", cursor: "pointer" }}
             />
             <span style={{ fontSize: 14, color: "#64748b", lineHeight: 1.4 }}>
-              Send me weekly listing tips and market insights (you can unsubscribe anytime)
+              Send me weekly listing tips and market insights
             </span>
           </label>
 
