@@ -268,22 +268,9 @@ export default function Home() {
   // Show main landing page with form
   return (
     <div style={{ minHeight: "100vh", background: "linear-gradient(135deg, #012f66 0%, #023d85 100%)" }}>
-      {/* Navigation */}
-      <nav style={{ padding: "16px 24px", display: "flex", justifyContent: "space-between", alignItems: "center", maxWidth: 1200, margin: "0 auto" }}>
-        <Image src="/logo.png" alt="Listing Rewriter" width={200} height={35} priority />
-      </nav>
-
       {/* Hero Section */}
-      <section style={{ padding: "60px 24px 40px", textAlign: "center", maxWidth: 800, margin: "0 auto" }}>
-        <h1 style={{
-          fontSize: "clamp(32px, 5vw, 52px)",
-          fontWeight: 800,
-          color: "white",
-          lineHeight: 1.1,
-          marginBottom: 20
-        }}>
-          Transform Boring Listings Into <span style={{ color: "#38bdf8" }}>Buyer Magnets</span>
-        </h1>
+      <section style={{ padding: "40px 24px 32px", textAlign: "center", maxWidth: 800, margin: "0 auto" }}>
+        <Image src="/logo.png" alt="Listing Rewriter - AI-powered listing descriptions" width={600} height={105} priority style={{ margin: "0 auto 24px" }} />
         <p style={{
           fontSize: 18,
           color: "#94a3b8",
