@@ -4,8 +4,8 @@ import { useState, useEffect } from "react";
 import Image from "next/image";
 
 const PROCESSING_STAGES = [
-  { icon: "\u270d\ufe0f", title: "Crafting Your Descriptions", subtitle: "Three expert writers working in parallel", funFact: "Each variation uses a different writing style to give you real options." },
-  { icon: "\u2728", title: "Final Polish", subtitle: "Perfecting every word", funFact: "Almost there! Your three listing descriptions are being finalized." },
+  { icon: "\u270d\ufe0f", title: "Crafting Your Description", subtitle: "Our AI is rewriting your listing", funFact: "We analyze your original and rewrite it with better flow, structure, and appeal." },
+  { icon: "\u2728", title: "Final Polish", subtitle: "Perfecting every word", funFact: "Almost there! Your new listing description is being finalized." },
 ];
 
 // Before/After example data
@@ -30,7 +30,6 @@ export default function Home() {
   const [result, setResult] = useState<any>(null);
   const [currentStageIndex, setCurrentStageIndex] = useState(0);
   const [copied, setCopied] = useState(false);
-  const [selectedVariation, setSelectedVariation] = useState<'professional' | 'fun' | 'balanced'>('balanced');
   const [optInTips, setOptInTips] = useState(true);
 
   // Cycle through stages during loading
@@ -94,7 +93,7 @@ export default function Home() {
   };
 
   const handleCopy = () => {
-    const textToCopy = result?.variations?.[selectedVariation] || result?.description;
+    const textToCopy = result?.description;
     if (textToCopy) {
       navigator.clipboard.writeText(textToCopy);
       setCopied(true);
@@ -120,27 +119,21 @@ export default function Home() {
 
   // Show result view
   if (result) {
-    const variations = result.variations || { professional: result.description, fun: result.description, balanced: result.description };
-    const currentDescription = variations[selectedVariation];
-    const variationTabs = [
-      { key: 'professional' as const, label: 'Professional', icon: '\ud83d\udcbc', desc: 'Formal & sophisticated' },
-      { key: 'balanced' as const, label: 'Balanced', icon: '\u2696\ufe0f', desc: 'Best of both worlds' },
-      { key: 'fun' as const, label: 'Engaging', icon: '\u2728', desc: 'Warm & inviting' },
-    ];
+    const rewrittenDescription = result.description;
 
     return (
       <div style={{ minHeight: "100vh", background: "linear-gradient(135deg, #012f66 0%, #023d85 100%)", padding: 24 }}>
         <div style={{ maxWidth: 900, margin: "0 auto" }}>
           <div style={{ background: "linear-gradient(135deg, #10b981 0%, #059669 100%)", borderRadius: 16, padding: 32, color: "white", textAlign: "center", marginBottom: 24 }}>
             <div style={{ fontSize: 48, marginBottom: 12 }}>{"\u2713"}</div>
-            <h2 style={{ fontSize: 28, fontWeight: 700, marginBottom: 8 }}>Your AI-Enhanced Descriptions are Ready!</h2>
-            <p style={{ fontSize: 16, opacity: 0.9 }}>3 variations also sent to <strong>{email}</strong></p>
+            <h2 style={{ fontSize: 28, fontWeight: 700, marginBottom: 8 }}>Your AI-Enhanced Description is Ready!</h2>
+            <p style={{ fontSize: 16, opacity: 0.9 }}>Also sent to <strong>{email}</strong></p>
           </div>
 
-          {/* Variation Tabs */}
+          {/* Rewritten Description */}
           <div style={{ background: "#fff", border: "2px solid #e2e8f0", borderRadius: 16, padding: 32, marginBottom: 24 }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
-              <h3 style={{ fontSize: 18, fontWeight: 600, color: "#023d85" }}>Choose Your Style</h3>
+              <h3 style={{ fontSize: 18, fontWeight: 600, color: "#023d85" }}>Your New Listing Description</h3>
               <button
                 onClick={handleCopy}
                 style={{
@@ -161,35 +154,16 @@ export default function Home() {
               </button>
             </div>
 
-            {/* Tab buttons */}
-            <div style={{ display: "flex", gap: 12, marginBottom: 20 }}>
-              {variationTabs.map((tab) => (
-                <button
-                  key={tab.key}
-                  onClick={() => setSelectedVariation(tab.key)}
-                  style={{
-                    flex: 1,
-                    padding: "16px 12px",
-                    border: selectedVariation === tab.key ? "2px solid #012f66" : "2px solid #e2e8f0",
-                    borderRadius: 12,
-                    background: selectedVariation === tab.key ? "#e6f0fa" : "#fff",
-                    cursor: "pointer",
-                    transition: "all 0.2s",
-                  }}
-                >
-                  <div style={{ fontSize: 24, marginBottom: 4 }}>{tab.icon}</div>
-                  <div style={{ fontSize: 14, fontWeight: 600, color: selectedVariation === tab.key ? "#012f66" : "#023d85" }}>{tab.label}</div>
-                  <div style={{ fontSize: 11, color: "#64748b", marginTop: 2 }}>{tab.desc}</div>
-                </button>
-              ))}
-            </div>
-
-            {/* Description display */}
             <div style={{ background: "#f8fafc", borderRadius: 12, padding: 24, fontSize: 16, lineHeight: 1.7, color: "#334155", whiteSpace: "pre-wrap" }}>
-              {currentDescription}
+              {rewrittenDescription}
             </div>
-            <div style={{ marginTop: 12, textAlign: "right", fontSize: 13, color: "#64748b" }}>
-              {currentDescription?.length || 0} characters
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 12 }}>
+              <p style={{ fontSize: 12, color: "#94a3b8", fontStyle: "italic" }}>
+                AI-generated — review for accuracy before posting to MLS
+              </p>
+              <span style={{ fontSize: 13, color: "#64748b" }}>
+                {rewrittenDescription?.length || 0} characters
+              </span>
             </div>
           </div>
 
@@ -280,7 +254,7 @@ export default function Home() {
           margin: "0 auto 20px",
           lineHeight: 1.6
         }}>
-          Paste your listing description and get three professionally rewritten variations in seconds. Free to use, no account needed.
+          Paste your listing description and get a professionally rewritten version in seconds. Free to use, no account needed.
         </p>
       </section>
 
@@ -401,11 +375,11 @@ export default function Home() {
               boxShadow: "0 4px 14px rgba(14, 165, 233, 0.4)",
             }}
           >
-            Generate 3 AI-Enhanced Descriptions
+            Generate AI-Enhanced Description
           </button>
 
           <p style={{ textAlign: "center", fontSize: 13, color: "#64748b", marginTop: 16 }}>
-            Free to use. Results delivered instantly and emailed to you.
+            Free to use. Result delivered instantly and emailed to you.
           </p>
         </div>
       </section>
@@ -423,7 +397,7 @@ export default function Home() {
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))", gap: 24 }}>
             {[
               { step: "1", icon: "\ud83d\udccb", title: "Paste Your Listing", desc: "Enter your property details and current description" },
-              { step: "2", icon: "\ud83e\udd16", title: "AI Rewrites It 3 Ways", desc: "Three distinct writing styles generate in parallel so you get real options" },
+              { step: "2", icon: "\ud83e\udd16", title: "AI Rewrites It", desc: "Our AI crafts a polished, MLS-ready description from your original" },
               { step: "3", icon: "\u2728", title: "Copy & Go", desc: "Pick the variation you like, copy it, and paste it into your MLS" },
             ].map((item) => (
               <div key={item.step} style={{
@@ -474,7 +448,7 @@ export default function Home() {
             Real transformation from a Chicago 2-flat listing
           </p>
 
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: 24 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: 24 }}>
             {/* Before */}
             <div style={{
               background: "rgba(239, 68, 68, 0.1)",
@@ -538,7 +512,7 @@ export default function Home() {
           Ready to Transform Your Listings?
         </h2>
         <p style={{ color: "#94a3b8", marginBottom: 24, fontSize: 16 }}>
-          Paste your description above and get three pro-quality rewrites in seconds
+          Paste your description above and get a pro-quality rewrite in seconds
         </p>
         <button
           onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}

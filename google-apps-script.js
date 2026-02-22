@@ -93,52 +93,13 @@ function saveLead(leadData) {
 
 function sendUserEmail(emailData) {
   try {
-    const subject = emailData.subject || `Your 3 AI-Enhanced Listing Descriptions for ${emailData.propertyAddress}`;
-
-    const descriptionsHtml = `
-          <!-- Professional Version -->
-          <div style="margin-bottom: 25px;">
-            <h3 style="color: #1e293b; margin-bottom: 10px; display: flex; align-items: center;">
-              <span style="font-size: 20px; margin-right: 8px;">&#x1f4bc;</span> Professional Version
-            </h3>
-            <p style="color: #64748b; font-size: 13px; margin-bottom: 8px;">Formal &amp; sophisticated tone</p>
-            <div style="background: white; padding: 20px; border-radius: 8px; border: 2px solid #3b82f6;">
-              <p style="color: #334155; line-height: 1.6; margin: 0;">${emailData.professionalDescription}</p>
-            </div>
-            <p style="color: #94a3b8; font-size: 12px; margin-top: 5px;">${emailData.professionalDescription.length} characters</p>
-          </div>
-
-          <!-- Balanced Version -->
-          <div style="margin-bottom: 25px;">
-            <h3 style="color: #1e293b; margin-bottom: 10px; display: flex; align-items: center;">
-              <span style="font-size: 20px; margin-right: 8px;">&#x2696;&#xfe0f;</span> Balanced Version
-              <span style="background: #10b981; color: white; font-size: 11px; padding: 2px 8px; border-radius: 10px; margin-left: 10px;">RECOMMENDED</span>
-            </h3>
-            <p style="color: #64748b; font-size: 13px; margin-bottom: 8px;">Best of both worlds</p>
-            <div style="background: white; padding: 20px; border-radius: 8px; border: 2px solid #10b981;">
-              <p style="color: #334155; line-height: 1.6; margin: 0;">${emailData.balancedDescription}</p>
-            </div>
-            <p style="color: #94a3b8; font-size: 12px; margin-top: 5px;">${emailData.balancedDescription.length} characters</p>
-          </div>
-
-          <!-- Engaging Version -->
-          <div style="margin-bottom: 15px;">
-            <h3 style="color: #1e293b; margin-bottom: 10px; display: flex; align-items: center;">
-              <span style="font-size: 20px; margin-right: 8px;">&#x2728;</span> Engaging Version
-            </h3>
-            <p style="color: #64748b; font-size: 13px; margin-bottom: 8px;">Warm &amp; inviting tone</p>
-            <div style="background: white; padding: 20px; border-radius: 8px; border: 2px solid #f59e0b;">
-              <p style="color: #334155; line-height: 1.6; margin: 0;">${emailData.funDescription}</p>
-            </div>
-            <p style="color: #94a3b8; font-size: 12px; margin-top: 5px;">${emailData.funDescription.length} characters</p>
-          </div>
-      `;
+    const subject = emailData.subject || `Your AI-Enhanced Listing Description for ${emailData.propertyAddress}`;
 
     const htmlBody = `
       <div style="font-family: Inter, Arial, sans-serif; max-width: 700px; margin: 0 auto;">
         <div style="background: linear-gradient(135deg, #012f66 0%, #023d85 100%); padding: 30px; text-align: center; border-radius: 10px 10px 0 0;">
-          <h1 style="color: white; margin: 0; font-size: 24px;">3 AI-Enhanced Descriptions Ready!</h1>
-          <p style="color: #94a3b8; margin-top: 10px; font-size: 14px;">Pick your favorite style below</p>
+          <h1 style="color: white; margin: 0; font-size: 24px;">Your AI-Enhanced Description is Ready!</h1>
+          <p style="color: #94a3b8; margin-top: 10px; font-size: 14px;">Copy it directly into your MLS</p>
         </div>
 
         <div style="background: #f8fafc; padding: 30px; border: 1px solid #e2e8f0;">
@@ -151,12 +112,23 @@ function sendUserEmail(emailData) {
 
           <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 25px 0;">
 
-          ${descriptionsHtml}
+          <h3 style="color: #1e293b; margin-bottom: 10px;">Your New Listing Description</h3>
+          <div style="background: white; padding: 20px; border-radius: 8px; border: 2px solid #10b981;">
+            <p style="color: #334155; line-height: 1.7; margin: 0;">${emailData.description}</p>
+          </div>
+          <p style="color: #94a3b8; font-size: 12px; margin-top: 8px;">${emailData.characterCount} characters</p>
+          <p style="color: #94a3b8; font-size: 11px; font-style: italic; margin-top: 4px;">AI-generated &mdash; review for accuracy before posting to MLS</p>
         </div>
 
         <div style="background: #012f66; padding: 20px; text-align: center; border-radius: 0 0 10px 10px;">
           <a href="https://listing.joinkale.com" style="display: inline-block; background: #10b981; color: white; padding: 12px 30px; text-decoration: none; border-radius: 8px; font-weight: 600;">Rewrite Another Listing</a>
-          <p style="color: #94a3b8; margin: 15px 0 0 0; font-size: 13px;">
+          <p style="color: #94a3b8; margin: 20px 0 10px 0; font-size: 14px;">
+            Subscribe to <a href="https://www.youtube.com/@KeepingitRealPodcast" style="color: #38bdf8; text-decoration: none; font-weight: 600;">KeepingItRealPodcast</a> and learn the secrets of the top agents in the industry!
+          </p>
+          <p style="color: #94a3b8; margin: 8px 0 10px 0; font-size: 13px;">
+            <a href="https://open.spotify.com/show/6lDHbQ8nfuV87QyqiELilc" style="color: #1DB954; text-decoration: none; font-weight: 600;">Spotify</a> &nbsp;&middot;&nbsp; <a href="https://podcasts.apple.com/us/podcast/keeping-it-real-podcast-secrets-of-top-1-realtors/id1237389947" style="color: #AF52DE; text-decoration: none; font-weight: 600;">Apple Podcasts</a>
+          </p>
+          <p style="color: #94a3b8; margin: 10px 0 0 0; font-size: 13px;">
             &copy; 2026 DJP3 Consulting Inc. Powered by AI.
           </p>
         </div>
