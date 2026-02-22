@@ -3,11 +3,8 @@
 import { useState, useEffect } from "react";
 
 const PROCESSING_STAGES = [
-  { icon: "🔍", title: "Researching Your Property", subtitle: "Analyzing recent listings & property details", funFact: "Did you know? Properties with detailed descriptions sell 30% faster." },
-  { icon: "🏘️", title: "Mapping the Neighborhood", subtitle: "Finding nearby amenities & attractions", funFact: "Fun fact: Mentioning nearby parks increases buyer interest by 25%." },
-  { icon: "📊", title: "Analyzing Comparables", subtitle: "Reviewing recently sold properties", funFact: "Insight: The best listings borrow winning elements from successful nearby sales." },
-  { icon: "✍️", title: "AI Copywriter at Work", subtitle: "Crafting your compelling description", funFact: "Secret: Action-oriented language creates urgency and drives faster decisions." },
-  { icon: "✨", title: "Final Polish", subtitle: "Perfecting every word", funFact: "Almost there! Your irresistible listing is being finalized." },
+  { icon: "✍️", title: "Crafting Your Descriptions", subtitle: "Three expert writers working in parallel", funFact: "Each variation uses a different writing style to give you real options." },
+  { icon: "✨", title: "Final Polish", subtitle: "Perfecting every word", funFact: "Almost there! Your three listing descriptions are being finalized." },
 ];
 
 // Before/After example data - Real AI-generated result from Uptown Chicago 2-flat

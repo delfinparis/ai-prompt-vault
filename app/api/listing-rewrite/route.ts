@@ -19,7 +19,6 @@ export async function POST(req: NextRequest) {
         userEmail = decoded.email;
         userCredits = decoded.credits;
 
-        // Check if user has credits
         if (userCredits < 1) {
           return NextResponse.json(
             { error: 'No credits remaining. Please purchase more credits to continue.' },
@@ -29,7 +28,6 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // If no valid auth, require email in body (free tier / anonymous)
     const body = await req.json();
     const { address, unit, price, beds, baths, sqft, description, email } = body;
 
@@ -47,10 +45,10 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const apiKey = process.env.OPENAI_API_KEY;
+    const apiKey = process.env.ANTHROPIC_API_KEY;
     if (!apiKey) {
       return NextResponse.json(
-        { error: 'OpenAI API key not configured' },
+        { error: 'Anthropic API key not configured' },
         { status: 500 }
       );
     }
@@ -58,16 +56,8 @@ export async function POST(req: NextRequest) {
     const fullAddress = unit ? `${address}, Unit ${unit}` : address;
     const finalEmail = email || userEmail;
 
-    // OPTIMIZATION 1: Run all research calls in PARALLEL with gpt-4o-mini
-    console.log('Starting parallel research...');
-    const [propertyResearch, neighborhoodInfo, comparableListings] = await Promise.all([
-      researchProperty(fullAddress, apiKey),
-      researchNeighborhood(fullAddress, apiKey),
-      findComparableListings(fullAddress, apiKey),
-    ]);
-    console.log('Research complete.');
-
-    // Generate all 3 variations (professional, fun, balanced)
+    // Generate all 3 variations in parallel (no research calls — only use data the user provided)
+    console.log('Generating 3 variations in parallel...');
     const variations = await generateAllVariations({
       address: fullAddress,
       price,
@@ -75,10 +65,8 @@ export async function POST(req: NextRequest) {
       baths,
       sqft,
       description,
-      propertyResearch,
-      neighborhoodInfo,
-      comparableListings,
     }, apiKey);
+    console.log('All 3 variations generated.');
 
     // Deduct credit if user is authenticated
     if (userId) {
@@ -93,7 +81,7 @@ export async function POST(req: NextRequest) {
       address: fullAddress,
       price: price || 'N/A',
       originalDescription: description,
-      rewrittenDescription: variations.balanced, // Save balanced as default
+      rewrittenDescription: variations.balanced,
       timestamp: new Date().toISOString(),
     });
 
@@ -112,7 +100,7 @@ export async function POST(req: NextRequest) {
       success: true,
       message: 'Processing complete! Check your email in the next 5 minutes.',
       variations,
-      description: variations.balanced, // Keep for backwards compatibility
+      description: variations.balanced,
       characterCount: variations.balanced.length,
       address: fullAddress,
       creditsRemaining: userId ? userCredits - 1 : undefined,
@@ -127,119 +115,7 @@ export async function POST(req: NextRequest) {
   }
 }
 
-// OPTIMIZATION: Use gpt-4o-mini for research (10x cheaper, same quality for factual lookups)
-async function researchProperty(address: string, apiKey: string): Promise<string> {
-  try {
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${apiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'gpt-4o-mini',
-        messages: [
-          {
-            role: 'system',
-            content: 'You are a real estate data researcher. Extract factual property details. Be concise. Never fabricate information.'
-          },
-          {
-            role: 'user',
-            content: `Research property at ${address}. Extract if available: year built, lot size, HOA fees, notable features, recent upgrades. Output as brief bullet points. Say "No data found" if nothing available.`
-          }
-        ],
-        max_tokens: 300,
-        temperature: 0.1,
-      }),
-    });
-
-    if (!response.ok) {
-      console.error('Property research error:', response.status);
-      return 'No property data available.';
-    }
-    const data = await response.json();
-    return data.choices[0]?.message?.content || 'No property data available.';
-  } catch (error) {
-    console.error('Property research error:', error);
-    return 'No property data available.';
-  }
-}
-
-async function researchNeighborhood(address: string, apiKey: string): Promise<string> {
-  try {
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${apiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'gpt-4o-mini',
-        messages: [
-          {
-            role: 'system',
-            content: 'You are a neighborhood researcher. Provide factual local amenities with specific names and distances. Be concise.'
-          },
-          {
-            role: 'user',
-            content: `List amenities within 1 mile of ${address}: parks, transit, schools, shopping, restaurants. Include specific names and distances. Max 2-3 per category. Omit categories with nothing notable.`
-          }
-        ],
-        max_tokens: 300,
-        temperature: 0.1,
-      }),
-    });
-
-    if (!response.ok) {
-      console.error('Neighborhood research error:', response.status);
-      return 'No neighborhood data available.';
-    }
-    const data = await response.json();
-    return data.choices[0]?.message?.content || 'No neighborhood data available.';
-  } catch (error) {
-    console.error('Neighborhood research error:', error);
-    return 'No neighborhood data available.';
-  }
-}
-
-async function findComparableListings(address: string, apiKey: string): Promise<string> {
-  try {
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${apiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'gpt-4o-mini',
-        messages: [
-          {
-            role: 'system',
-            content: 'You are a real estate market analyst. Identify winning patterns from successful listings in the area.'
-          },
-          {
-            role: 'user',
-            content: `For properties near ${address}, what description patterns work best? List 2-3 key themes that resonate with buyers in this area (lifestyle benefits, neighborhood highlights, urgency triggers).`
-          }
-        ],
-        max_tokens: 250,
-        temperature: 0.2,
-      }),
-    });
-
-    if (!response.ok) {
-      console.error('Comparable listings error:', response.status);
-      return 'No comparable data available.';
-    }
-    const data = await response.json();
-    return data.choices[0]?.message?.content || 'No comparable data available.';
-  } catch (error) {
-    console.error('Comparable listings error:', error);
-    return 'No comparable data available.';
-  }
-}
-
-// FEW-SHOT EXAMPLES: Real human-written MLS descriptions that convert
+// Few-shot examples: real human-written MLS descriptions that convert
 const FEW_SHOT_EXAMPLES = `
 EXAMPLE 1 (Chicago condo, 847 chars):
 "Sun-drenched corner unit in the heart of Lincoln Park with stunning skyline views from floor-to-ceiling windows. The open layout flows naturally from the chef's kitchen with quartz counters and stainless appliances to a generous living space perfect for entertaining. Primary suite includes a spa-like bath and custom closet system. Building amenities include 24-hour door staff, fitness center, and rooftop deck. Steps to the Diversey Brown Line, Lincoln Park Zoo, and some of the city's best dining along Halsted. Deeded parking included. One of the few units in this boutique building to hit the market this year."
@@ -248,98 +124,95 @@ EXAMPLE 2 (Suburban home, 912 chars):
 "Original owner, meticulously maintained brick colonial on a quiet cul-de-sac in award-winning District 34. Hardwood floors throughout the main level lead to a remodeled kitchen with soft-close cabinetry, granite surfaces, and breakfast bar overlooking the family room. Four generous bedrooms upstairs include a primary with renovated en-suite. The finished basement adds flexible space for a home office, playroom, or gym. Mature landscaping surrounds the private backyard with bluestone patio, perfect for summer evenings. Walk to Avoca West Elementary. New roof 2022, HVAC 2021. Attached two-car garage with epoxy floors and built-in storage."
 `;
 
-// Types for variations
-interface DescriptionVariations {
-  professional: string;
-  fun: string;
-  balanced: string;
-}
+// Shared writing rules
+const WRITING_RULES = `RULES — follow these exactly:
 
-// Generate all 3 variations in parallel (same cost - one API call each but run simultaneously)
-async function generateAllVariations(data: any, apiKey: string): Promise<DescriptionVariations> {
-  console.log('Generating 3 variations in parallel...');
-
-  const baseContext = `PROPERTY DATA:
-Address: ${data.address}
-Price: ${data.price || 'Contact for price'} | Beds: ${data.beds || 'N/A'} | Baths: ${data.baths || 'N/A'} | Sq Ft: ${data.sqft || 'N/A'}
-
-ORIGINAL DESCRIPTION:
-${data.description}
-
-RESEARCH CONTEXT:
-Property: ${data.propertyResearch}
-Neighborhood: ${data.neighborhoodInfo}
-Market Insights: ${data.comparableListings}
-
-${FEW_SHOT_EXAMPLES}`;
-
-  const baseRules = `DO NOT:
+DO NOT:
 - Use "Welcome to" or "Step into" openings
 - Use "boasts," "features," or "offers" as main verbs
 - Use "Whether you're..." constructions
 - Use "Don't miss" or "Act now" clichés
 - Use em dashes, exclamation points, or colon lists
 - Use ** bold markers or bullet points
+- Use "stunning," "amazing," "charming," "cozy," "unique," or "motivated seller"
 - Sound like AI wrote it
+- Invent or assume any facts not present in the PROPERTY DATA or ORIGINAL DESCRIPTION
 
 DO:
 - Lead with the most specific, compelling detail (not generic praise)
 - Convert features to lifestyle benefits
 - Flow naturally from space to space
-- Include 1-2 neighborhood highlights woven naturally into the text
-- Keep factual and authentic
+- Only reference features, specs, and details present in the PROPERTY DATA or ORIGINAL DESCRIPTION
 - Output exactly 800-900 characters, one paragraph, no line breaks`;
 
-  // Professional tone prompt
-  const professionalPrompt = `You are an elite real estate copywriter writing for luxury brokerages and high-end MLS listings.
+// Types
+interface DescriptionVariations {
+  professional: string;
+  fun: string;
+  balanced: string;
+}
 
-${baseContext}
+interface PropertyData {
+  address: string;
+  price?: string;
+  beds?: string;
+  baths?: string;
+  sqft?: string;
+  description: string;
+}
 
-TONE: Professional & Sophisticated
-- Formal but not stuffy
-- Emphasize investment value, quality finishes, and prestige
-- Use precise, elevated language
-- Appeal to discerning buyers who value quality and exclusivity
-- Subtle confidence, understated elegance
+// Generate all 3 variations in parallel with distinct personas
+async function generateAllVariations(data: PropertyData, apiKey: string): Promise<DescriptionVariations> {
+  const userMessage = `PROPERTY DATA:
+Address: ${data.address}
+Price: ${data.price || 'Contact for price'} | Beds: ${data.beds || 'N/A'} | Baths: ${data.baths || 'N/A'} | Sq Ft: ${data.sqft || 'N/A'}
 
-${baseRules}`;
+ORIGINAL DESCRIPTION:
+${data.description}
 
-  // Fun/Engaging tone prompt
-  const funPrompt = `You are a creative real estate copywriter known for engaging, personality-filled listings that stand out.
+Rewrite this listing description following the rules in your instructions. Output only the description text, nothing else.`;
 
-${baseContext}
-
-TONE: Fun & Engaging
-- Warm, conversational, and inviting
-- Paint vivid lifestyle pictures (weekend BBQs, morning coffee on the patio)
-- Use sensory language and emotional hooks
-- Make readers smile and imagine themselves living there
-- Energetic but not over-the-top
-
-${baseRules}`;
-
-  // Balanced tone prompt
-  const balancedPrompt = `You are an experienced real estate copywriter who blends professionalism with warmth.
-
-${baseContext}
-
-TONE: Balanced (Professional + Engaging)
-- Professional enough for MLS, warm enough to connect emotionally
-- Mix practical details with lifestyle benefits
-- Confident but approachable
-- Appeal to a broad range of buyers
-- The sweet spot between formal and friendly
-
-${baseRules}`;
-
-  // Run all 3 in parallel
   const [professionalResult, funResult, balancedResult] = await Promise.all([
-    generateSingleVariation(professionalPrompt, apiKey, 'Professional'),
-    generateSingleVariation(funPrompt, apiKey, 'Fun'),
-    generateSingleVariation(balancedPrompt, apiKey, 'Balanced'),
-  ]);
+    generateVariation({
+      systemPrompt: `You are an MLS compliance editor at a top luxury brokerage. You write descriptions that read like polished investment briefs — precise specs, understated confidence, zero fluff. You never paint lifestyle scenes. You let the property's features speak for themselves through specific details and exact numbers.
 
-  console.log('All 3 variations generated successfully.');
+${WRITING_RULES}
+
+TONE: Professional and understated. Emphasize investment value, quality of finishes, and location advantages. Use precise, elevated language. No storytelling — just confident, specific copy that appeals to discerning buyers.
+
+${FEW_SHOT_EXAMPLES}`,
+      userMessage,
+      temperature: 0.5,
+      apiKey,
+      label: 'Professional',
+    }),
+    generateVariation({
+      systemPrompt: `You are a lifestyle magazine writer for Dwell and Architectural Digest. You write descriptions that make readers feel one specific moment in the home — morning light on the kitchen counter, the sound of the backyard on a summer evening. You use sensory details and warmth, never generic superlatives.
+
+${WRITING_RULES}
+
+TONE: Warm, sensory, and inviting. Paint one vivid scene the buyer can picture themselves in. Use specific sensory details from the property data. Make readers feel what it's like to live here, not just what the house looks like.
+
+${FEW_SHOT_EXAMPLES}`,
+      userMessage,
+      temperature: 0.9,
+      apiKey,
+      label: 'Engaging',
+    }),
+    generateVariation({
+      systemPrompt: `You are a top-producing listing agent with 20 years of experience and over 1,000 transactions. You write descriptions that lead with the single strongest selling point, weave in key specs naturally, and close with one moment of lifestyle appeal. You know what buyers actually care about and what makes them book a showing.
+
+${WRITING_RULES}
+
+TONE: Confident and approachable. Lead with the strongest feature. Mix practical details with one lifestyle moment. Professional enough for MLS, warm enough to connect emotionally. The sweet spot that appeals to the broadest range of buyers.
+
+${FEW_SHOT_EXAMPLES}`,
+      userMessage,
+      temperature: 0.7,
+      apiKey,
+      label: 'Balanced',
+    }),
+  ]);
 
   return {
     professional: professionalResult,
@@ -348,20 +221,36 @@ ${baseRules}`;
   };
 }
 
-async function generateSingleVariation(prompt: string, apiKey: string, label: string): Promise<string> {
+async function generateVariation({
+  systemPrompt,
+  userMessage,
+  temperature,
+  apiKey,
+  label,
+}: {
+  systemPrompt: string;
+  userMessage: string;
+  temperature: number;
+  apiKey: string;
+  label: string;
+}): Promise<string> {
   console.log(`Generating ${label} variation...`);
 
-  const response = await fetch('https://api.openai.com/v1/chat/completions', {
+  const response = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
     headers: {
-      'Authorization': `Bearer ${apiKey}`,
-      'Content-Type': 'application/json',
+      'x-api-key': apiKey,
+      'anthropic-version': '2023-06-01',
+      'content-type': 'application/json',
     },
     body: JSON.stringify({
-      model: 'gpt-4o',
-      messages: [{ role: 'user', content: prompt }],
+      model: 'claude-haiku-4-5-20251001',
       max_tokens: 600,
-      temperature: 0.7,
+      temperature,
+      system: systemPrompt,
+      messages: [
+        { role: 'user', content: userMessage },
+      ],
     }),
   });
 
@@ -372,10 +261,62 @@ async function generateSingleVariation(prompt: string, apiKey: string, label: st
   }
 
   const result = await response.json();
-  return result.choices[0]?.message?.content || '';
+  let output = result.content?.[0]?.text || '';
+
+  // Strip any wrapping quotes the model may add
+  output = output.replace(/^["']|["']$/g, '').trim();
+
+  // Validate length — retry once if outside 750-950 range
+  if (output.length < 750 || output.length > 950) {
+    console.log(`${label} variation length ${output.length} outside range, retrying...`);
+    output = await retryForLength(output, apiKey, label);
+  }
+
+  console.log(`${label} variation done: ${output.length} chars`);
+  return output;
 }
 
-async function saveToGoogleSheets(data: any) {
+async function retryForLength(draft: string, apiKey: string, label: string): Promise<string> {
+  const direction = draft.length < 750 ? 'expand' : 'trim';
+  const target = direction === 'expand' ? 'at least 800' : 'no more than 900';
+
+  const response = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: {
+      'x-api-key': apiKey,
+      'anthropic-version': '2023-06-01',
+      'content-type': 'application/json',
+    },
+    body: JSON.stringify({
+      model: 'claude-haiku-4-5-20251001',
+      max_tokens: 600,
+      temperature: 0.3,
+      system: `You are a copy editor. ${direction === 'expand' ? 'Expand' : 'Tighten'} the following listing description to ${target} characters. Keep the same tone and style. Do not add any facts not already present. Output only the revised description.`,
+      messages: [
+        { role: 'user', content: draft },
+      ],
+    }),
+  });
+
+  if (!response.ok) {
+    console.warn(`${label} length retry failed, using original`);
+    return draft;
+  }
+
+  const result = await response.json();
+  const revised = (result.content?.[0]?.text || draft).replace(/^["']|["']$/g, '').trim();
+  console.log(`${label} retry result: ${revised.length} chars`);
+  return revised;
+}
+
+async function saveToGoogleSheets(data: {
+  email: string;
+  address: string;
+  price: string;
+  originalDescription: string;
+  rewrittenDescription: string;
+  timestamp: string;
+}) {
   try {
     const googleScriptUrl = process.env.GOOGLE_SHEETS_WEBHOOK_URL;
     if (!googleScriptUrl) {
@@ -397,7 +338,7 @@ async function saveToGoogleSheets(data: any) {
   }
 }
 
-async function sendEmailToUser(email: string, property: any, variations: DescriptionVariations) {
+async function sendEmailToUser(email: string, property: { address: string; price: string; beds: string; baths: string }, variations: DescriptionVariations) {
   try {
     const googleScriptUrl = process.env.GOOGLE_SHEETS_WEBHOOK_URL;
     if (!googleScriptUrl) {
@@ -419,11 +360,9 @@ async function sendEmailToUser(email: string, property: any, variations: Descrip
           propertyPrice: property.price,
           propertyBeds: property.beds,
           propertyBaths: property.baths,
-          // Send all 3 variations
           professionalDescription: variations.professional,
           funDescription: variations.fun,
           balancedDescription: variations.balanced,
-          // Keep backward compatibility
           description: variations.balanced,
           characterCount: variations.balanced.length,
         },
