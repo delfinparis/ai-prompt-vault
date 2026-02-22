@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { address, unit, price, beds, baths, sqft, description, email } = body;
+    const { address, unit, price, beds, baths, sqft, description, email, optInTips } = body;
 
     if (!email) {
       return NextResponse.json(
@@ -49,6 +49,7 @@ export async function POST(req: NextRequest) {
       originalDescription: description,
       rewrittenDescription: variations.balanced,
       timestamp: new Date().toISOString(),
+      optInTips: optInTips ? 'Yes' : 'No',
     });
 
     console.log('Sending email to user:', email);
@@ -281,6 +282,7 @@ async function saveToGoogleSheets(data: {
   originalDescription: string;
   rewrittenDescription: string;
   timestamp: string;
+  optInTips: string;
 }) {
   try {
     const googleScriptUrl = process.env.GOOGLE_SHEETS_WEBHOOK_URL;

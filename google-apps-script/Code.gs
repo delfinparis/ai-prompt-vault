@@ -72,7 +72,7 @@ function saveLead(leadData) {
   // Create Leads sheet if it doesn't exist
   if (!sheet) {
     sheet = ss.insertSheet('Leads');
-    sheet.appendRow(['timestamp', 'email', 'address', 'price', 'originalDescription', 'rewrittenDescription']);
+    sheet.appendRow(['timestamp', 'email', 'address', 'price', 'originalDescription', 'rewrittenDescription', 'optInTips']);
     sheet.setFrozenRows(1);
   }
 
@@ -82,7 +82,8 @@ function saveLead(leadData) {
     leadData.address,
     leadData.price || 'N/A',
     leadData.originalDescription,
-    leadData.rewrittenDescription
+    leadData.rewrittenDescription,
+    leadData.optInTips || 'No'
   ]);
 
   return { success: true };

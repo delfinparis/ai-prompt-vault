@@ -31,6 +31,7 @@ export default function Home() {
   const [currentStageIndex, setCurrentStageIndex] = useState(0);
   const [copied, setCopied] = useState(false);
   const [selectedVariation, setSelectedVariation] = useState<'professional' | 'fun' | 'balanced'>('balanced');
+  const [optInTips, setOptInTips] = useState(true);
 
   // Cycle through stages during loading
   useEffect(() => {
@@ -74,6 +75,7 @@ export default function Home() {
           baths,
           sqft,
           description,
+          optInTips,
         }),
       });
 
@@ -369,6 +371,19 @@ export default function Home() {
               style={{ width: "100%", padding: 14, fontSize: 16, border: "2px solid #e2e8f0", borderRadius: 10, resize: "vertical", boxSizing: "border-box", color: "#1e293b", background: "white" }}
             />
           </div>
+
+          {/* Opt-in checkbox */}
+          <label style={{ display: "flex", alignItems: "flex-start", gap: 10, marginBottom: 24, cursor: "pointer" }}>
+            <input
+              type="checkbox"
+              checked={optInTips}
+              onChange={(e) => setOptInTips(e.target.checked)}
+              style={{ marginTop: 3, width: 18, height: 18, accentColor: "#012f66", cursor: "pointer" }}
+            />
+            <span style={{ fontSize: 14, color: "#64748b", lineHeight: 1.4 }}>
+              Send me weekly listing tips and market insights (you can unsubscribe anytime)
+            </span>
+          </label>
 
           {/* Submit Button */}
           <button
