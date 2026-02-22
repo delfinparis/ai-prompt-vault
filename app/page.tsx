@@ -270,7 +270,7 @@ export default function Home() {
     <div style={{ minHeight: "100vh", background: "linear-gradient(135deg, #012f66 0%, #023d85 100%)" }}>
       {/* Hero Section */}
       <section style={{ padding: "40px 24px 32px", textAlign: "center", maxWidth: 800, margin: "0 auto" }}>
-        <Image src="/logo.png" alt="Listing Rewriter - AI-powered listing descriptions" width={600} height={105} priority style={{ margin: "0 auto 24px" }} />
+        <Image src="/logo.png" alt="Listing Rewriter - AI-powered listing descriptions" width={1200} height={210} priority style={{ margin: "0 auto 24px", maxWidth: "100%", height: "auto" }} />
         <p style={{
           fontSize: 18,
           color: "#94a3b8",
