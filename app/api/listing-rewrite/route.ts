@@ -1,40 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
-import { verifyToken } from "@/lib/auth";
-import { updateUserCredits } from "@/lib/db";
 
 export async function POST(req: NextRequest) {
   try {
-    // Check for auth token
-    const authHeader = req.headers.get('authorization');
-    let userId: string | null = null;
-    let userEmail: string = 'anonymous@user.com';
-    let userCredits: number = 0;
-
-    if (authHeader && authHeader.startsWith('Bearer ')) {
-      const token = authHeader.substring(7);
-      const decoded = verifyToken(token);
-
-      if (decoded) {
-        userId = decoded.id;
-        userEmail = decoded.email;
-        userCredits = decoded.credits;
-
-        if (userCredits < 1) {
-          return NextResponse.json(
-            { error: 'No credits remaining. Please purchase more credits to continue.' },
-            { status: 402 }
-          );
-        }
-      }
-    }
-
     const body = await req.json();
     const { address, unit, price, beds, baths, sqft, description, email } = body;
 
-    if (!userId && !email) {
+    if (!email) {
       return NextResponse.json(
-        { error: 'Please log in or provide an email address' },
-        { status: 401 }
+        { error: 'Please provide an email address' },
+        { status: 400 }
       );
     }
 
@@ -54,9 +28,8 @@ export async function POST(req: NextRequest) {
     }
 
     const fullAddress = unit ? `${address}, Unit ${unit}` : address;
-    const finalEmail = email || userEmail;
 
-    // Generate all 3 variations in parallel (no research calls — only use data the user provided)
+    // Generate all 3 variations in parallel
     console.log('Generating 3 variations in parallel...');
     const variations = await generateAllVariations({
       address: fullAddress,
@@ -68,16 +41,9 @@ export async function POST(req: NextRequest) {
     }, apiKey);
     console.log('All 3 variations generated.');
 
-    // Deduct credit if user is authenticated
-    if (userId) {
-      const newCredits = userCredits - 1;
-      console.log(`Deducting credit for user ${userId}. Credits: ${userCredits} -> ${newCredits}`);
-      await updateUserCredits(userId, newCredits, finalEmail);
-    }
-
     console.log('Saving to Google Sheets...');
     await saveToGoogleSheets({
-      email: finalEmail,
+      email,
       address: fullAddress,
       price: price || 'N/A',
       originalDescription: description,
@@ -85,8 +51,8 @@ export async function POST(req: NextRequest) {
       timestamp: new Date().toISOString(),
     });
 
-    console.log('Sending email to user:', finalEmail);
-    await sendEmailToUser(finalEmail, {
+    console.log('Sending email to user:', email);
+    await sendEmailToUser(email, {
       address: fullAddress,
       price: price || 'N/A',
       beds: beds || 'N/A',
@@ -94,7 +60,7 @@ export async function POST(req: NextRequest) {
     }, variations);
 
     console.log('Notifying admin...');
-    await notifyAdmin(finalEmail, fullAddress);
+    await notifyAdmin(email, fullAddress);
 
     return NextResponse.json({
       success: true,
@@ -103,7 +69,6 @@ export async function POST(req: NextRequest) {
       description: variations.balanced,
       characterCount: variations.balanced.length,
       address: fullAddress,
-      creditsRemaining: userId ? userCredits - 1 : undefined,
     });
 
   } catch (error) {
@@ -131,7 +96,7 @@ DO NOT:
 - Use "Welcome to" or "Step into" openings
 - Use "boasts," "features," or "offers" as main verbs
 - Use "Whether you're..." constructions
-- Use "Don't miss" or "Act now" clichés
+- Use "Don't miss" or "Act now" cliches
 - Use em dashes, exclamation points, or colon lists
 - Use ** bold markers or bullet points
 - Use "stunning," "amazing," "charming," "cozy," "unique," or "motivated seller"
@@ -143,7 +108,7 @@ DO:
 - Convert features to lifestyle benefits
 - Flow naturally from space to space
 - Only reference features, specs, and details present in the PROPERTY DATA or ORIGINAL DESCRIPTION
-- Output exactly 800-900 characters, one paragraph, no line breaks`;
+- Output exactly 900-1000 characters, one paragraph, no line breaks`;
 
 // Types
 interface DescriptionVariations {
@@ -266,8 +231,8 @@ async function generateVariation({
   // Strip any wrapping quotes the model may add
   output = output.replace(/^["']|["']$/g, '').trim();
 
-  // Validate length — retry once if outside 750-950 range
-  if (output.length < 750 || output.length > 950) {
+  // Validate length — retry once if outside 850-1050 range
+  if (output.length < 850 || output.length > 1050) {
     console.log(`${label} variation length ${output.length} outside range, retrying...`);
     output = await retryForLength(output, apiKey, label);
   }
@@ -277,8 +242,8 @@ async function generateVariation({
 }
 
 async function retryForLength(draft: string, apiKey: string, label: string): Promise<string> {
-  const direction = draft.length < 750 ? 'expand' : 'trim';
-  const target = direction === 'expand' ? 'at least 800' : 'no more than 900';
+  const direction = draft.length < 850 ? 'expand' : 'trim';
+  const target = direction === 'expand' ? 'at least 900' : 'no more than 1000';
 
   const response = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',

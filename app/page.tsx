@@ -3,32 +3,16 @@
 import { useState, useEffect } from "react";
 
 const PROCESSING_STAGES = [
-  { icon: "✍️", title: "Crafting Your Descriptions", subtitle: "Three expert writers working in parallel", funFact: "Each variation uses a different writing style to give you real options." },
-  { icon: "✨", title: "Final Polish", subtitle: "Perfecting every word", funFact: "Almost there! Your three listing descriptions are being finalized." },
+  { icon: "\u270d\ufe0f", title: "Crafting Your Descriptions", subtitle: "Three expert writers working in parallel", funFact: "Each variation uses a different writing style to give you real options." },
+  { icon: "\u2728", title: "Final Polish", subtitle: "Perfecting every word", funFact: "Almost there! Your three listing descriptions are being finalized." },
 ];
 
-// Before/After example data - Real AI-generated result from Uptown Chicago 2-flat
+// Before/After example data
 const EXAMPLE_BEFORE = `Solid brick 2-flat in Uptown. First floor unit has 3 beds 1 bath. Second floor is 2 beds 1 bath. Full basement. 2 car garage. Separate utilities. Good rental history. Near CTA Red Line. Needs some updating but great bones. Sold as-is.`;
 
-const EXAMPLE_AFTER = `Discover a timeless 1910 brick 2-flat nestled in the heart of Uptown, where vintage architecture meets modern convenience. This property, with its recently updated kitchen and bathrooms, blends charm and functionality. Picture mornings in the sunlit first-floor unit, where hardwood floors echo with history and stories. Separate utilities and a solid rental history make this a fantastic investment opportunity. Just a short stroll to the CTA Red Line, you'll enjoy easy commutes and vibrant city life at your doorstep. Indulge in the culinary delights of The Chicago Diner or savor a coffee at nearby Cafe Cito. Families will appreciate the proximity to Ravenswood Elementary and Amundsen High School, while Welles and Horner Parks offer green escapes for leisure and play. A new HVAC system ensures comfort year-round. This home is sold as-is, inviting you to infuse your personal touch and continue its storied legacy. Secure your slice of Chicago's rich tapestry with this captivating property.`;
-
-interface User {
-  id: string;
-  email: string;
-  credits: number;
-}
+const EXAMPLE_AFTER = `Rare Uptown 2-flat with separate utilities and a two-car garage on a tree-lined block steps from the CTA Red Line. The first-floor three-bedroom, one-bath unit draws morning light through the original double-hung windows, while hardwood floors run room to room. Upstairs, a quieter two-bedroom, one-bath layout sits above it all with long sightlines toward Montrose Avenue. Solid brick construction throughout keeps this building standing as firmly as the day it was built, and the full unfinished basement opens up storage or future build-out space below grade. Rental history is consistent and the separate utility setup means each tenant handles their own. The garage sits off the alley, wide enough for two cars with room left over. Uptown itself continues to draw new restaurants, coffee shops, and renovation activity without losing the neighborhood feel that longtime residents value. This is a property for a buyer who sees the upside in good bones and wants to bring their own plans to the table. Sold as-is and priced to reflect the opportunity.`;
 
 export default function Home() {
-  // Auth state
-  const [user, setUser] = useState<User | null>(null);
-  const [token, setToken] = useState<string | null>(null);
-  const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
-  const [authEmail, setAuthEmail] = useState("");
-  const [authPassword, setAuthPassword] = useState("");
-  const [authLoading, setAuthLoading] = useState(false);
-  const [authError, setAuthError] = useState("");
-  const [showAuthForm, setShowAuthForm] = useState(false);
-
   // Form fields
   const [email, setEmail] = useState("");
   const [address, setAddress] = useState("");
@@ -47,16 +31,6 @@ export default function Home() {
   const [copied, setCopied] = useState(false);
   const [selectedVariation, setSelectedVariation] = useState<'professional' | 'fun' | 'balanced'>('balanced');
 
-  // Load token from localStorage on mount
-  useEffect(() => {
-    const savedToken = localStorage.getItem('auth_token');
-    const savedUser = localStorage.getItem('auth_user');
-    if (savedToken && savedUser) {
-      setToken(savedToken);
-      setUser(JSON.parse(savedUser));
-    }
-  }, []);
-
   // Cycle through stages during loading
   useEffect(() => {
     if (loading) {
@@ -67,56 +41,8 @@ export default function Home() {
     }
   }, [loading]);
 
-  const handleAuth = async () => {
-    if (!authEmail.trim() || !authPassword.trim()) {
-      setAuthError("Email and password are required");
-      return;
-    }
-
-    setAuthLoading(true);
-    setAuthError("");
-
-    try {
-      const endpoint = authMode === 'login' ? '/api/auth/login' : '/api/auth/register';
-      const response = await fetch(endpoint, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: authEmail, password: authPassword }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || 'Authentication failed');
-      }
-
-      // Save to state and localStorage
-      setUser(data.user);
-      setToken(data.token);
-      localStorage.setItem('auth_token', data.token);
-      localStorage.setItem('auth_user', JSON.stringify(data.user));
-      setEmail(data.user.email);
-      setAuthEmail("");
-      setAuthPassword("");
-      setShowAuthForm(false);
-    } catch (err: any) {
-      setAuthError(err.message || 'Something went wrong');
-    } finally {
-      setAuthLoading(false);
-    }
-  };
-
-  const handleLogout = () => {
-    setUser(null);
-    setToken(null);
-    localStorage.removeItem('auth_token');
-    localStorage.removeItem('auth_user');
-    setEmail("");
-  };
-
   const handleSubmit = async () => {
-    // Validation for non-logged-in users
-    if (!user && (!email.trim() || !email.includes("@"))) {
+    if (!email.trim() || !email.includes("@")) {
       setError("Please enter a valid email address");
       return;
     }
@@ -129,28 +55,17 @@ export default function Home() {
       return;
     }
 
-    // Check credits for logged-in users
-    if (user && user.credits < 1) {
-      setError("No credits remaining. Please contact us for more credits during the testing period.");
-      return;
-    }
-
     setLoading(true);
     setError("");
     setResult(null);
     setCurrentStageIndex(0);
 
     try {
-      const headers: Record<string, string> = { "Content-Type": "application/json" };
-      if (token) {
-        headers["Authorization"] = `Bearer ${token}`;
-      }
-
       const response = await fetch("/api/listing-rewrite", {
         method: "POST",
-        headers,
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          email: user ? user.email : email,
+          email,
           address,
           unit,
           price,
@@ -168,13 +83,6 @@ export default function Home() {
       }
 
       setResult(data);
-
-      // Update credits in local state if logged in
-      if (user && data.creditsRemaining !== undefined) {
-        const updatedUser = { ...user, credits: data.creditsRemaining };
-        setUser(updatedUser);
-        localStorage.setItem('auth_user', JSON.stringify(updatedUser));
-      }
     } catch (err: any) {
       setError(err.message || "Something went wrong");
     } finally {
@@ -202,32 +110,28 @@ export default function Home() {
     setDescription("");
   };
 
+  const handleRegenerate = () => {
+    setResult(null);
+    handleSubmit();
+  };
+
   // Show result view
   if (result) {
     const variations = result.variations || { professional: result.description, fun: result.description, balanced: result.description };
     const currentDescription = variations[selectedVariation];
     const variationTabs = [
-      { key: 'professional' as const, label: 'Professional', icon: '💼', desc: 'Formal & sophisticated' },
-      { key: 'balanced' as const, label: 'Balanced', icon: '⚖️', desc: 'Best of both worlds' },
-      { key: 'fun' as const, label: 'Engaging', icon: '✨', desc: 'Warm & inviting' },
+      { key: 'professional' as const, label: 'Professional', icon: '\ud83d\udcbc', desc: 'Formal & sophisticated' },
+      { key: 'balanced' as const, label: 'Balanced', icon: '\u2696\ufe0f', desc: 'Best of both worlds' },
+      { key: 'fun' as const, label: 'Engaging', icon: '\u2728', desc: 'Warm & inviting' },
     ];
 
     return (
       <div style={{ minHeight: "100vh", background: "linear-gradient(135deg, #012f66 0%, #023d85 100%)", padding: 24 }}>
         <div style={{ maxWidth: 900, margin: "0 auto" }}>
-          {/* Header with credits */}
-          {user && (
-            <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 16 }}>
-              <div style={{ background: "rgba(255,255,255,0.1)", borderRadius: 8, padding: "8px 16px", color: "white" }}>
-                Credits: <strong>{user.credits}</strong>
-              </div>
-            </div>
-          )}
-
           <div style={{ background: "linear-gradient(135deg, #10b981 0%, #059669 100%)", borderRadius: 16, padding: 32, color: "white", textAlign: "center", marginBottom: 24 }}>
-            <div style={{ fontSize: 48, marginBottom: 12 }}>✓</div>
-            <h2 style={{ fontSize: 28, fontWeight: 700, marginBottom: 8 }}>Your AI-Enhanced Description is Ready!</h2>
-            <p style={{ fontSize: 16, opacity: 0.9 }}>3 variations sent to <strong>{user?.email || email}</strong></p>
+            <div style={{ fontSize: 48, marginBottom: 12 }}>{"\u2713"}</div>
+            <h2 style={{ fontSize: 28, fontWeight: 700, marginBottom: 8 }}>Your AI-Enhanced Descriptions are Ready!</h2>
+            <p style={{ fontSize: 16, opacity: 0.9 }}>3 variations also sent to <strong>{email}</strong></p>
           </div>
 
           {/* Variation Tabs */}
@@ -286,22 +190,52 @@ export default function Home() {
             </div>
           </div>
 
-          <button
-            onClick={handleReset}
-            style={{
-              width: "100%",
-              background: "white",
-              color: "#012f66",
-              border: "2px solid #012f66",
-              borderRadius: 12,
-              padding: 16,
-              fontSize: 18,
-              fontWeight: 600,
-              cursor: "pointer",
-            }}
-          >
-            Rewrite Another Listing
-          </button>
+          {/* Original Description */}
+          <div style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 16, padding: 24, marginBottom: 24 }}>
+            <h3 style={{ fontSize: 16, fontWeight: 600, color: "#94a3b8", marginBottom: 12 }}>Your Original Description</h3>
+            <p style={{ fontSize: 14, lineHeight: 1.7, color: "#64748b", whiteSpace: "pre-wrap" }}>
+              {description}
+            </p>
+            <div style={{ marginTop: 8, textAlign: "right", fontSize: 12, color: "#475569" }}>
+              {description.length} characters
+            </div>
+          </div>
+
+          {/* Action buttons */}
+          <div style={{ display: "flex", gap: 12 }}>
+            <button
+              onClick={handleRegenerate}
+              style={{
+                flex: 1,
+                background: "linear-gradient(135deg, #012f66 0%, #0284c7 100%)",
+                color: "white",
+                border: "none",
+                borderRadius: 12,
+                padding: 16,
+                fontSize: 16,
+                fontWeight: 600,
+                cursor: "pointer",
+              }}
+            >
+              Regenerate (Same Listing)
+            </button>
+            <button
+              onClick={handleReset}
+              style={{
+                flex: 1,
+                background: "white",
+                color: "#012f66",
+                border: "2px solid #012f66",
+                borderRadius: 12,
+                padding: 16,
+                fontSize: 16,
+                fontWeight: 600,
+                cursor: "pointer",
+              }}
+            >
+              New Listing
+            </button>
+          </div>
         </div>
       </div>
     );
@@ -338,50 +272,10 @@ export default function Home() {
         <div style={{ color: "white", fontWeight: 700, fontSize: 20 }}>
           <span style={{ color: "#38bdf8" }}>Kale</span> Listing AI
         </div>
-        {user ? (
-          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-            <div style={{
-              background: "rgba(255,255,255,0.1)",
-              border: "none",
-              borderRadius: 8,
-              padding: "8px 16px",
-              color: "white",
-              fontSize: 14,
-              fontWeight: 500,
-            }}>
-              {user.credits} Credit{user.credits !== 1 ? 's' : ''}
-            </div>
-            <button
-              onClick={handleLogout}
-              style={{ background: "rgba(255,255,255,0.1)", border: "none", borderRadius: 8, padding: "8px 16px", color: "#94a3b8", cursor: "pointer", fontSize: 14 }}
-            >
-              Logout
-            </button>
-          </div>
-        ) : (
-          <button
-            onClick={() => setShowAuthForm(true)}
-            style={{ background: "#012f66", border: "none", borderRadius: 8, padding: "10px 20px", color: "white", cursor: "pointer", fontSize: 14, fontWeight: 600 }}
-          >
-            Login / Sign Up
-          </button>
-        )}
       </nav>
 
       {/* Hero Section */}
       <section style={{ padding: "60px 24px 40px", textAlign: "center", maxWidth: 800, margin: "0 auto" }}>
-        <div style={{
-          display: "inline-block",
-          background: "rgba(1, 47, 102, 0.15)",
-          color: "#38bdf8",
-          fontSize: 13,
-          fontWeight: 600,
-          padding: "6px 14px",
-          borderRadius: 20,
-          marginBottom: 20
-        }}>
-          Beta Testing - 5 Free Credits on Signup
-        </div>
         <h1 style={{
           fontSize: "clamp(32px, 5vw, 52px)",
           fontWeight: 800,
@@ -398,103 +292,9 @@ export default function Home() {
           margin: "0 auto 32px",
           lineHeight: 1.6
         }}>
-          Our AI analyzes your property, researches the neighborhood, and crafts compelling descriptions that sell homes faster.
+          Paste your listing description and get three professionally rewritten variations in seconds. Free to use, no account needed.
         </p>
       </section>
-
-      {/* Auth Card (if not logged in and wants to auth) */}
-      {!user && showAuthForm && (
-        <div style={{ maxWidth: 440, margin: "0 auto 32px", padding: "0 24px" }}>
-          <div style={{ background: "white", borderRadius: 16, padding: 24, boxShadow: "0 10px 30px rgba(0,0,0,0.3)" }}>
-            <div style={{ display: "flex", gap: 12, marginBottom: 20 }}>
-              <button
-                onClick={() => setAuthMode('login')}
-                style={{
-                  flex: 1,
-                  padding: 12,
-                  border: "none",
-                  borderRadius: 8,
-                  background: authMode === 'login' ? "#012f66" : "#f1f5f9",
-                  color: authMode === 'login' ? "white" : "#64748b",
-                  fontWeight: 600,
-                  cursor: "pointer",
-                }}
-              >
-                Login
-              </button>
-              <button
-                onClick={() => setAuthMode('register')}
-                style={{
-                  flex: 1,
-                  padding: 12,
-                  border: "none",
-                  borderRadius: 8,
-                  background: authMode === 'register' ? "#012f66" : "#f1f5f9",
-                  color: authMode === 'register' ? "white" : "#64748b",
-                  fontWeight: 600,
-                  cursor: "pointer",
-                }}
-              >
-                Sign Up
-              </button>
-            </div>
-
-            {authError && (
-              <div style={{ background: "#fef2f2", border: "1px solid #fecaca", borderRadius: 8, padding: 12, marginBottom: 16, color: "#dc2626", fontSize: 14 }}>
-                {authError}
-              </div>
-            )}
-
-            <input
-              type="email"
-              value={authEmail}
-              onChange={(e) => setAuthEmail(e.target.value)}
-              placeholder="Email"
-              style={{ width: "100%", padding: 12, fontSize: 16, border: "2px solid #e2e8f0", borderRadius: 8, marginBottom: 12, boxSizing: "border-box", color: "#1e293b", background: "white" }}
-            />
-            <input
-              type="password"
-              value={authPassword}
-              onChange={(e) => setAuthPassword(e.target.value)}
-              placeholder="Password"
-              style={{ width: "100%", padding: 12, fontSize: 16, border: "2px solid #e2e8f0", borderRadius: 8, marginBottom: 16, boxSizing: "border-box", color: "#1e293b", background: "white" }}
-            />
-            <button
-              onClick={handleAuth}
-              disabled={authLoading}
-              style={{
-                width: "100%",
-                padding: 14,
-                background: "#012f66",
-                color: "white",
-                border: "none",
-                borderRadius: 8,
-                fontSize: 16,
-                fontWeight: 600,
-                cursor: authLoading ? "wait" : "pointer",
-                opacity: authLoading ? 0.7 : 1,
-              }}
-            >
-              {authLoading ? "Please wait..." : (authMode === 'login' ? 'Login' : 'Create Account (5 Free Credits)')}
-            </button>
-            <button
-              onClick={() => setShowAuthForm(false)}
-              style={{
-                width: "100%",
-                padding: 12,
-                background: "transparent",
-                color: "#64748b",
-                border: "none",
-                fontSize: 14,
-                cursor: "pointer",
-                marginTop: 8,
-              }}
-            >
-              Cancel
-            </button>
-          </div>
-        </div>
-      )}
 
       {/* Main Form Card */}
       <section style={{ padding: "0 24px 40px", maxWidth: 600, margin: "0 auto" }}>
@@ -505,33 +305,22 @@ export default function Home() {
             </div>
           )}
 
-          {/* Email (only show if not logged in) */}
-          {!user && !showAuthForm && (
-            <div style={{ marginBottom: 20 }}>
-              <label style={{ display: "block", fontSize: 14, fontWeight: 600, color: "#023d85", marginBottom: 8 }}>
-                Your Email <span style={{ color: "#ef4444" }}>*</span>
-              </label>
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="you@email.com"
-                style={{ width: "100%", padding: 14, fontSize: 16, border: "2px solid #e2e8f0", borderRadius: 10, boxSizing: "border-box", color: "#1e293b", background: "white" }}
-              />
-              <p style={{ fontSize: 13, color: "#64748b", marginTop: 8 }}>
-                <button onClick={() => { setShowAuthForm(true); setAuthMode('register'); }} style={{ background: "none", border: "none", color: "#012f66", cursor: "pointer", textDecoration: "underline", fontSize: 13, padding: 0, fontWeight: 500 }}>Create an account</button> to get 5 free credits and save your history
-              </p>
-            </div>
-          )}
-
-          {/* Logged in user info */}
-          {user && (
-            <div style={{ background: "#f0fdf4", border: "1px solid #86efac", borderRadius: 12, padding: 16, marginBottom: 20 }}>
-              <p style={{ color: "#166534", fontSize: 14, fontWeight: 500 }}>
-                Logged in as <strong>{user.email}</strong> • <strong>{user.credits}</strong> credit{user.credits !== 1 ? 's' : ''} remaining
-              </p>
-            </div>
-          )}
+          {/* Email */}
+          <div style={{ marginBottom: 20 }}>
+            <label style={{ display: "block", fontSize: 14, fontWeight: 600, color: "#023d85", marginBottom: 8 }}>
+              Your Email <span style={{ color: "#ef4444" }}>*</span>
+            </label>
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="you@email.com"
+              style={{ width: "100%", padding: 14, fontSize: 16, border: "2px solid #e2e8f0", borderRadius: 10, boxSizing: "border-box", color: "#1e293b", background: "white" }}
+            />
+            <p style={{ fontSize: 13, color: "#64748b", marginTop: 8 }}>
+              We&apos;ll email you all three variations for easy reference
+            </p>
+          </div>
 
           {/* Address */}
           <div style={{ marginBottom: 20 }}>
@@ -561,7 +350,7 @@ export default function Home() {
             />
           </div>
 
-          {/* Property Details Row - 2x2 on mobile, 4 cols on desktop */}
+          {/* Property Details Row */}
           <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 12, marginBottom: 20 }} className="property-details-grid">
             <div>
               <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#023d85", marginBottom: 6 }}>Price</label>
@@ -611,11 +400,11 @@ export default function Home() {
               boxShadow: "0 4px 14px rgba(14, 165, 233, 0.4)",
             }}
           >
-            Generate AI-Enhanced Description
+            Generate 3 AI-Enhanced Descriptions
           </button>
 
           <p style={{ textAlign: "center", fontSize: 13, color: "#64748b", marginTop: 16 }}>
-            {user ? `Uses 1 credit. You have ${user.credits} remaining.` : "Your enhanced description will be emailed to you"}
+            Free to use. Results delivered instantly and emailed to you.
           </p>
         </div>
       </section>
@@ -632,9 +421,9 @@ export default function Home() {
 
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))", gap: 24 }}>
             {[
-              { step: "1", icon: "📋", title: "Paste Your Listing", desc: "Enter your property details and current description" },
-              { step: "2", icon: "🤖", title: "AI Works Its Magic", desc: "Our AI researches comps, neighborhood, and crafts compelling copy" },
-              { step: "3", icon: "✨", title: "Get Your New Description", desc: "Receive an optimized listing ready to copy and paste" },
+              { step: "1", icon: "\ud83d\udccb", title: "Paste Your Listing", desc: "Enter your property details and current description" },
+              { step: "2", icon: "\ud83e\udd16", title: "AI Rewrites It 3 Ways", desc: "Three distinct writing styles generate in parallel so you get real options" },
+              { step: "3", icon: "\u2728", title: "Copy & Go", desc: "Pick the variation you like, copy it, and paste it into your MLS" },
             ].map((item) => (
               <div key={item.step} style={{
                 background: "rgba(255,255,255,0.05)",
@@ -681,7 +470,7 @@ export default function Home() {
             See the Difference
           </h2>
           <p style={{ color: "#94a3b8", textAlign: "center", marginBottom: 48, fontSize: 16 }}>
-            Real transformation from a recent listing
+            Real transformation from a Chicago 2-flat listing
           </p>
 
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: 24 }}>
@@ -708,7 +497,7 @@ export default function Home() {
                 {EXAMPLE_BEFORE}
               </p>
               <div style={{ marginTop: 16, color: "#f87171", fontSize: 13 }}>
-                <span style={{ fontWeight: 600 }}>Issues:</span> Generic, lacks emotion, no storytelling
+                <span style={{ fontWeight: 600 }}>Issues:</span> Choppy sentences, no flow, reads like a checklist
               </div>
             </div>
 
@@ -735,7 +524,7 @@ export default function Home() {
                 {EXAMPLE_AFTER}
               </p>
               <div style={{ marginTop: 16, color: "#34d399", fontSize: 13 }}>
-                <span style={{ fontWeight: 600 }}>Result:</span> Compelling, emotional, drives action
+                <span style={{ fontWeight: 600 }}>Result:</span> Flows naturally, highlights benefits, sounds human
               </div>
             </div>
           </div>
@@ -748,7 +537,7 @@ export default function Home() {
           Ready to Transform Your Listings?
         </h2>
         <p style={{ color: "#94a3b8", marginBottom: 24, fontSize: 16 }}>
-          Sign up now and get 5 free credits to try it out
+          Paste your description above and get three pro-quality rewrites in seconds
         </p>
         <button
           onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
@@ -771,7 +560,7 @@ export default function Home() {
       {/* Footer */}
       <footer style={{ padding: "24px", borderTop: "1px solid rgba(255,255,255,0.1)", textAlign: "center" }}>
         <p style={{ color: "#64748b", fontSize: 13 }}>
-          © 2024 Kale Realty. Powered by AI.
+          &copy; 2026 DJP3 Consulting Inc. Powered by AI.
         </p>
       </footer>
     </div>
