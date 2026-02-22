@@ -168,12 +168,12 @@ export default function Home() {
           </div>
 
           {/* Original Description */}
-          <div style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 16, padding: 24, marginBottom: 24 }}>
-            <h3 style={{ fontSize: 16, fontWeight: 600, color: "#94a3b8", marginBottom: 12 }}>Your Original Description</h3>
-            <p style={{ fontSize: 14, lineHeight: 1.7, color: "#64748b", whiteSpace: "pre-wrap" }}>
+          <div style={{ background: "#fff", border: "2px solid #e2e8f0", borderRadius: 16, padding: 32, marginBottom: 24 }}>
+            <h3 style={{ fontSize: 18, fontWeight: 600, color: "#023d85", marginBottom: 20 }}>Your Original Description</h3>
+            <div style={{ background: "#f8fafc", borderRadius: 12, padding: 24, fontSize: 16, lineHeight: 1.7, color: "#334155", whiteSpace: "pre-wrap" }}>
               {description}
-            </p>
-            <div style={{ marginTop: 8, textAlign: "right", fontSize: 12, color: "#475569" }}>
+            </div>
+            <div style={{ marginTop: 12, textAlign: "right", fontSize: 13, color: "#64748b" }}>
               {description.length} characters
             </div>
           </div>
@@ -245,8 +245,8 @@ export default function Home() {
   return (
     <div style={{ minHeight: "100vh", background: "linear-gradient(135deg, #012f66 0%, #023d85 100%)" }}>
       {/* Hero Section */}
-      <section style={{ padding: "24px 24px 16px", textAlign: "center", maxWidth: 800, margin: "0 auto" }}>
-        <Image src="/logo.png" alt="Listing Rewriter - AI-powered listing descriptions" width={2400} height={420} priority style={{ margin: "0 auto 16px", maxWidth: "100%", height: "auto" }} />
+      <section style={{ padding: "40px 24px 16px", textAlign: "center", maxWidth: 900, margin: "0 auto" }}>
+        <Image src="/logo.png" alt="Listing Rewriter - AI-powered listing descriptions" width={2400} height={420} priority style={{ display: "block", margin: "0 auto 24px", width: "100%", maxWidth: 800, height: "auto" }} />
         <p style={{
           fontSize: 18,
           color: "#94a3b8",

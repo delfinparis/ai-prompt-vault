@@ -80,49 +80,54 @@ export async function POST(req: NextRequest) {
   }
 }
 
-// Few-shot examples: real human-written MLS descriptions that convert
-const FEW_SHOT_EXAMPLES = `
-EXAMPLE 1 (Chicago condo, 620 chars):
-"Sun-drenched corner unit in the heart of Lincoln Park with skyline views from floor-to-ceiling windows. The open layout flows from the kitchen with quartz counters and stainless appliances to a generous living space. Primary suite includes an en-suite bath and custom closet system. Building amenities include 24-hour door staff, fitness center, and rooftop deck. Steps to the Diversey Brown Line and Lincoln Park Zoo. Deeded parking included. One of the few units in this boutique building to hit the market this year."
+// Before/after example showing the transformation we want
+const BEFORE_AFTER_EXAMPLE = `
+BEFORE (typical MLS input):
+"Solid brick 2-flat in Uptown. First floor unit has 3 beds 1 bath. Second floor is 2 beds 1 bath. Full basement. 2 car garage. Separate utilities. Good rental history. Near CTA Red Line. Needs some updating but great bones. Sold as-is."
 
-EXAMPLE 2 (Suburban home, 680 chars):
-"Meticulously maintained brick colonial on a quiet cul-de-sac in award-winning District 34. Hardwood floors throughout the main level lead to a remodeled kitchen with soft-close cabinetry, granite surfaces, and breakfast bar overlooking the family room. Four bedrooms upstairs include a primary with renovated en-suite. The finished basement adds flexible space below grade. Private backyard with bluestone patio. Walk to Avoca West Elementary. New roof 2022, HVAC 2021. Attached two-car garage."
+AFTER (what you should produce):
+"Solid brick 2-flat near the CTA Red Line in Uptown with separate utilities and a two-car garage. The first-floor unit offers three bedrooms and one bath, while the second floor holds a two-bedroom, one-bath layout above. A full basement sits below grade for additional flexibility. Rental history has been consistent, and the separate utility arrangement keeps operating costs straightforward for each unit. The building needs updating, but the brick construction and underlying structure remain sound. Sold as-is and priced to reflect the opportunity."
+
+WHY THE AFTER IS BETTER:
+- Choppy fragments ("Full basement. 2 car garage.") become flowing sentences that connect related ideas
+- Abbreviations ("3 beds 1 bath") become polished text ("three bedrooms and one bath")
+- Features are grouped logically (units described together, then building features, then condition)
+- Reader is walked through the property top to bottom instead of random bullet-style facts
+- Every single fact in the AFTER appears in the BEFORE — nothing was invented
 `;
 
 // Shared writing rules
 const WRITING_RULES = `RULES — follow these exactly:
 
-DO NOT:
-- Use "Welcome to" or "Step into" openings
-- Use "boasts," "features," or "offers" as main verbs
-- Use "Whether you're..." constructions
-- Use "Don't miss" or "Act now" cliches
-- Use em dashes, exclamation points, or colon lists
-- Use ** bold markers or bullet points
-- Use "stunning," "amazing," "charming," "cozy," "unique," or "motivated seller"
-- Sound like AI wrote it
+TRANSFORM THE WRITING — this is what makes the rewrite worth reading:
+- Convert choppy fragments and bullet-style sentences into flowing, connected prose
+- Spell out abbreviations: "3 beds 1 bath" becomes "three bedrooms and one bath," "2 car" becomes "two-car"
+- Group related features together instead of listing them randomly
+- Walk the reader through the property spatially: exterior/location, then main living areas, then bedrooms, then additional features
+- Vary sentence length: mix shorter punchy sentences with longer ones that connect ideas
+- Replace generic MLS shorthand with specific, human language (but only using facts from the source)
+- Turn plain specs into context: "2 car garage" can become "a two-car garage off the alley" IF the alley is mentioned in the source
+- Make the opening line specific and compelling — not a generic "Beautiful home in..." opener
+- Close with the strongest remaining selling point or a forward-looking statement
 
-STRICT FACTUAL ACCURACY — this is the most important rule:
+STRICT FACTUAL ACCURACY — never violate these:
 - ONLY state facts explicitly present in the PROPERTY DATA or ORIGINAL DESCRIPTION
-- Do NOT invent specific distances (e.g., do not turn "near" into "two blocks from" or "steps from")
-- Do NOT add neighborhood amenities, restaurants, shops, parks, landmarks, or area descriptions not in the source
-- Do NOT describe the neighborhood as "vibrant," "bustling," "diverse," "revitalizing," or any other characterization not in the source
-- Do NOT add the word "original" to features unless the source says "original"
-- Do NOT invent sensory details about light, sound, views, or smells not in the source
-- Do NOT add "storage" or other features/uses to rooms unless explicitly stated
-- Do NOT speculate about investment returns, appreciation, cash flow, or property value
-- Do NOT make "separate utilities" more specific (e.g., do not say "separate meters" or "separate billing")
-- Do NOT change the property type (e.g., do not call a 2-flat a 3-flat)
-- If the source says "near" a landmark, say "near" — do not upgrade or quantify the distance
-- When in doubt, leave it out. Omitting a detail is always better than inventing one.
-- To fill the character count, elaborate on STATED features (how rooms connect, how finishes work together) rather than inventing NEW facts. Rephrase and expand what exists — do not add what doesn't.
+- Do NOT invent distances, neighborhood details, sensory details, or features not in the source
+- Do NOT add "original," "spacious," "updated," or other adjectives not supported by the source
+- Do NOT speculate about investment returns, appreciation, or property value
+- Do NOT change the property type or unit count
+- If the source says "near" a landmark, say "near" — do not quantify the distance
+- When in doubt, leave it out
 
-DO:
-- Lead with the most specific, compelling detail (not generic praise)
-- Convert stated features to lifestyle benefits (but do not invent features)
-- Flow naturally from space to space
-- Only reference features, specs, and details present in the PROPERTY DATA or ORIGINAL DESCRIPTION
-- Output exactly 600-800 characters, one paragraph, no line breaks`;
+BANNED PHRASES AND PATTERNS:
+- "Welcome to" or "Step into" openings
+- "boasts," "features," or "offers" as main verbs
+- "Whether you're..." constructions
+- "Don't miss" or "Act now"
+- em dashes, exclamation points, colon lists, bold markers, bullet points
+- "stunning," "amazing," "charming," "cozy," "unique," "motivated seller"
+
+OUTPUT: exactly 800-1000 characters, one paragraph, no line breaks`;
 
 // Types
 interface PropertyData {
@@ -146,13 +151,13 @@ ${data.description}
 Rewrite this listing description following the rules in your instructions. Before finalizing, verify every fact in your output appears in the PROPERTY DATA or ORIGINAL DESCRIPTION above. If you cannot verify a detail, remove it. Output only the description text, nothing else.`;
 
   return generateVariation({
-    systemPrompt: `You are a top-producing listing agent with 20 years of experience and over 1,000 transactions. You write descriptions that lead with the single strongest selling point, weave in key specs naturally, and close with one moment of lifestyle appeal. You know what buyers actually care about and what makes them book a showing.
+    systemPrompt: `You are a listing description editor who transforms choppy, abbreviation-heavy MLS drafts into polished, flowing prose. Your job is to make the description read dramatically better while using ONLY the facts provided. You never add information — you restructure, connect, and elevate what's already there.
 
 ${WRITING_RULES}
 
-TONE: Confident and approachable. Lead with the strongest feature. Mix practical details with one lifestyle moment. Professional enough for MLS, warm enough to connect emotionally. The sweet spot that appeals to the broadest range of buyers.
+TONE: Confident and approachable. Professional enough for MLS, warm enough to connect emotionally.
 
-${FEW_SHOT_EXAMPLES}`,
+${BEFORE_AFTER_EXAMPLE}`,
     userMessage,
     temperature: 0.7,
     apiKey,
@@ -183,8 +188,8 @@ async function generateVariation({
       'content-type': 'application/json',
     },
     body: JSON.stringify({
-      model: 'claude-haiku-4-5-20251001',
-      max_tokens: 400,
+      model: 'claude-sonnet-4-6',
+      max_tokens: 600,
       temperature,
       system: systemPrompt,
       messages: [
@@ -205,8 +210,8 @@ async function generateVariation({
   // Strip any wrapping quotes the model may add
   output = output.replace(/^["']|["']$/g, '').trim();
 
-  // Validate length — retry once if outside 550-850 range
-  if (output.length < 550 || output.length > 850) {
+  // Validate length — retry once if outside 750-1050 range
+  if (output.length < 750 || output.length > 1050) {
     console.log(`${label} variation length ${output.length} outside range, retrying...`);
     output = await retryForLength(output, apiKey, label);
   }
@@ -216,8 +221,8 @@ async function generateVariation({
 }
 
 async function retryForLength(draft: string, apiKey: string, label: string): Promise<string> {
-  const direction = draft.length < 550 ? 'expand' : 'trim';
-  const target = direction === 'expand' ? 'at least 600' : 'no more than 800';
+  const direction = draft.length < 750 ? 'expand' : 'trim';
+  const target = direction === 'expand' ? 'at least 800' : 'no more than 1000';
 
   const response = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
@@ -227,7 +232,7 @@ async function retryForLength(draft: string, apiKey: string, label: string): Pro
       'content-type': 'application/json',
     },
     body: JSON.stringify({
-      model: 'claude-haiku-4-5-20251001',
+      model: 'claude-sonnet-4-6',
       max_tokens: 600,
       temperature: 0.3,
       system: `You are a copy editor. ${direction === 'expand' ? 'Expand' : 'Tighten'} the following listing description to ${target} characters. Keep the same tone and style. Do not add any facts not already present. Output only the revised description.`,
