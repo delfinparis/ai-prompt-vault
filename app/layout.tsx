@@ -1,18 +1,7 @@
 import type { Metadata } from "next";
-import { Inter, Space_Grotesk } from "next/font/google";
 import Script from "next/script";
+import { inter } from "./fonts";
 import "./globals.css";
-
-const inter = Inter({
-  subsets: ["latin"],
-  display: "swap",
-});
-
-export const spaceGrotesk = Space_Grotesk({
-  subsets: ["latin"],
-  display: "swap",
-  weight: ["700"],
-});
 
 const GTM_ID = "GTM-P6MPH7";
 

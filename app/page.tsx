@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Image from "next/image";
-import { spaceGrotesk } from "./layout";
+import { spaceGrotesk } from "./fonts";
 
 const PROCESSING_STAGES = [
   { icon: "\u270d\ufe0f", title: "Crafting Your Description", subtitle: "Our AI is rewriting your listing", funFact: "We analyze your original and rewrite it with better flow, structure, and appeal." },
