@@ -245,13 +245,9 @@ export default function Home() {
   // Show main landing page with form
   return (
     <div style={{ minHeight: "100vh", background: "linear-gradient(135deg, #012f66 0%, #023d85 100%)" }}>
-      {/* Logo */}
-      <div style={{ padding: "24px 24px 0", maxWidth: 900, margin: "0 auto" }}>
-        <Image src="/logo.png" alt="Listing Rewriter" width={2400} height={420} priority style={{ display: "block", width: 200, height: "auto" }} />
-      </div>
-
       {/* Hero Section */}
       <section style={{ padding: "40px 24px 16px", textAlign: "center", maxWidth: 900, margin: "0 auto" }}>
+        <Image src="/logo.png" alt="Listing Rewriter - AI-powered listing descriptions" width={2400} height={420} priority style={{ display: "block", margin: "0 auto 24px", width: "100%", maxWidth: 800, height: "auto" }} />
         <h1 className={spaceGrotesk.className} style={{
           fontSize: 48,
           fontWeight: 700,
@@ -264,18 +260,10 @@ export default function Home() {
           Tired of Crummy AI Listing Descriptions?
         </h1>
         <p style={{
-          fontSize: 28,
-          color: "#94a3b8",
-          fontWeight: 400,
-          fontStyle: "italic",
-        }}>
-          yeah, we fixed that.
-        </p>
-        <p style={{
           fontSize: 16,
           color: "#94a3b8",
           maxWidth: 600,
-          margin: "20px auto 0",
+          margin: "0 auto",
           lineHeight: 1.6,
         }}>
           Most AI tools hallucinate features and sound robotic. This one only uses the facts you provide, avoids cliched MLS language, and transforms your notes into polished, flowing prose.
