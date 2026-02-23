@@ -6,7 +6,25 @@ import { spaceGrotesk } from "./fonts";
 
 const PROCESSING_STAGES = [
   { icon: "\u270d\ufe0f", title: "Crafting Your Description", subtitle: "Our AI is rewriting your listing", funFact: "We analyze your original and rewrite it with better flow, structure, and appeal." },
+  { icon: "\ud83d\udd0d", title: "Checking Every Detail", subtitle: "Making sure nothing was left out", funFact: "We verify that every feature you mentioned appears in the final description." },
   { icon: "\u2728", title: "Final Polish", subtitle: "Perfecting every word", funFact: "Almost there! Your new listing description is being finalized." },
+];
+
+const TONE_OPTIONS = [
+  { value: "professional", label: "Professional", description: "Clear, confident MLS-ready copy" },
+  { value: "luxury", label: "Luxury Editorial", description: "Elevated vocabulary, architectural detail" },
+  { value: "direct", label: "Practical / Direct", description: "Facts-first, minimal flair" },
+  { value: "warm", label: "Warm & Casual", description: "Friendly, neighborhood-focused" },
+  { value: "investment", label: "Investment-Focused", description: "Returns, rental income, potential" },
+];
+
+const BANNED_WORD_SUGGESTIONS = [
+  "nestled",
+  "entertainer's dream",
+  "sun-kissed",
+  "charming retreat",
+  "moments from",
+  "turnkey",
 ];
 
 // Before/After example data
@@ -32,6 +50,9 @@ export default function Home() {
   const [currentStageIndex, setCurrentStageIndex] = useState(0);
   const [copied, setCopied] = useState(false);
   const [optInTips, setOptInTips] = useState(true);
+  const [tone, setTone] = useState("professional");
+  const [bannedWords, setBannedWords] = useState<string[]>([]);
+  const [bannedWordInput, setBannedWordInput] = useState("");
 
   // Cycle through stages during loading
   useEffect(() => {
@@ -76,6 +97,8 @@ export default function Home() {
           sqft,
           description,
           optInTips,
+          tone,
+          bannedWords,
         }),
       });
 
@@ -111,6 +134,9 @@ export default function Home() {
     setBaths("");
     setSqft("");
     setDescription("");
+    setTone("professional");
+    setBannedWords([]);
+    setBannedWordInput("");
   };
 
   const handleRegenerate = () => {
@@ -247,7 +273,7 @@ export default function Home() {
     <div style={{ minHeight: "100vh", background: "linear-gradient(135deg, #012f66 0%, #023d85 100%)" }}>
       {/* Hero Section */}
       <section style={{ padding: "40px 24px 16px", textAlign: "center", maxWidth: 900, margin: "0 auto" }}>
-        <Image src="/logo.png" alt="Listing Rewriter - AI-powered listing descriptions" width={984} height={232} priority style={{ display: "block", margin: "0 auto 24px", width: "100%", height: "auto" }} />
+        <Image src="/logo.png" alt="Listing Rewriter - AI-powered listing descriptions" width={984} height={232} priority style={{ display: "block", margin: "0 auto 24px", width: "70%", height: "auto" }} />
         <h1 className={spaceGrotesk.className} style={{
           fontSize: "clamp(28px, 7vw, 48px)",
           fontWeight: 700,
@@ -356,6 +382,91 @@ export default function Home() {
               rows={6}
               style={{ width: "100%", padding: 14, fontSize: 16, border: "2px solid #e2e8f0", borderRadius: 10, resize: "vertical", boxSizing: "border-box", color: "#1e293b", background: "white" }}
             />
+          </div>
+
+          {/* Tone Selector */}
+          <div style={{ marginBottom: 20 }}>
+            <label style={{ display: "block", fontSize: 14, fontWeight: 600, color: "#023d85", marginBottom: 8 }}>
+              Writing Tone
+            </label>
+            <select
+              value={tone}
+              onChange={(e) => setTone(e.target.value)}
+              style={{ width: "100%", padding: 14, fontSize: 16, border: "2px solid #e2e8f0", borderRadius: 10, boxSizing: "border-box", color: "#1e293b", background: "white", cursor: "pointer", appearance: "auto" }}
+            >
+              {TONE_OPTIONS.map((opt) => (
+                <option key={opt.value} value={opt.value}>{opt.label}</option>
+              ))}
+            </select>
+            <p style={{ fontSize: 13, color: "#64748b", marginTop: 8 }}>
+              {TONE_OPTIONS.find((o) => o.value === tone)?.description}
+            </p>
+          </div>
+
+          {/* Banned Words */}
+          <div style={{ marginBottom: 24 }}>
+            <label style={{ display: "block", fontSize: 14, fontWeight: 600, color: "#023d85", marginBottom: 8 }}>
+              Words to Avoid <span style={{ color: "#94a3b8", fontWeight: 400 }}>(optional)</span>
+            </label>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 10 }}>
+              {BANNED_WORD_SUGGESTIONS.filter((w) => !bannedWords.includes(w)).map((word) => (
+                <button
+                  key={word}
+                  type="button"
+                  onClick={() => bannedWords.length < 20 && setBannedWords([...bannedWords, word])}
+                  style={{ background: "#f1f5f9", border: "1px solid #e2e8f0", borderRadius: 20, padding: "6px 14px", fontSize: 13, color: "#475569", cursor: "pointer" }}
+                >
+                  + {word}
+                </button>
+              ))}
+            </div>
+            <div style={{ display: "flex", gap: 8, maxWidth: "100%", overflow: "hidden" }}>
+              <input
+                type="text"
+                value={bannedWordInput}
+                onChange={(e) => setBannedWordInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && bannedWordInput.trim() && bannedWords.length < 20) {
+                    e.preventDefault();
+                    setBannedWords([...bannedWords, bannedWordInput.trim()]);
+                    setBannedWordInput("");
+                  }
+                }}
+                placeholder="Type a word or phrase to ban..."
+                style={{ flex: 1, minWidth: 0, padding: 12, fontSize: 14, border: "2px solid #e2e8f0", borderRadius: 10, boxSizing: "border-box", color: "#1e293b", background: "white" }}
+              />
+              <button
+                type="button"
+                onClick={() => {
+                  if (bannedWordInput.trim() && bannedWords.length < 20) {
+                    setBannedWords([...bannedWords, bannedWordInput.trim()]);
+                    setBannedWordInput("");
+                  }
+                }}
+                style={{ background: "#012f66", color: "white", border: "none", borderRadius: 10, padding: "12px 16px", fontSize: 14, fontWeight: 600, cursor: "pointer", whiteSpace: "nowrap", flexShrink: 0 }}
+              >
+                Add
+              </button>
+            </div>
+            {bannedWords.length > 0 && (
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 10 }}>
+                {bannedWords.map((word, i) => (
+                  <span
+                    key={i}
+                    style={{ background: "#fef2f2", border: "1px solid #fecaca", borderRadius: 20, padding: "5px 12px", fontSize: 13, color: "#dc2626", display: "inline-flex", alignItems: "center", gap: 6 }}
+                  >
+                    {word}
+                    <button
+                      type="button"
+                      onClick={() => setBannedWords(bannedWords.filter((_, j) => j !== i))}
+                      style={{ background: "none", border: "none", color: "#dc2626", cursor: "pointer", padding: 0, fontSize: 16, lineHeight: 1 }}
+                    >
+                      &times;
+                    </button>
+                  </span>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Opt-in checkbox */}

@@ -14,8 +14,12 @@ test.describe('Listing Rewriter - Mobile Responsiveness', () => {
     if (logoBox) {
       // Logo should never be wider than the viewport
       expect(logoBox.width).toBeLessThanOrEqual(viewport.width);
-      // Logo should be reasonably sized (at least 50% of viewport)
-      expect(logoBox.width).toBeGreaterThan(viewport.width * 0.5);
+      // On mobile, logo should fill a reasonable portion of the screen
+      if (viewport.width < 800) {
+        expect(logoBox.width).toBeGreaterThan(viewport.width * 0.5);
+      }
+      // On all screens, logo should be at least 150px wide
+      expect(logoBox.width).toBeGreaterThan(150);
     }
   });
 
@@ -231,6 +235,49 @@ test.describe('Listing Rewriter - Mobile Responsiveness', () => {
     await expect(checkbox).toBeChecked();
     await checkbox.click();
     await expect(checkbox).not.toBeChecked();
+  });
+
+  test('tone selector should be usable on mobile', async ({ page }) => {
+    await page.goto('/');
+
+    const toneSelect = page.locator('select');
+    await expect(toneSelect).toBeVisible();
+
+    const box = await toneSelect.boundingBox();
+    expect(box).not.toBeNull();
+    if (box) {
+      // Native select on mobile may be shorter than typical touch targets
+      expect(box.height).toBeGreaterThanOrEqual(24);
+      // Should be reasonably wide
+      expect(box.width).toBeGreaterThan(200);
+    }
+
+    // Should be functional
+    await toneSelect.selectOption('luxury');
+    await expect(toneSelect).toHaveValue('luxury');
+  });
+
+  test('banned words section should be usable on mobile', async ({ page }) => {
+    await page.goto('/');
+
+    const viewport = page.viewportSize()!;
+
+    // Suggestion chips should be visible
+    const nestledChip = page.locator('button:has-text("+ nestled")');
+    await expect(nestledChip).toBeVisible();
+
+    // Tap a suggestion chip
+    await nestledChip.click();
+
+    // Active banned word should appear
+    await expect(page.locator('span:has-text("nestled")')).toBeVisible();
+
+    // Banned word input should not overflow
+    const bannedInput = page.locator('input[placeholder="Type a word or phrase to ban..."]');
+    const inputBox = await bannedInput.boundingBox();
+    if (inputBox) {
+      expect(inputBox.x + inputBox.width).toBeLessThanOrEqual(viewport.width + 5);
+    }
   });
 
   test('Get Started Free button should be tappable on mobile', async ({ page }) => {

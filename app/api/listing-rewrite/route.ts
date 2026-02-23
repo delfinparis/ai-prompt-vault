@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { address, unit, price, beds, baths, sqft, description, email, optInTips } = body;
+    const { address, unit, price, beds, baths, sqft, description, email, optInTips, tone, bannedWords } = body;
 
     if (!email) {
       return NextResponse.json(
@@ -38,6 +38,8 @@ export async function POST(req: NextRequest) {
       baths,
       sqft,
       description,
+      tone,
+      bannedWords,
     }, apiKey);
     console.log('Description generated.');
 
@@ -129,6 +131,15 @@ BANNED PHRASES AND PATTERNS:
 
 OUTPUT: exactly 800-1000 characters, one paragraph, no line breaks`;
 
+// Tone prompt map
+const TONE_PROMPTS: Record<string, string> = {
+  professional: "TONE: Confident and approachable. Professional enough for MLS, warm enough to connect emotionally.",
+  luxury: "TONE: Luxury editorial. Use elevated but precise vocabulary. Emphasize architectural details, premium finishes, and lifestyle. Sentences should feel measured and sophisticated, like a high-end design magazine. Avoid casual phrasing.",
+  direct: "TONE: Practical and direct. Lead with the most important facts. Use short, clear sentences. Minimize adjectives. The reader should get the key details in the first two sentences. Think informed buyer, not emotional buyer.",
+  warm: "TONE: Warm and casual. Write as if describing the home to a friend. Emphasize livability, neighborhood feel, and day-to-day experience. Use approachable language without being unprofessional. Light, conversational sentence structure.",
+  investment: "TONE: Investment-focused. Emphasize financial fundamentals: rental income potential, unit configuration, separate utilities, operating costs, and value-add opportunities. Write for an investor audience that cares about numbers and upside. Keep it analytical but readable.",
+};
+
 // Types
 interface PropertyData {
   address: string;
@@ -137,6 +148,8 @@ interface PropertyData {
   baths?: string;
   sqft?: string;
   description: string;
+  tone?: string;
+  bannedWords?: string[];
 }
 
 // Generate a single polished listing description
@@ -150,18 +163,24 @@ ${data.description}
 
 Rewrite this listing description following the rules in your instructions. Before finalizing, verify every fact in your output appears in the PROPERTY DATA or ORIGINAL DESCRIPTION above. If you cannot verify a detail, remove it. Output only the description text, nothing else.`;
 
+  const toneInstruction = TONE_PROMPTS[data.tone || 'professional'] || TONE_PROMPTS.professional;
+  const userBannedSection = data.bannedWords && data.bannedWords.length > 0
+    ? `\n\nADDITIONAL BANNED WORDS (user-specified — never use these):\n- ${data.bannedWords.map(w => `"${w}"`).join('\n- ')}`
+    : '';
+
   return generateVariation({
     systemPrompt: `You are a listing description editor who transforms choppy, abbreviation-heavy MLS drafts into polished, flowing prose. Your job is to make the description read dramatically better while using ONLY the facts provided. You never add information — you restructure, connect, and elevate what's already there.
 
-${WRITING_RULES}
+${WRITING_RULES}${userBannedSection}
 
-TONE: Confident and approachable. Professional enough for MLS, warm enough to connect emotionally.
+${toneInstruction}
 
 ${BEFORE_AFTER_EXAMPLE}`,
     userMessage,
     temperature: 0.7,
     apiKey,
     label: 'Rewrite',
+    originalDescription: data.description,
   });
 }
 
@@ -171,12 +190,14 @@ async function generateVariation({
   temperature,
   apiKey,
   label,
+  originalDescription,
 }: {
   systemPrompt: string;
   userMessage: string;
   temperature: number;
   apiKey: string;
   label: string;
+  originalDescription?: string;
 }): Promise<string> {
   console.log(`Generating ${label} variation...`);
 
@@ -216,6 +237,23 @@ async function generateVariation({
     output = await retryForLength(output, apiKey, label);
   }
 
+  // Feature retention check
+  if (originalDescription) {
+    const features = await extractFeatures(originalDescription, apiKey);
+    if (features.length > 0) {
+      const missing = findMissingFeatures(features, output);
+      if (missing.length > 0) {
+        console.log(`${label}: ${missing.length} features missing: ${missing.join(', ')}`);
+        output = await retryForFeatures(output, missing, originalDescription, apiKey, label);
+        // Re-check length after feature retry
+        if (output.length < 750 || output.length > 1050) {
+          console.log(`${label}: length ${output.length} outside range after feature retry, re-adjusting...`);
+          output = await retryForLength(output, apiKey, label);
+        }
+      }
+    }
+  }
+
   console.log(`${label} variation done: ${output.length} chars`);
   return output;
 }
@@ -250,6 +288,89 @@ async function retryForLength(draft: string, apiKey: string, label: string): Pro
   const result = await response.json();
   const revised = (result.content?.[0]?.text || draft).replace(/^["']|["']$/g, '').trim();
   console.log(`${label} retry result: ${revised.length} chars`);
+  return revised;
+}
+
+async function extractFeatures(description: string, apiKey: string): Promise<string[]> {
+  try {
+    const response = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01',
+        'content-type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-6',
+        max_tokens: 400,
+        temperature: 0,
+        system: 'You extract distinct factual features from real estate listing descriptions. Return ONLY a JSON array of short strings, each describing one distinct fact or feature. Include: rooms, amenities, structural details, location references, conditions, and notable features. Do not include subjective opinions or marketing language. Example: ["rooftop deck","mountain views","full basement","2 car garage","near CTA Red Line"]',
+        messages: [{ role: 'user', content: description }],
+      }),
+    });
+
+    if (!response.ok) {
+      console.warn('Feature extraction failed, skipping validation');
+      return [];
+    }
+
+    const result = await response.json();
+    const text = result.content?.[0]?.text || '[]';
+    return JSON.parse(text);
+  } catch {
+    console.warn('Failed to parse features, skipping validation');
+    return [];
+  }
+}
+
+function findMissingFeatures(features: string[], output: string): string[] {
+  const outputLower = output.toLowerCase();
+  return features.filter(feature => {
+    const featureLower = feature.toLowerCase();
+    if (outputLower.includes(featureLower)) return false;
+    // Check key nouns (words > 3 chars)
+    const keyWords = featureLower.split(/\s+/).filter(w => w.length > 3);
+    if (keyWords.length > 0 && keyWords.every(w => outputLower.includes(w))) return false;
+    return true;
+  });
+}
+
+async function retryForFeatures(
+  draft: string,
+  missingFeatures: string[],
+  originalDescription: string,
+  apiKey: string,
+  label: string
+): Promise<string> {
+  console.log(`${label}: retrying to include missing features`);
+
+  const response = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: {
+      'x-api-key': apiKey,
+      'anthropic-version': '2023-06-01',
+      'content-type': 'application/json',
+    },
+    body: JSON.stringify({
+      model: 'claude-sonnet-4-6',
+      max_tokens: 600,
+      temperature: 0.3,
+      system: 'You are a copy editor. The following listing description is missing important features from the original. Revise it to naturally incorporate ALL of the missing features listed below. Keep the same tone, style, and approximate length (800-1000 characters). Do not add any facts not in the original description. Do not remove any existing content unless necessary to fit. Output only the revised description.',
+      messages: [{
+        role: 'user',
+        content: `CURRENT DRAFT:\n${draft}\n\nMISSING FEATURES THAT MUST BE INCLUDED:\n${missingFeatures.map(f => `- ${f}`).join('\n')}\n\nORIGINAL DESCRIPTION (for reference):\n${originalDescription}`,
+      }],
+    }),
+  });
+
+  if (!response.ok) {
+    console.warn(`${label} feature retry failed, using original draft`);
+    return draft;
+  }
+
+  const result = await response.json();
+  const revised = (result.content?.[0]?.text || draft).replace(/^["']|["']$/g, '').trim();
+  console.log(`${label} feature retry result: ${revised.length} chars`);
   return revised;
 }
 

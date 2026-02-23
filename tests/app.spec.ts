@@ -119,4 +119,78 @@ test.describe('Listing Rewriter - Landing Page', () => {
     await checkbox.check();
     await expect(checkbox).toBeChecked();
   });
+
+  test('should have tone selector with all options', async ({ page }) => {
+    await page.goto('/');
+
+    const toneSelect = page.locator('select');
+    await expect(toneSelect).toBeVisible();
+
+    // Default should be Professional
+    await expect(toneSelect).toHaveValue('professional');
+
+    // Should have all 5 tone options
+    const options = toneSelect.locator('option');
+    await expect(options).toHaveCount(5);
+
+    // Change tone and verify
+    await toneSelect.selectOption('luxury');
+    await expect(toneSelect).toHaveValue('luxury');
+
+    // Description text should update
+    await expect(page.locator('text=Elevated vocabulary, architectural detail')).toBeVisible();
+  });
+
+  test('should add and remove banned words', async ({ page }) => {
+    await page.goto('/');
+
+    // Suggestion chips should be visible
+    await expect(page.locator('button:has-text("+ nestled")')).toBeVisible();
+    await expect(page.locator('button:has-text("+ turnkey")')).toBeVisible();
+
+    // Click a suggestion chip to add it
+    await page.locator('button:has-text("+ nestled")').click();
+
+    // Should appear as active banned word with remove button
+    await expect(page.locator('span:has-text("nestled") >> button')).toBeVisible();
+
+    // Suggestion chip should disappear
+    await expect(page.locator('button:has-text("+ nestled")')).not.toBeVisible();
+
+    // Remove it
+    await page.locator('span:has-text("nestled") >> button').click();
+
+    // Suggestion chip should reappear
+    await expect(page.locator('button:has-text("+ nestled")')).toBeVisible();
+  });
+
+  test('should add custom banned word via input', async ({ page }) => {
+    await page.goto('/');
+
+    const bannedInput = page.locator('input[placeholder="Type a word or phrase to ban..."]');
+    await expect(bannedInput).toBeVisible();
+
+    // Type and press Enter
+    await bannedInput.fill('boasts');
+    await bannedInput.press('Enter');
+
+    // Should appear as active banned word
+    await expect(page.locator('span:has-text("boasts")')).toBeVisible();
+
+    // Input should be cleared
+    await expect(bannedInput).toHaveValue('');
+  });
+
+  test('should add custom banned word via Add button', async ({ page }) => {
+    await page.goto('/');
+
+    const bannedInput = page.locator('input[placeholder="Type a word or phrase to ban..."]');
+    await bannedInput.fill('vibrant');
+
+    await page.locator('button:has-text("Add")').click();
+
+    // Should appear as active banned word
+    await expect(page.locator('span:has-text("vibrant")')).toBeVisible();
+    await expect(bannedInput).toHaveValue('');
+  });
 });
