@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Image from "next/image";
+import { spaceGrotesk } from "./layout";
 
 const PROCESSING_STAGES = [
   { icon: "\u270d\ufe0f", title: "Crafting Your Description", subtitle: "Our AI is rewriting your listing", funFact: "We analyze your original and rewrite it with better flow, structure, and appeal." },
@@ -11,7 +12,7 @@ const PROCESSING_STAGES = [
 // Before/After example data
 const EXAMPLE_BEFORE = `Solid brick 2-flat in Uptown. First floor unit has 3 beds 1 bath. Second floor is 2 beds 1 bath. Full basement. 2 car garage. Separate utilities. Good rental history. Near CTA Red Line. Needs some updating but great bones. Sold as-is.`;
 
-const EXAMPLE_AFTER = `Rare Uptown 2-flat with separate utilities and a two-car garage on a tree-lined block steps from the CTA Red Line. The first-floor three-bedroom, one-bath unit draws morning light through the original double-hung windows, while hardwood floors run room to room. Upstairs, a quieter two-bedroom, one-bath layout sits above it all with long sightlines toward Montrose Avenue. Solid brick construction throughout keeps this building standing as firmly as the day it was built, and the full unfinished basement opens up storage or future build-out space below grade. Rental history is consistent and the separate utility setup means each tenant handles their own. The garage sits off the alley, wide enough for two cars with room left over. Uptown itself continues to draw new restaurants, coffee shops, and renovation activity without losing the neighborhood feel that longtime residents value. This is a property for a buyer who sees the upside in good bones and wants to bring their own plans to the table. Sold as-is and priced to reflect the opportunity.`;
+const EXAMPLE_AFTER = `Solid brick 2-flat near the CTA Red Line in Uptown with separate utilities and a two-car garage. The first-floor unit offers three bedrooms and one bath, while the second floor holds a two-bedroom, one-bath layout above. A full basement sits below grade for additional flexibility. Rental history has been consistent, and the separate utility arrangement keeps operating costs straightforward for each unit. The building needs updating, but the brick construction and underlying structure remain sound. Sold as-is and priced to reflect the opportunity.`;
 
 export default function Home() {
   // Form fields
@@ -244,17 +245,40 @@ export default function Home() {
   // Show main landing page with form
   return (
     <div style={{ minHeight: "100vh", background: "linear-gradient(135deg, #012f66 0%, #023d85 100%)" }}>
+      {/* Logo */}
+      <div style={{ padding: "24px 24px 0", maxWidth: 900, margin: "0 auto" }}>
+        <Image src="/logo.png" alt="Listing Rewriter" width={2400} height={420} priority style={{ display: "block", width: 200, height: "auto" }} />
+      </div>
+
       {/* Hero Section */}
       <section style={{ padding: "40px 24px 16px", textAlign: "center", maxWidth: 900, margin: "0 auto" }}>
-        <Image src="/logo.png" alt="Listing Rewriter - AI-powered listing descriptions" width={2400} height={420} priority style={{ display: "block", margin: "0 auto 24px", width: "100%", maxWidth: 800, height: "auto" }} />
+        <h1 className={spaceGrotesk.className} style={{
+          fontSize: 48,
+          fontWeight: 700,
+          color: "white",
+          lineHeight: 1.1,
+          marginBottom: 16,
+          textTransform: "uppercase",
+          letterSpacing: "-0.02em",
+        }}>
+          Tired of Crummy AI Listing Descriptions?
+        </h1>
         <p style={{
-          fontSize: 18,
+          fontSize: 28,
+          color: "#94a3b8",
+          fontWeight: 400,
+          fontStyle: "italic",
+        }}>
+          yeah, we fixed that.
+        </p>
+        <p style={{
+          fontSize: 16,
           color: "#94a3b8",
           maxWidth: 600,
-          margin: "0 auto 20px",
-          lineHeight: 1.6
+          margin: "20px auto 0",
+          lineHeight: 1.6,
         }}>
-          Paste your listing description and get a professionally rewritten version in seconds. Free to use, no account needed.
+          Most AI tools hallucinate features and sound robotic. This one only uses the facts you provide, avoids cliched MLS language, and transforms your notes into polished, flowing prose.
         </p>
       </section>
 
@@ -280,7 +304,7 @@ export default function Home() {
               style={{ width: "100%", padding: 14, fontSize: 16, border: "2px solid #e2e8f0", borderRadius: 10, boxSizing: "border-box", color: "#1e293b", background: "white" }}
             />
             <p style={{ fontSize: 13, color: "#64748b", marginTop: 8 }}>
-              We&apos;ll email you all three variations for easy reference
+              We&apos;ll email you the rewritten description for easy reference
             </p>
           </div>
 
@@ -396,9 +420,9 @@ export default function Home() {
 
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))", gap: 24 }}>
             {[
-              { step: "1", icon: "\ud83d\udccb", title: "Paste Your Listing", desc: "Enter your property details and current description" },
-              { step: "2", icon: "\ud83e\udd16", title: "AI Rewrites It", desc: "Our AI crafts a polished, MLS-ready description from your original" },
-              { step: "3", icon: "\u2728", title: "Copy & Go", desc: "Pick the variation you like, copy it, and paste it into your MLS" },
+              { step: "1", icon: "\ud83d\udccb", title: "Paste Your Listing", desc: "Paste your address, specs, and current description" },
+              { step: "2", icon: "\ud83e\udd16", title: "AI Rewrites It", desc: "AI restructures your description using only the facts you provided" },
+              { step: "3", icon: "\u2728", title: "Copy & Go", desc: "Review, copy, and paste directly into your MLS" },
             ].map((item) => (
               <div key={item.step} style={{
                 background: "rgba(255,255,255,0.05)",
@@ -509,10 +533,10 @@ export default function Home() {
       {/* Footer CTA */}
       <section style={{ padding: "60px 24px 80px", textAlign: "center" }}>
         <h2 style={{ fontSize: 28, fontWeight: 700, color: "white", marginBottom: 16 }}>
-          Ready to Transform Your Listings?
+          Ready to Try It?
         </h2>
         <p style={{ color: "#94a3b8", marginBottom: 24, fontSize: 16 }}>
-          Paste your description above and get a pro-quality rewrite in seconds
+          Free to use, no account needed. Results in seconds.
         </p>
         <button
           onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
