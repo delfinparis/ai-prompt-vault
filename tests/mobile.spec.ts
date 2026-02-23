@@ -19,17 +19,28 @@ test.describe('Listing Rewriter - Mobile Responsiveness', () => {
     }
   });
 
-  test('hero subtitle should be readable on mobile', async ({ page }) => {
+  test('hero headline and subtitle should be readable on mobile', async ({ page }) => {
     await page.goto('/');
 
-    const subtitle = page.locator('text=Paste your listing description and get a professionally rewritten version');
+    const headline = page.locator('text=Tired of Crummy AI Listing Descriptions?');
+    await expect(headline).toBeVisible();
+
+    const headlineBox = await headline.boundingBox();
+    const viewport = page.viewportSize()!;
+    expect(headlineBox).not.toBeNull();
+    if (headlineBox) {
+      expect(headlineBox.x).toBeGreaterThanOrEqual(0);
+      expect(headlineBox.x + headlineBox.width).toBeLessThanOrEqual(viewport.width + 5);
+    }
+
+    const subtitle = page.locator('text=Most AI tools hallucinate features and sound robotic');
     await expect(subtitle).toBeVisible();
 
     const subtitleBox = await subtitle.boundingBox();
     expect(subtitleBox).not.toBeNull();
     if (subtitleBox) {
       expect(subtitleBox.x).toBeGreaterThanOrEqual(0);
-      expect(subtitleBox.x + subtitleBox.width).toBeLessThanOrEqual(page.viewportSize()!.width + 5);
+      expect(subtitleBox.x + subtitleBox.width).toBeLessThanOrEqual(viewport.width + 5);
     }
   });
 

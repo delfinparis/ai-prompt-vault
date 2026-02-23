@@ -4,9 +4,10 @@ test.describe('Listing Rewriter - Landing Page', () => {
   test('should load landing page with all sections', async ({ page }) => {
     await page.goto('/');
 
-    // Check hero section — logo and subtitle
+    // Check hero section — logo, headline, and subtitle
     await expect(page.locator('img[alt*="Listing Rewriter"]')).toBeVisible();
-    await expect(page.locator('text=Paste your listing description and get a professionally rewritten version')).toBeVisible();
+    await expect(page.locator('text=Tired of Crummy AI Listing Descriptions?')).toBeVisible();
+    await expect(page.locator('text=Most AI tools hallucinate features and sound robotic')).toBeVisible();
 
     // Check form exists with correct fields
     await expect(page.locator('text=Your Email')).toBeVisible();
@@ -29,7 +30,7 @@ test.describe('Listing Rewriter - Landing Page', () => {
     await expect(page.getByText('AFTER', { exact: true })).toBeVisible();
 
     // Check Footer CTA
-    await expect(page.locator('text=Ready to Transform Your Listings?')).toBeVisible();
+    await expect(page.locator('text=Ready to Try It?')).toBeVisible();
     await expect(page.getByRole('button', { name: 'Get Started Free' })).toBeVisible();
 
     // Check footer copyright
@@ -99,7 +100,7 @@ test.describe('Listing Rewriter - Landing Page', () => {
     await expect(page.locator('textarea')).toHaveValue('Spacious 3 bedroom home with updated kitchen.');
 
     // Submit button should be enabled
-    await expect(page.getByRole('button', { name: 'Generate 3 AI-Enhanced Descriptions' })).toBeEnabled();
+    await expect(page.getByRole('button', { name: 'Generate AI-Enhanced Description' })).toBeEnabled();
   });
 
   test('should toggle opt-in checkbox', async ({ page }) => {
