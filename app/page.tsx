@@ -102,7 +102,13 @@ export default function Home() {
         }),
       });
 
-      const data = await response.json();
+      // Server errors and timeouts can come back as HTML, not JSON
+      let data;
+      try {
+        data = await response.json();
+      } catch {
+        throw new Error("Our server hit a snag. Please try again in a minute.");
+      }
 
       if (!response.ok) {
         throw new Error(data.error || "Failed to rewrite listing");

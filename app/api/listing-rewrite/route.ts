@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 
+// Up to 5 sequential Claude calls plus 3 webhook calls; default timeout can cut this off
+export const maxDuration = 60;
+
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
@@ -315,7 +318,8 @@ async function extractFeatures(description: string, apiKey: string): Promise<str
     }
 
     const result = await response.json();
-    const text = result.content?.[0]?.text || '[]';
+    // Model sometimes wraps the array in a ```json fence
+    const text = (result.content?.[0]?.text || '[]').replace(/^```(?:json)?\s*|\s*```$/g, '').trim();
     return JSON.parse(text);
   } catch {
     console.warn('Failed to parse features, skipping validation');
